@@ -44,7 +44,7 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
 	// if the item is in the monitorList remove it.
 	if (monitorList.contains(item)) {
 	    monitorList.remove(item);
-	    System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+	    //System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 	}
 
 	// if there's something to delete
@@ -53,7 +53,7 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
 	    IndexItem first = (IndexItem)monitorList.getFirst();
 
 
-	    System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Hollow list size = " + monitorList.size());
+	    //System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Hollow list size = " + monitorList.size());
 	    monitorList.remove(first);
 	    
 	    cache.hollowItem(first.getPosition());
@@ -68,7 +68,7 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
 	monitorList.add(item);
-	System.err.println("Queuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+	//System.err.println("Queuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 
 	return null;
     }
