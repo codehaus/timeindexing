@@ -14,6 +14,8 @@ import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.DefaultIndexCache;
 import com.timeindexing.event.*;
 import java.util.Properties;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * An implementation of an incore Index object.
@@ -30,6 +32,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * Initialize the object.
      */
     protected void init() {
+
 	header = new IncoreIndexHeader(this,indexName);
 	indexCache = new DefaultIndexCache(this);
 
@@ -91,6 +94,12 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	if (dataType != null) {
 	    header.setIndexDataType(dataType);
+	}
+
+	try {
+	    setURI(new URI("index", indexName, null));
+	} catch (URISyntaxException use) {
+	    ;
 	}
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
@@ -175,6 +184,41 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
     }
 
    
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public long addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addReference(item, other, item.getDataTimestamp());
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+
+	if (! hasIndexURI(otherIndex.getURI())) {
+	    // its a new index being referenced
+	    addIndexURI(otherIndex.getID(), otherIndex.getURI());
+	}
+
+	// set the ID to be the length
+	// as it's unique
+	long id = getLength();
+	// the record Timestamp is now (as microseconds)
+	Timestamp recordTS = Clock.time.asMicros();
+	// the actual data Timestamp is the record Timestamp
+	// if the dataTS param is null, it is the speicifed value otherwise
+	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
+
+        IndexReferenceDataHolder dataHolder = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
+
+	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE_DT, new SID(id), new SID(0));
+
+	dataHolder.setIndexItem(item);
+
+	return addItem((IndexItem)item);
+    }
+
    /**
      * Close this index.
      */
