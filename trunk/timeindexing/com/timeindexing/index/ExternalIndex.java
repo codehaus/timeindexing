@@ -78,6 +78,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    IndexProperties indexProperties = new IndexProperties();
 
 	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("readonly", readOnly);
 	    
 	    // open the index and the data
 	    indexInteractor.open(indexProperties);
@@ -104,6 +105,8 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
      * Called when an ExternalIndex needs to be created.
      */
     public synchronized boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
+	String uri = null;
+
 	// check the passed in properties
 	checkCreateProperties(properties);
 
@@ -114,7 +117,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 	// check to see if this index is already open and registered
 	try {
-	    String uri = generateURI(headerPathName).toString();
+	    uri = generateURI(headerPathName).toString();
 
 	    if (isOpen(uri)) {
 		throw new IndexCreateException("Index is already created and is open");
@@ -143,11 +146,14 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    indexProperties.put("indexpath", headerPathName);
 	    indexProperties.put("datapath", dataPathName);
 
-
-	    indexInteractor.create(indexProperties);
+	    // create the relevant objects
+	    indexInteractor.create(indexProperties);	
 	
 	    // activate the index
 	    activate();
+
+	    // flush out the current settings
+	    indexInteractor.flush();
 
 	    // pass an event to the listeners
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
@@ -162,8 +168,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    return true;
 	} catch (IOException ioe) {
 	    throw new IndexCreateException(ioe);
-	}
-	    
+	} catch (TimeIndexException ioe) {
+	    throw new IndexCreateException(ioe);
+	}	    
     }
 
     /**
@@ -191,6 +198,17 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	} else {
 	    loadStyle = LoadStyle.NONE;
 	}
+
+	if (indexProperties.containsKey("readonly")) {
+	    String readonly = indexProperties.getProperty("readonly").toLowerCase();
+
+	    if (readonly.equals("true")) {
+		readOnly = Boolean.TRUE;
+	    } else {
+		readOnly = Boolean.FALSE;
+	    }
+	}
+		
     }
 
 
