@@ -47,7 +47,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     protected int itemSize = 0;
     protected long dataSize = 0;
     protected Map dataTypeMap = null;
-    protected int indexType = IndexType.INCORE;
+    protected IndexType indexType = IndexType.INCORE_DT;
     protected boolean hasAnnotations = false;
     protected int annotationStyle = AnnotationStyle.NONE;
     protected Map externalIndexMap = null;
@@ -303,7 +303,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * Get the data style.
      * Either inline or external or shadow.
      */
-    public int getIndexType() {
+    public IndexType getIndexType() {
 	return indexType;
     }
 
@@ -311,7 +311,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * Set the data style.
      * Either inline or external or shadow.
      */
-    public ManagedIndexHeader setIndexType(int type) {
+    public ManagedIndexHeader setIndexType(IndexType type) {
 	indexType = type;
 	return this;
     }
@@ -642,7 +642,10 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	buffer.append(versionMinor);
 	buffer.append(", ");
 
+	buffer.append(indexType);
+	buffer.append(", ");
 
+	/*
 	switch (indexType) {
 	case IndexType.INLINE: {
 	    buffer.append("Inline, ");
@@ -665,9 +668,13 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	    break;
 	}
 	}
+	*/
 
+	
+	buffer.append(getIndexDataType());
+	buffer.append(", ");
 
-
+	/*
 	switch (getIndexDataType().value()) {
 	case DataType.NOTSET: {
 	    buffer.append("Type not set!, ");
@@ -690,6 +697,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	    break;
 	}
 	}
+	*/
 
 	buffer.append("Index name \"");
 	buffer.append(indexName);
