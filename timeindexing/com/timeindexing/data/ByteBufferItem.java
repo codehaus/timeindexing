@@ -11,16 +11,26 @@ import com.timeindexing.index.DataType;
  * This is an implementation of ByteBufferItem.
  */
 public class ByteBufferItem implements DataItem {
-    /*
-     * The string
-     */
+    //The data
     ByteBuffer data = null;
 
+    // the data type
+    DataType dataType = null;
+
     /**
-     * Construct a ByteBufferItem from a string.
+     * Construct a ByteBufferItem from a ByteBuffer.
      */
     public ByteBufferItem(ByteBuffer bb) {
 	data = bb;
+	dataType = DataType.ANY_DT;
+    }
+
+    /**
+     * Construct a ByteBufferItem from a ByteBuffer and a DataType
+     */
+    public ByteBufferItem(ByteBuffer bb, DataType type) {
+	data = bb;
+	dataType = type;
     }
 
     /**
@@ -42,6 +52,6 @@ public class ByteBufferItem implements DataItem {
      * Get the DataType of the DataItem.
      */
     public DataType getDataType() {
-	return DataType.ANY_DT;
+	return dataType;
     }
 }
