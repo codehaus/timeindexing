@@ -373,28 +373,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	return getItem(tsm.position());
     }
 
-    /**
-     * Hollow the IndexItem at the position.
-     */
-    public boolean hollowItem(long position) {
-	if (isSelection) {
-	    return indexModel.hollowItem(position+ start.value());
-	} else {
-	    return indexModel.hollowItem(position);
-	}
-    }
-
-    /**
-     * Hollow the IndexItem at the position.
-     */
-    public boolean hollowItem(Position p) {
-	if (isSelection) {
-	    return indexModel.hollowItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
-	} else {
-	    return indexModel.hollowItem(p);
-	}
-    }
-	
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
