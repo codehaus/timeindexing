@@ -6,6 +6,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.event.IndexEventGenerator;
+import java.util.Properties;
 
 /**
  * An interface for classes that need to manage
@@ -17,12 +18,12 @@ public interface ManagedIndex extends ExtendedIndex, IndexEventGenerator  {
     /**
      * Open this index.
      */
-     public boolean open() throws IndexOpenException;
+     public boolean open(Properties props) throws IndexSpecificationException, IndexOpenException;
 
     /**
      * Create this index.
      */
-     public boolean create() throws IndexCreateException;
+     public boolean create(Properties props) throws IndexSpecificationException, IndexCreateException;
 
     /**
      * Flush this index.

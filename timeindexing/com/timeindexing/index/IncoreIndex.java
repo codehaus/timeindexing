@@ -12,7 +12,6 @@ import com.timeindexing.basic.Position;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.event.*;
-
 import java.util.Properties;
 
 /**
@@ -23,28 +22,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
     /**
      * Create an IncoreIndex
      */
-    public IncoreIndex(Properties indexProperties) throws IndexSpecificationException  {
-	if (indexProperties.containsKey("name")) {
-	    indexName = indexProperties.getProperty("name");
-	} else {
-	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
-	}
-
-	if (indexProperties.containsKey("datatype")) {
-	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
-	}
-
-
-	init();
-    }
-
-    /**
-     * Create an IncoreIndex
-     */
-    public IncoreIndex(String name) {
-	indexName = name;
-
-	init();
+    public IncoreIndex() {
     }
 
     /**
@@ -60,6 +38,52 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	closed = false;
     }
 
+
+
+    /**
+     * Open this index.
+     */
+     public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
+	return true;
+    }
+
+    /**
+     * Create this index.
+     */
+    public boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
+	// things to do the first time in
+	// set the ID, the startTime, first offset, last offset
+	ID indexID = new UID();
+	header.setID(indexID);
+	header.setStartTime(Clock.time.asMicros());
+	header.setFirstOffset(new Offset(0));
+	header.setLastOffset(new Offset(0));
+
+
+	if (dataType != null) {
+	    header.setIndexDataType(dataType);
+	}
+
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+	closed = false;
+	activate();
+
+
+	return true;
+    }
 
     /**
      * Get the  last time the index was flushed.
@@ -152,42 +176,6 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 
 
    
-
-    /**
-     * Open this index.
-     */
-    public boolean open() {
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
-	return true;
-    }
-
-    /**
-     * Create this index.
-     */
-    public boolean create() {
-	// things to do the first time in
-	// set the ID, the startTime, and the index type
-	ID indexID = new UID();
-	header.setID(indexID);
-	//header.setIndexType(indexType);
-
-	header.setStartTime(Clock.time.asMicros());
-	header.setFirstOffset(new Offset(0));
-	header.setLastOffset(new Offset(0));
-
-
-	if (dataType != null) {
-	    header.setIndexDataType(dataType);
-	}
-
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
-	closed = false;
-	activate();
-
-
-	return true;
-    }
-
    /**
      * Close this index.
      */
@@ -204,6 +192,18 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	activated = false;
 
 	return true;
+    }
+
+    protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
+	if (indexProperties.containsKey("name")) {
+	    indexName = indexProperties.getProperty("name");
+	} else {
+	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("datatype")) {
+	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
+	}
     }
 
     /**

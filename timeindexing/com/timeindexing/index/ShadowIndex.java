@@ -18,8 +18,7 @@ public class ShadowIndex extends ExternalIndex  implements ManagedIndex  {
     /**
      * Create an ShadowIndex
      */
-    public ShadowIndex(Properties indexProperties) throws IndexSpecificationException {
-	super(indexProperties);
+    public ShadowIndex() throws IndexSpecificationException {
     }
 
     /**
