@@ -51,7 +51,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 	case IndexType.EXTERNAL: {
@@ -68,7 +68,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 
 	}
 
@@ -86,7 +86,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 
 	}
 
@@ -104,7 +104,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 	default:
@@ -206,7 +206,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 	case IndexType.EXTERNAL: {
@@ -219,7 +219,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 	case IndexType.SHADOW: {
@@ -232,7 +232,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 	case IndexType.INCORE: {
@@ -245,7 +245,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	    return new TimeIndex(newIndex);
 	}
 
 
