@@ -17,11 +17,8 @@ import com.timeindexing.index.IndexTimestampSelector;
      * public Position goto(Timestamp t);
      * public Position goto(Position p);
      * public Position goto(long p);
-     * public Position mark();
-     * public Position next();
-     * public Position prev();
-     * public Interval region();
      */
+
 /**
  * An index view has the moethods needed
  * for view on an Index.
@@ -74,12 +71,12 @@ public interface IndexView extends Index {
     /**
      * Get the Index Item from the Index at position position().
      */
-    public IndexItem getItem();
+    public IndexItem getItem() throws GetItemException;
 
     /**
      * Get the Index Item from the Index at position mark().
      */
-    public IndexItem getItemAtMark();
+    public IndexItem getItemAtMark() throws GetItemException;
 
     /**
      * What is the region covered by position and mark.
