@@ -192,8 +192,6 @@ public class TICreate {
 		    item = new ReaderResultItem(result);
 
 		    indexSize = index.addItem(item, dataTS);
-
-		    index.hollowItem(indexSize - 1);
 		}
 
 		// wind it up
