@@ -23,7 +23,7 @@ public interface IndexCache {
     /**
      * Get the no of items in the index.
      */
-    public long length();
+    public long cacheSize();
 
     /**
      * Get an Index Item from the Index.
@@ -46,14 +46,6 @@ public interface IndexCache {
      */
     public boolean hollowItem(Position p);
 
-
-    /**
-     * Does a timestamp fall within the bounds of the Index.
-     * The bounds are the first time data is put in and the last
-     * time data is put in the Index.
-     */
-    public boolean contains(Timestamp t, IndexTimestampSelector sel);
-
     /**
      * Get the time the first IndexItem was put into the Index.
      */
@@ -73,11 +65,5 @@ public interface IndexCache {
      * Get the time the last IndexItem was put into the Index.
      */
     public Timestamp getLastDataTime();
-
-    /**
-     * Try and determine the position associated
-     * with the speicifed Timestamp.
-     */
-    public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime);
 
 }
