@@ -325,6 +325,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * returns false if in correct place
      */
     protected boolean seekToIndex(long position) throws IOException {
+	System.err.println("Index seek to " + position);
 	if (indexChannelPosition != position) {
 	    // we need to seek to a different place
 	    indexChannel.position(position);
@@ -341,6 +342,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * returns false if in correct place
      */
     protected boolean seekToData(long position) throws IOException {
+	System.err.println("Data seek to " + position);
 	if (dataChannelPosition != position) {
 	    // we need to seek to a different place
 	    dataChannel.position(position);
@@ -426,7 +428,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    // soak up index name padding
 	    dataFile.readByte();
 
-	    //System.err.println("Inline Index Header read size = " + dataFile.getFilePointer());
+	    //System.err.println("External Data Header read size = " + dataChannel.position());
 
 	    dataChannelPosition = dataChannel.position();
 	    dataFirstPosition = dataChannelPosition;
@@ -485,5 +487,36 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	return writeCount;
 
     } 
+
+
+    /**
+     * Goto the append position
+     */
+    public boolean gotoAppendPosition() throws IOException {
+	seekToIndex(indexAppendPosition);
+	return seekToData(dataAppendPosition);
+    }
+
+    /**
+     * Goto the first position
+     */
+    public boolean gotoFirstPosition() throws IOException {
+	seekToIndex(indexFirstPosition);	
+	return seekToData(dataFirstPosition);
+    }
+
+    /**
+     * Set the append position from the indexChannelPosition.
+     */
+    public boolean setAppendPosition() throws IOException {
+	System.err.println("Index append position = " + indexChannelPosition);
+	indexAppendPosition = indexChannelPosition;
+
+	System.err.println("Data append position = " + dataChannelPosition);
+	dataAppendPosition = dataChannelPosition;
+
+	return true;
+    }
+
 
 }
