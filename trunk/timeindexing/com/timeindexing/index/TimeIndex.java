@@ -127,11 +127,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Get the time the first IndexItem was put into the Index.
+     * @return ZeroTimestamp if there is no first item, usually when there are no items in the index
      */
     public Timestamp getFirstTime() {
 	if (isSelection) {
-	    IndexItem first = getItem(0);
-	    return first.getIndexTimestamp();
+	    try {
+		IndexItem first = getItem(0);
+		return first.getIndexTimestamp();
+	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    }
 	} else {
 	    return indexImpl.getFirstTime();
 	}
@@ -139,11 +144,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Get the time the last IndexItem was put into the Index.
+     * @return  ZeroTimestamp if there is no last item, usually when there are no items in the index
      */
     public Timestamp getLastTime() {
 	if (isSelection) {
-	    IndexItem last = getItem(getLength()-1);
-	    return last.getIndexTimestamp();
+	    try {
+		IndexItem last = getItem(getLength()-1);
+		return last.getIndexTimestamp();
+	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    }
 	} else {
 	    return indexImpl.getLastTime();
 	}
@@ -152,11 +162,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Get the data time for the first IndexItem in the Index.
+     * @return ZeroTimestamp if there is no first item, usually when there are no items in the index
      */
     public Timestamp getFirstDataTime() {
 	if (isSelection) {
-	    IndexItem first = getItem(0);
-	    return first.getDataTimestamp();
+	    try {
+		IndexItem first = getItem(0);
+		return first.getDataTimestamp();
+	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    }
 	} else {
 	    return indexImpl.getFirstDataTime();
 	}
@@ -164,11 +179,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Get the data time for the last IndexItem in the Index.
+     * @return ZeroTimestamp if there is no last item, usually when there are no items in the index
      */
     public Timestamp getLastDataTime() {
 	if (isSelection) {
-	    IndexItem last = getItem(getLength()-1);
-	    return last.getDataTimestamp();
+	    try {
+		IndexItem last = getItem(getLength()-1);
+		return last.getDataTimestamp();
+	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    }
 	} else {
 	    return indexImpl.getLastDataTime();
 	}
@@ -263,7 +283,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException , IndexItemException {
+    public long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException , AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -274,7 +294,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index with a specific Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp datatime) throws IndexTerminatedException, IndexActivationException, IndexItemException {
+    public long addItem(DataItem item, Timestamp datatime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -296,7 +316,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) {
+    public IndexItem getItem(long n) throws GetItemException {
 	if (isSelection) {
 	    return indexImpl.getItem(n+start);
 	} else {
@@ -307,7 +327,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p) {
+    public IndexItem getItem(Position p) throws GetItemException {
 	if (isSelection) {
 	    return indexImpl.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start));
 	} else {
@@ -318,7 +338,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
+    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException {
 	TimestampMapping tsm = locate(t, sel, lifetime);
 	return getItem(tsm.position());
     }
@@ -397,10 +417,22 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public boolean contains(Timestamp t, IndexTimestampSelector sel) {
 	if (isSelection) {
-	    IndexItem first = getItem(0);
-	    IndexItem last = getItem(getLength()-1);
+	    IndexItem first = null;
+	    IndexItem last = null;
 	    Timestamp firstTS =  null;
 	    Timestamp lastTS = null;
+
+
+	    // if we cant get both the items
+	    // then the selection doesn't contain the timestamp
+	    // so return false
+	    try {
+		first = getItem(0);
+		last = getItem(getLength()-1);
+	    } catch (GetItemException gie) {
+		return false;
+	    }
+
 
 	    if (sel == IndexTimestampSelector.DATA) {
 		firstTS = first.getDataTimestamp();
@@ -424,7 +456,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Try and determine the position associated
      * with the speicifed data Timestamp.
-     */
+     * @return null if no position is found
+      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
 	Timestamp firstTS =  null;
 	Timestamp lastTS = null;
@@ -434,8 +467,18 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return indexImpl.locate(t, sel, lifetime);
 	    } else {
 		// now try and determine if it is too low or too high
-		IndexItem first = getItem(0);
-		IndexItem last = getItem(getLength()-1);
+		IndexItem first = null;
+		IndexItem last = null;
+
+		// if we cant get both the items
+		// then the selection doesn't contain the timestamp
+		// so return null
+		try {
+		    first = getItem(0);
+		    last = getItem(getLength()-1);
+		} catch (GetItemException gie) {
+		    return null;
+		}
 
 		if (sel == IndexTimestampSelector.DATA) {
 		    firstTS = first.getDataTimestamp();
@@ -583,6 +626,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
+     * Is the Index closed.
+     */
+    public boolean isClosed() {
+	return indexImpl.isClosed();
+    }
+
+    /**
      * Close the index.
      * Intened to close all associated streams and files,
      * and this sets the end time too.
@@ -671,7 +721,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get the Index Item from the Index at position position().
      */
-    public IndexItem getItem() {
+    public IndexItem getItem() throws GetItemException {
 	if (position == null) {
 	    throw new PositionOutOfBoundsException("Position not set. Region does not exist");
 	} else {
@@ -682,7 +732,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get the Index Item from the Index at position mark().
      */
-    public IndexItem getItemAtMark() {
+    public IndexItem getItemAtMark() throws GetItemException {
 	if (mark == null) {
 	    throw new PositionOutOfBoundsException("Mark not set. Region does not exist");
 	} else {
