@@ -44,7 +44,7 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
 	monitorList = new LinkedList();
 	removeList = new LinkedList();
 	preQueue = new LinkedList();
-	// 50k
+	// 50
 	volumeThreshold = 50 * 1024;
 	// 0.5 second
 	timeout = new ElapsedMillisecondTimestamp(500);
@@ -89,13 +89,13 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (monitorList.contains(item)) {
+	if (isInFirst(30, monitorList, item)) {
 	    monitorList.remove(item);
 	    //System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 	}
 
 	// if the item is in the removeList remove it.
-	if (removeList.contains(item)) {
+	if (isInFirst(30, removeList, item)) {
 	    removeList.remove(item);
 	    //System.err.println("Dont remove " + item.getPosition() + ".Remove list size = " + removeList.size());
 	}
@@ -135,7 +135,7 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
 	    }
 	}
 
-	// now move an element fro the prque to the monitorList
+	// now move an element fro the preque to the monitorList
 	if (preQueue.size() > 2) {
 	    ManagedIndexItem first = (ManagedIndexItem)preQueue.getFirst();
 
@@ -152,7 +152,7 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
 	// if this item is not in the monitorList, then add it
-	if (! preQueue.contains(item) && ! monitorList.contains(item)) {
+	if (! preQueue.contains(item) && ! isInFirst(30, monitorList, item)) {
 	    preQueue.add(item);
 	    //System.err.println("PreQueuing " + item.getPosition() + ". Prequeue size = " + preQueue.size());
 	}
