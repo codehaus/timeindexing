@@ -253,7 +253,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      */
     public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
-
 	// can't add anything if the index is terminated
 	// check this first as this can never change.
 	if (isTerminated()) {
@@ -262,9 +261,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
 	// now check the values that can possibly change
 
-	// can't add anything if the index is terminated
-	if (isTerminated()) {
-	    throw new IndexTerminatedException("Index terminated " + this);
+	// can't add anything if the index is closed
+	if (isClosed()) {
+	    throw new IndexClosedException("Index closed " + this);
 	}
 
 	// can't add anything if the index is NOT activated
@@ -320,8 +319,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Get an Index Item from the Index.
      */
     public IndexItem getItem(Position p) throws GetItemException {
-	lastAccessTime = Clock.time.asMicros();
-	return indexCache.getItem(p);
+        if (p == Position.TOO_LOW) {
+	    throw new PositionOutOfBoundsException("Position TOO_LOW");
+	} else if (p == Position.TOO_HIGH) {
+	    throw  new PositionOutOfBoundsException("Position TOO_HIGH");
+	} else {
+	    lastAccessTime = Clock.time.asMicros();
+	    return indexCache.getItem(p);
+	}
     }
 
     /**
