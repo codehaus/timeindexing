@@ -75,7 +75,7 @@ public class CountLimitedSelectionStreamer extends SelectionStreamer  {
 		    } 
 		}
 
-		writeCount += outputPlugin.write(itemN);
+		writeCount += outputPlugin.write(itemN, outputProperties);
 	    }
 	}
 	
