@@ -8,6 +8,7 @@ import com.timeindexing.basic.SID;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.FileIndexItem;
 import com.timeindexing.index.ManagedIndex;
+import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexHeader;
 import com.timeindexing.index.HeaderOption;
 import com.timeindexing.index.DataType;
@@ -30,23 +31,25 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
- * An Index Header interactor.
- * This is an UNFINISHED implementation of an Index Header Interactor. 
- * It represents the index header in core.
+ * An Index Header IO object.
+ * It represents the file version of an index header in core.
  */
 public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor, IndexHeader, Cloneable {
+    // The IndexFileInteractor that interacts between the
+    // StoredIndex and the underlying files.
+    IndexFileInteractor interactor = null;
     // The index that this does header I/O for
-    ManagedIndex myIndex = null;
+    StoredIndex myIndex = null;
 
     /**
      * Create a IndexHeaderIO.
      */
-    public IndexHeaderIO(ManagedIndex indexMgr) {
-	myIndex = indexMgr;
+    public IndexHeaderIO(IndexFileInteractor indexInteractor) {
+	interactor = indexInteractor;
+	myIndex = interactor.getIndex();
 	headerBuf = ByteBuffer.allocate(2048);
 	openMode = "rw";
     }
-
 
 
     /**
@@ -75,8 +78,8 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
      * Create an index header.
      */
     public boolean create(String filename, Properties options) throws IOException {
-	itemSize = INDEX_ITEM_SIZE;
-	indexType = myIndex.getIndexType();
+	setItemSize(INDEX_ITEM_SIZE);
+	setIndexType(myIndex.getIndexType());
 
 	boolean opened =  super.open(filename);
 
@@ -133,6 +136,8 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	// sync the incore header with this
 	syncHeader(myIndex.getHeader());
 
+	//System.err.println("Sync Header: with " + myIndex.getIndexType() + " " + myIndex.getName());
+
 	if (myIndex.isActivated()) {
 	    write();
 	}
@@ -163,56 +168,56 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	headerBuf.put(FileType.HEADER);    
 
 	// version major
-	headerBuf.put((byte)versionMajor);    
+	headerBuf.put((byte)getVersionMajor());    
 	// version minor
-	headerBuf.put((byte)versionMinor);    
+	headerBuf.put((byte)getVersionMinor());    
 
 	// write the ID
-	headerBuf.putLong(indexID.value());  
+	headerBuf.putLong(getID().value());  
 
 	// size of name, +1 for null terminator
-	headerBuf.putShort((short)(indexName.length()+1));     
+	headerBuf.putShort((short)(getName().length()+1));     
 
 	// the name
-	headerBuf.put(indexName.getBytes());         
+	headerBuf.put(getName().getBytes());         
 	// plus null terminator
 	headerBuf.put((byte)0x00);    
 
 	// indexType
-	headerBuf.put((byte)indexType.value());    
+	headerBuf.put((byte)getIndexType().value());    
 
 	// write the start time
-	headerBuf.putLong(startTime.value()); 
+	headerBuf.putLong(getStartTime().value()); 
 
 	// write the end time
-	headerBuf.putLong(endTime.value());  
+	headerBuf.putLong(getEndTime().value());  
 
 	// write the first time
-	headerBuf.putLong(firstTime.value());
+	headerBuf.putLong(getFirstTime().value());
 
 	// write the last time
-	headerBuf.putLong(lastTime.value()); 
+	headerBuf.putLong(getLastTime().value()); 
 
 	// write the first data time
-	headerBuf.putLong(firstDataTime.value());  
+	headerBuf.putLong(getFirstDataTime().value());  
 
 	// write the last data time
-	headerBuf.putLong(lastDataTime.value()); 
+	headerBuf.putLong(getLastDataTime().value()); 
 
 	// write the item size
-	headerBuf.putInt(itemSize); 
+	headerBuf.putInt(getItemSize()); 
 
 	// write the data size
-	headerBuf.putLong(dataSize);
+	headerBuf.putLong(getDataSize());
 
 	// write the length
-	headerBuf.putLong(length);  
+	headerBuf.putLong(getLength());  
 
 	// write the offset of the first item
-	headerBuf.putLong(firstOffset.value()); 
+	headerBuf.putLong(getFirstOffset().value()); 
 
 	// write the offset of the last item
-	headerBuf.putLong(lastOffset.value());  
+	headerBuf.putLong(getLastOffset().value());  
 
 	// is the index terminated
 	if (isTerminated()) {
