@@ -11,8 +11,7 @@ import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
-import com.timeindexing.cache.FileIndexCache;
-import com.timeindexing.cache.HollowAfterUsePolicy;
+import com.timeindexing.cache.*;
 import com.timeindexing.io.LoadStyle;
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
@@ -49,7 +48,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	indexCache.setPolicy(new HollowAfterUsePolicy());
+	indexCache.setPolicy(new HollowAfterTimeoutPolicy());
 
 	setIndexType(IndexType.INLINE_DT);
 
@@ -90,7 +89,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.register(this, headerPathName, getID());
+	    TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -145,7 +144,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.register(this, headerPathName, getID());
+	    TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -184,7 +183,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 		loadStyle = LoadStyle.HOLLOW;
 	    }
 	} else {
-	    loadStyle = LoadStyle.NONE;
+	    loadStyle = LoadStyle.HOLLOW;
 	}
 
     }
