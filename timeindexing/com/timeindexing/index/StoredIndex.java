@@ -3,9 +3,23 @@
 package com.timeindexing.index;
 
 /**
- * A place holder abstract class for stored Index objects.
- * This is to be extended by classes that store index
+ * An interface for classes that need to process
+ * Indexes that are saved in stores.
+ * This is to be used by classes that store index
  * data, rather than have data incore.
  */
-public abstract class StoredIndex extends AbstractIndex implements ManagedStoredIndex  {
+public interface StoredIndex extends ManagedIndex  {
+    /**
+     * Retrieve an Index Item into the Index.
+     * @param item the IndexItem to add
+     * @return the no of items in the index.
+     */
+    public long retrieveItem(IndexItem item);
+
+    /**
+     * Read data for an index item
+     * given a DataReference.
+     */
+    public DataHolderObject readData(DataReference dataReference);
+
 }
