@@ -83,7 +83,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    closed = false;
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.register(this, headerPathName, getID());
+	    TimeIndexDirectory.addHandle(this);
 
 
 	    return true;
@@ -130,7 +130,6 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 	    indexInteractor.create(indexProperties);
 	
-
 	    // activate the index
 	    activate();
 
@@ -142,7 +141,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.register(this, headerPathName, getID());
+	    TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
