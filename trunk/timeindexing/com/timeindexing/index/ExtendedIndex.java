@@ -16,7 +16,7 @@ public interface ExtendedIndex extends Index, ExtendedIndexHeader {
     /**
      * Get the type of the index.
      */
-    public int getIndexType();
+    public IndexType getIndexType();
 
     /**
      * Get the  last time the index was flushed.
