@@ -61,6 +61,13 @@ public class OutputStreamer {
 
 	for (long i=0; i<length; i++) {
 	    IndexItem itemN = selection.getItem(i);
+
+	    // check for refererences
+	    // follow all references until we find the real data
+	    while (itemN.isReference()) {
+		itemN = itemN.follow();
+	    }
+
 	    writeCount += outputPlugin.write(itemN, outputProperties);
 	}
 
