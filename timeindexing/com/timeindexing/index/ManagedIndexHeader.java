@@ -108,6 +108,12 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
     public ManagedIndexHeader setDataPathName(String path);
 
     /**
+     * Set the description.
+     * This is one of the few attributes of an index that can be set directly.
+     */
+    public ManagedIndexHeader setDescription(Description description);
+
+    /**
      * State that the index is not in time order any more.
      */
     public ManagedIndexHeader notInTimeOrder();
