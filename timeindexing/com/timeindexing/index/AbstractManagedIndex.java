@@ -337,7 +337,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      */
     public boolean flush() {
 
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
+	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.FLUSHED, this));
 
 	return true;
     }
@@ -382,7 +382,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
 	closed = true;
 	activated = false;
 
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
+	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
 
 	return true;
     }
