@@ -113,6 +113,11 @@ public interface IndexHeader {
     public Description getDescription();
 
     /**
+     * Is the Index only available for read-only operations.
+     */
+    public boolean isReadOnly();
+
+    /**
      * Is the Index terminated.
      */
     public boolean isTerminated();
