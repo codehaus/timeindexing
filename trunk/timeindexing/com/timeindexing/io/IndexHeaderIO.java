@@ -26,9 +26,11 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Map;
 import java.util.Iterator;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.net.URI;
 
 /**
  * An Index Header IO object.
@@ -295,10 +297,15 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 		}
 		    
 		case HeaderOption.IS_IN_TIME_ORDER: {
-			spaceNeeded += processIsInTimeOrder(HeaderOptionProcess.SIZE, anOption, null);
+		    spaceNeeded += processIsInTimeOrder(HeaderOptionProcess.SIZE, anOption, null);
 		    break;
 		}
 	
+		case HeaderOption.REFERENCEMAPPING: {
+		    spaceNeeded += processReferenceMapping(HeaderOptionProcess.SIZE, anOption, null);
+		    break;
+		}
+		    
 
 		default: {
 		}
@@ -340,15 +347,20 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 		    }
 
 		    case HeaderOption.DATATYPE: {
-			processDataType(HeaderOptionProcess.SIZE, anOption, null);
+			processDataType(HeaderOptionProcess.WRITE, anOption, optionBuffer);
 			break;
 		    }
 			
 		    case HeaderOption.IS_IN_TIME_ORDER: {
-			processIsInTimeOrder(HeaderOptionProcess.SIZE, anOption, null);
+			processIsInTimeOrder(HeaderOptionProcess.WRITE, anOption, optionBuffer);
 			break;
 		    }
 	
+		    case HeaderOption.REFERENCEMAPPING: {
+			processReferenceMapping(HeaderOptionProcess.WRITE, anOption, optionBuffer);
+			break;
+		    }
+		    
 		    default: {
 		    }
 		    }
@@ -500,6 +512,73 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	    return size;
 	}
 
+    }
+
+    /**
+     * The referenced indexes mapping
+     */
+    protected int processReferenceMapping(HeaderOptionProcess what, HeaderOption anOption, ByteBuffer optionBuffer) {
+	// the referenced indexes map: ID -> URI
+	Map referenceMap = (Map)getOption(anOption);
+
+	int size = 0;
+
+
+	if (what == HeaderOptionProcess.SIZE) {
+	    // 1 for option byte, 2 for the no of entries 
+	    // 8 for EACH ID
+	    // 2 for the size, and n for EACH URI, and 1 for the NUL
+	    size = 1 + 2;
+
+	    // skip through all the URIs to find their length
+	    Iterator mapIterator = referenceMap.values().iterator();
+
+	    while (mapIterator.hasNext()) {
+		URI uri = (URI)mapIterator.next();
+
+		// add the size of the ID
+		size += 8;
+
+		// add the size of the URI + 1 for the NUL
+		size +=2;
+		size += uri.toString().length();
+		size += 1;
+	    }
+		   
+
+	    return size;
+	} else {
+	    // output
+	    optionBuffer.put(anOption.value()); // the option bytes
+	    
+	    // put out the size
+	    optionBuffer.putShort((short)referenceMap.size());
+	    System.err.println("IndexHeaderIO: " + referenceMap.size() + " references");
+	    
+
+	    // skip through all the kays
+	    Iterator mapIterator = referenceMap.keySet().iterator();
+
+	    while (mapIterator.hasNext()) {
+		ID id = (ID)mapIterator.next();
+
+		// add the ID
+		optionBuffer.putLong(id.value());
+
+		// get the URI
+		URI uri = (URI)referenceMap.get(id);
+
+		// add the the URI + the NUL
+		String uriString = uri.toString();
+		optionBuffer.putShort((short)(uriString.length()+1));
+		optionBuffer.put(uriString.getBytes());     // the URI as a string
+		optionBuffer.put((byte)0x00);    	// plus null terminator
+
+		System.err.println("IndexHeaderIO: reference: " + id + " => " + uri);
+	    }
+
+	    return size;
+	}
     }
 
 }
