@@ -31,7 +31,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
     // The last time that the idnex was flushed.
     Timestamp lastFlushTime = null;
     // The style to load the index
-    LoadStyle loadStyle = LoadStyle.HOLLOW;
+    LoadStyle loadStyle = LoadStyle.NONE;
     // The path name of the header
     String headerPathName = null;
 
@@ -155,22 +155,52 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
     }
 
     /**
+     * Get an Index Item from the Index.
+     */
+    public IndexItem getItem(long n) throws GetItemException {
+	setLastAccessTime();
+
+	IndexItem item = null;
+
+	if (indexCache.containsItem(n)) { 	// if the cache has the item
+	    // get it from the cache
+	    item = indexCache.getItem(n);
+	} else {
+	    //System.err.println("FileIndex: load-on-demand item: " + n);
+	    try {
+		// get the item from the index interactor
+		indexInteractor.getItem(n, false);
+		// get it out of the cache
+		item = indexCache.getItem(n);
+	    } catch (IOException ioe) {
+		throw new GetItemException("Cant load item " + n);
+	    }
+	}
+
+	// tell all the listeners that an item has been accessed
+	eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+
+	return item;
+    }
+
+    /**
      * Retrieve an Index Item into the Index.
      * @param item the IndexItem to add
-     * @return the no of items in the index.
+     * @param position the position to load the IndexItem at
+     * @return the no of items in the cache
      */
-    public long retrieveItem(IndexItem item) {
+    public long retrieveItem(IndexItem item, long position) {
 	// add the item to the index item cache
-	// the cache will return its load position
-	long loadPos = indexCache.addItem(item);
+	// the cache will return the size of the index
+	long cacheSize = indexCache.addItem(item, position);
 
 	// now set the item's position and
 	// bind it to the index
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
-	itemM.setPosition(new AbsolutePosition(loadPos - 1));
+	itemM.setPosition(new AbsolutePosition(position));
 	itemM.setIndex(this);
 
-	return loadPos;
+	return cacheSize;
     }
 
 
