@@ -696,7 +696,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * It is not possible to add items to an Index
      * that is not active.
      */
-    public Index activate() {
+    public Index activate() throws IndexReadOnlyException, IndexWriteLockedException {
 	return indexModel.activate();
     }
 
@@ -752,6 +752,21 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public boolean isChanged() {
 	return indexModel.isChanged();
+    }
+
+    
+    /**
+     * Is the Index only available for read-only operations.
+     */
+    public boolean isReadOnly() {
+	return indexModel.isReadOnly();
+    }
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	return indexModel.isWriteLocked();
     }
 
     /**
