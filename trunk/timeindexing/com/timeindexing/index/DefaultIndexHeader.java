@@ -19,42 +19,42 @@ import java.util.HashMap;
 public class DefaultIndexHeader implements ManagedIndexHeader {
 
     // these are currently synced in syncHeader()
-    protected String indexName = null;
-    protected ID indexID = null;
-    protected Timestamp startTime = Timestamp.ZERO;
-    protected Timestamp endTime = Timestamp.ZERO;
-    protected Timestamp firstTime = Timestamp.ZERO;
-    protected Timestamp lastTime = Timestamp.ZERO;
-    protected Timestamp firstDataTime = Timestamp.ZERO;
-    protected Timestamp lastDataTime = Timestamp.ZERO;
-    protected long length = 0;
-    protected boolean terminated = false;
-    protected Offset firstOffset = null;
-    protected Offset lastOffset = null;
+    String indexName = null;
+    ID indexID = null;
+    Timestamp startTime = Timestamp.ZERO;
+    Timestamp endTime = Timestamp.ZERO;
+    Timestamp firstTime = Timestamp.ZERO;
+    Timestamp lastTime = Timestamp.ZERO;
+    Timestamp firstDataTime = Timestamp.ZERO;
+    Timestamp lastDataTime = Timestamp.ZERO;
+    long length = 0;
+    boolean terminated = false;
+    Offset firstOffset = null;
+    Offset lastOffset = null;
 
     // These should be options in the IndexProperties
 
     // TODO: fix the getter and setter to use the 
     // optionalValues map.
-    //protected String indexPathName = null;
-    //protected String dataPathName = null;
-    //protected Description description = null;
-    //protected DataType dataType = DataType.NOTSET_DT;
-    //protected boolean indexIsSorted = true;
+    //String indexPathName = null;
+    //String dataPathName = null;
+    //Description description = null;
+    //DataType dataType = DataType.NOTSET_DT;
+    //boolean indexIsSorted = true;
 
     // these are not, YET
 
-    protected int itemSize = 0;
-    protected long dataSize = 0;
-    protected Map dataTypeMap = null;
-    protected IndexType indexType = IndexType.INCORE_DT;
-    protected boolean hasAnnotations = false;
-    protected int annotationStyle = AnnotationStyle.NONE;
-    protected Map externalIndexMap = null;
+    int itemSize = 0;
+    long dataSize = 0;
+    Map dataTypeMap = null;
+    IndexType indexType = IndexType.INCORE_DT;
+    boolean hasAnnotations = false;
+    int annotationStyle = AnnotationStyle.NONE;
+    Map externalIndexMap = null;
 
     // low level info
-    protected int versionMajor = 0;
-    protected int versionMinor = 0;
+    int versionMajor = 0;
+    int versionMinor = 0;
     
     // A Map used for the optional value
     // These include the descrition, the dataPathName
@@ -227,8 +227,8 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     /**
      * Set the index to be terminated.
      */
-    public ManagedIndexHeader terminate() {
-	terminated = true;
+    public ManagedIndexHeader setTerminated(boolean t) {
+	terminated = t;
 	return this;
     }
     
@@ -507,6 +507,37 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     }
 
     /**
+     * Get the major version no.
+     */
+    public int getVersionMajor() {
+	return versionMajor;
+    }
+
+
+    /**
+     * Set the major version no.
+     */
+    public ManagedIndexHeader setVersionMajor(int maj) {
+	versionMajor = maj;
+	return this;
+    }
+
+    /**
+     * Get the minor version no.
+     */
+    public int getVersionMinor() {
+	return versionMinor;
+    }
+
+    /**
+     * Set the minor version no.
+     */
+    public ManagedIndexHeader setVersionMinor(int min) {
+	versionMinor = min;
+	return this;
+    }
+
+    /**
      * Syncrhronize the values in this index header 
      * from values in a specified IndexHeader object.
      */
@@ -536,7 +567,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	// if the other indexHeader is terminated
 	// then set me to be terminated
 	if (indexHeader.isTerminated()) {
-	    terminate();
+	    setTerminated(true);
 	}
 
 	//setItemSize(indexHeader.getItemSize());
