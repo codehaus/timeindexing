@@ -106,7 +106,13 @@ public class WebServerLogLine extends Line {
 	    } catch (ParseException pe) {
 		// coudln;t parse a date out of the match characters
 		// return now, without a timestamp
-		 return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
+		System.err.println("WebServerLogLine: coulbn't parse date in " + line);
+		byte [] lineBytes = line.getBytes();
+		ByteBuffer lineBuffer = ByteBuffer.allocate(lineBytes.length + 1);
+		lineBuffer.put(lineBytes);
+		lineBuffer.put(System.getProperty("line.separator").getBytes());
+		return new DefaultReaderResult(lineBuffer, null, DataType.TEXT_DT);
+		//return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
 	    }
 
 	    // we got here so we parsed a date successfully
@@ -115,11 +121,22 @@ public class WebServerLogLine extends Line {
 	    timestamp = new MillisecondTimestamp(date.getTime());
 
 	    // return the line as a ReaderResult with the timestamp
-	    DefaultReaderResult result = new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp, DataType.TEXT_DT);
+	    byte [] lineBytes = line.getBytes();
+	    ByteBuffer lineBuffer = ByteBuffer.allocate(lineBytes.length + 1);
+	    lineBuffer.put(lineBytes);
+	    lineBuffer.put(System.getProperty("line.separator").getBytes());
+	    DefaultReaderResult result = new DefaultReaderResult(lineBuffer, timestamp, DataType.TEXT_DT);
+	    //DefaultReaderResult result = new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp, DataType.TEXT_DT);
 
 	    return result;
 	} else {
-	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
+	    System.err.println("WebServerLogLine: didn't find pattern in " + line);
+	    byte [] lineBytes = line.getBytes();
+	    ByteBuffer lineBuffer = ByteBuffer.allocate(lineBytes.length + 1);
+	    lineBuffer.put(lineBytes);
+	    lineBuffer.put(System.getProperty("line.separator").getBytes());
+	    return new DefaultReaderResult(lineBuffer, null, DataType.TEXT_DT);
+	    //return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
 	}
     }
 
