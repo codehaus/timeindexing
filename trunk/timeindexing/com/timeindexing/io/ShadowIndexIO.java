@@ -2,7 +2,7 @@
 
 package com.timeindexing.io;
 
-import com.timeindexing.index.ManagedStoredIndex;
+import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.HeaderOption;
 import com.timeindexing.index.IndexCreateException;
@@ -22,7 +22,7 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
     /**
      * Construct a shadow Index.
      */
-    public ShadowIndexIO(ManagedStoredIndex indexMgr) {
+    public ShadowIndexIO(StoredIndex indexMgr) {
 	super(indexMgr);
     }
 
@@ -34,6 +34,8 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	originalIndexSpecifier = (String)indexProperties.get("indexpath");
 
+	headerInteractor = new IndexHeaderIO(this);
+
 	// use the original specifier as a first cut for the idnex file name
 	headerFileName = originalIndexSpecifier;
 	indexFileName = originalIndexSpecifier;
@@ -42,14 +44,14 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	indexName = (String)indexProperties.get("name");
 	indexID = (ID)indexProperties.get("indexid");
 
+	// create the header
+	headerInteractor.create(originalIndexSpecifier);
+	
 	try {
 	    open();
 
-	    myIndex.getHeader().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
-	    myIndex.getHeader().setOption(HeaderOption.DATAPATH_HO, dataFileName);
-
-	    //myIndex.getHeader().setIndexPathName(indexFileName);
-	    //myIndex.getHeader().setDataPathName(dataFileName);
+	    myIndex.setOption(HeaderOption.INDEXPATH_HO, indexFileName);
+	    myIndex.setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
 	    long position = writeHeader(FileType.SHADOW_INDEX);
 	    indexAppendPosition = position;
@@ -67,8 +69,14 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
     public long open(IndexProperties indexProperties) throws IOException, IndexOpenException {
 	creating = false;
 
-	headerInteractor = (IndexHeaderIO)indexProperties.get("header");
-	originalIndexSpecifier = (String)indexProperties.get("headerpath");
+	originalIndexSpecifier = (String)indexProperties.get("indexpath");
+
+	headerInteractor = new IndexHeaderIO(this);
+
+	// open the index header
+	headerInteractor.open(originalIndexSpecifier);
+
+	//headerInteractor = (IndexHeaderIO)indexProperties.get("header");
 
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
@@ -84,6 +92,10 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	    headerInteractor.getName().equals(indexName)) {
 	    // The values in the header match up so we
 	    // must be looking in the right place.
+
+	    // sync the read header with the index object
+	    myIndex.syncHeader(headerInteractor);
+
 	    return position;
 	} else {
 	    // The values in the header are different
@@ -190,6 +202,9 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	// flush out any reaming data
 	written += flushBuffer(indexChannel, indexFlushBuffer);
+
+	// flush the header
+	headerInteractor.flush();
 
 	return written;
     }
