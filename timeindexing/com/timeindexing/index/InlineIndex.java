@@ -124,6 +124,9 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    //System.err.println(" append position = " + appendPosition);
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
+	    
+	    // now we're open
+	    closed = false;
 
 	    return true;
 	} catch (IOException ioe) {
