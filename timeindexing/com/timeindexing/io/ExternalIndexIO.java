@@ -242,6 +242,25 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	
     }
 
+
+    /**
+     * Get the item at index position Position.
+     */
+    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
+	// calculate the position to load from
+	long start = indexFirstPosition;
+	long determined = start + (position * INDEX_ITEM_SIZE);
+
+
+	ManagedIndexItem item = readItem(determined, doLoadData);	
+
+	// post the read item into the index
+	// this is the Index callback
+	getIndex().retrieveItem(item, position);
+
+	return item;
+    }
+
     /**
      * Align the index for an append of the Data
      */

@@ -177,6 +177,38 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 
     /**
+     * Get the item at index position Position.
+     * This will load upto position position.
+     */
+    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
+	// this requires a linear scan down the index
+
+	IndexItem item = null;
+
+	//System.err.println("InlineIndexIO: getItem " + position);
+
+	gotoFirstPosition();
+
+	long offset = indexChannelPosition;
+	long count = 0;
+
+	for (count=0; count <= position; count++) {
+	    // read an item
+	    //System.err.println("InlineIndexIO: getItem at offset " + offset);
+	    item =  readItem(offset, doLoadData);
+
+	    // set the position for next time
+	    offset = indexChannelPosition;
+
+	    // post the read item into the index
+	    // this is the Index callback
+	    //System.err.println("InlineIndexIO: retrieveItem at position " + count);
+	    getIndex().retrieveItem(item, count);
+	}
+	return null;
+    }
+
+    /**
      * Align the index for an append of the Data
      */
     protected long alignForData() throws IOException   {
