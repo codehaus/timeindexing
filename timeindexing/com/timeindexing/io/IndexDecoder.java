@@ -63,7 +63,7 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      * Construct a decoder.
      */
     public IndexDecoder(String filename) throws IOException  {
-	itemSize = INDEX_ITEM_SIZE;
+	setItemSize(INDEX_ITEM_SIZE);
 	open(filename);
     }
 
@@ -79,20 +79,6 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      */
     public String getHeaderPathName() {
 	return fileName;
-    }
-
-    /**
-     * Get the major version no.
-     */
-    public int getVersionMajor() {
-	return versionMajor;
-    }
-
-    /**
-     * Get the minor version no.
-     */
-    public int getVersionMinor() {
-	return versionMinor;
     }
 
     /**
@@ -190,17 +176,17 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 
 	    
 		// get the version no
-		versionMajor = (int)readBuf.get();
-		versionMinor = (int)readBuf.get();
+		setVersionMajor((int)readBuf.get());
+		setVersionMinor((int)readBuf.get());
 
 		// read index ID
-		indexID = new SID(readBuf.getLong());
+		setID(new SID(readBuf.getLong()));
 
 		// read the Index name
 		short nameSize = readBuf.getShort();
 		byte[] nameRaw = new byte[nameSize-1];
 		readBuf.get(nameRaw, 0, nameSize-1);
-		indexName = new String(nameRaw);
+		setName(new String(nameRaw));
 
 		// soak up index name padding
 		readBuf.get();
@@ -210,15 +196,15 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 
 		switch (indexTypeValue) {
 		    case IndexType.INLINE: {
-			indexType = IndexType.INLINE_DT;
+			setIndexType(IndexType.INLINE_DT);
 			break;
 		    }
 		    case IndexType.EXTERNAL: {
-			indexType = IndexType.EXTERNAL_DT;
+			setIndexType(IndexType.EXTERNAL_DT);
 			break;
 		    }
 		    case IndexType.SHADOW: {
-			indexType = IndexType.SHADOW_DT;
+			setIndexType(IndexType.SHADOW_DT);
 			break;
 		    }
 		    case IndexType.INCORE: {
@@ -234,51 +220,51 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 
 		// startTime
 		aTime = readBuf.getLong();
-		startTime = timestampDecoder.decode(aTime);
+		setStartTime(timestampDecoder.decode(aTime));
 
 		// endTime
 		aTime = readBuf.getLong();
-		endTime = timestampDecoder.decode(aTime);
+		setEndTime(timestampDecoder.decode(aTime));
 
 
 		// firstTime
 		aTime = readBuf.getLong();
-		firstTime = timestampDecoder.decode(aTime);
+		setFirstTime(timestampDecoder.decode(aTime));
 
 		// lastTime
 		aTime = readBuf.getLong();
-		lastTime = timestampDecoder.decode(aTime);
+		setLastTime(timestampDecoder.decode(aTime));
 
 
 		// firstDataTime
 		aTime = readBuf.getLong();
-		firstDataTime = timestampDecoder.decode(aTime);
+		setFirstDataTime(timestampDecoder.decode(aTime));
 
 		// lastDataTime
 		aTime = readBuf.getLong();
-		lastDataTime = timestampDecoder.decode(aTime);
+		setLastDataTime(timestampDecoder.decode(aTime));
 
 		// item size
-		itemSize = readBuf.getInt();
+		setItemSize(readBuf.getInt());
 
 		// data size
-		dataSize = readBuf.getLong();
+		setDataSize(readBuf.getLong());
 
 		// length
-		length = readBuf.getLong();
+		setLength(readBuf.getLong());
 
 		// first offset
-		firstOffset = new Offset(readBuf.getLong());
+		setFirstOffset(new Offset(readBuf.getLong()));
 
 		// last offset
-		lastOffset = new Offset(readBuf.getLong());
+		setLastOffset(new Offset(readBuf.getLong()));
 
 		// terminated
 		byte terminatedByte = readBuf.get();
 		if (terminatedByte > 0) {
-		    terminated = true;
+		    setTerminated(true);
 		} else {
-		    terminated = false;
+		    setTerminated(false);
 		}
 
 		/* now process the optional values */
