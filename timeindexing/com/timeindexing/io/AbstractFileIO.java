@@ -89,7 +89,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /*
      * The size of a flush buffer
      */
-    final static int FLUSH_SIZE = 1 * 1024;
+    final static int FLUSH_SIZE = 8 * 1024;
 
 
     /**
