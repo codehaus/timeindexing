@@ -6,6 +6,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
 import com.timeindexing.basic.SID;
@@ -16,6 +17,9 @@ import com.timeindexing.data.DataItem;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
+//import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.Comparator;
 
 /**
  * An abstract implementation of an Index object.
@@ -50,9 +54,15 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
     // Local variables for temporary use
     // index type
-    int indexType = -1;
+    //int indexType = -1;
+
+
     // data type
     DataType dataType = DataType.NOTSET_DT;
+
+
+    TreeMap searchTree = null;
+
 
     protected AbstractIndex() {
 	;
@@ -168,7 +178,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Get the index type.
      * Either inline or external.
      */
-    public int getIndexType() {
+    public IndexType getIndexType() {
 	return header.getIndexType();
     }
 
@@ -256,19 +266,19 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	// can't add anything if the index is terminated
 	// check this first as this can never change.
 	if (isTerminated()) {
-	    throw new IndexTerminatedException("Index terminated " + this);
+	    throw new IndexTerminatedException("addItem: Index terminated " + this);
 	}
 
 	// now check the values that can possibly change
 
 	// can't add anything if the index is closed
 	if (isClosed()) {
-	    throw new IndexClosedException("Index closed " + this);
+	    throw new IndexClosedException("addItem: Index closed " + this);
 	}
 
 	// can't add anything if the index is NOT activated
 	if (!isActivated()) {
-	    throw new IndexActivationException("Index NOT activated " + this);
+	    throw new IndexActivationException("addItem: Index NOT activated " + this);
 	}
 
 
@@ -278,7 +288,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	long newSize = header.getLength()+1;
 
 	// get the time this item was set
-	Timestamp last = indexCache.getLastIndexTime();
+	Timestamp last = item.getIndexTimestamp();
 
 	// tell the header how big the index is now
 	header.setLength(newSize);
@@ -311,8 +321,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Get an Index Item from the Index.
      */
     public IndexItem getItem(long n) throws GetItemException {
-	lastAccessTime = Clock.time.asMicros();
-	return indexCache.getItem(n);
+	setLastAccessTime();
+
+	IndexItem item = indexCache.getItem(n);
+
+	// tell all the listeners that an item has been accessed
+	eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+
+	return item;
     }
 
     /**
@@ -324,8 +340,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} else if (p == Position.TOO_HIGH) {
 	    throw  new PositionOutOfBoundsException("Position TOO_HIGH");
 	} else {
-	    lastAccessTime = Clock.time.asMicros();
-	    return indexCache.getItem(p);
+	    setLastAccessTime();
+
+	    IndexItem item = indexCache.getItem(p);
+
+	    // tell all the listeners that an item has been accessed
+	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+
+	    return item;
 	}
     }
 
@@ -343,6 +365,15 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      */
     public Timestamp getLastAccessTime() {
 	return lastAccessTime;
+    }
+
+
+    /**
+     * Set the  last time an IndexItem was accessed from the index.
+     */
+    protected Index setLastAccessTime() {
+	lastAccessTime = Clock.time.asMicros();
+	return this;
     }
 
 
@@ -382,25 +413,194 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
 
 
-   /**
+     /**
      * Does a timestamp fall within the bounds of the Index.
      * The bounds are the first time data is put in and the last
      * time data is put in the Index.
      */
-    public boolean contains(Timestamp t, IndexTimestampSelector sel) {
-	return indexCache.contains(t, sel);
+    public boolean contains(Timestamp t, IndexTimestampSelector selector) {
+	// if firstIndexTime <= t <= lastIndexTime
+	//   return true
+	// otherwise return false
+	if (selector == IndexTimestampSelector.DATA) {
+	    if (TimeCalculator.lessThanEquals(this.getFirstDataTime(), t) &&
+		TimeCalculator.lessThanEquals(t, this.getLastDataTime())) {
+		System.err.println("DataTS = " + t + " is contained in " +
+				   this.getFirstDataTime() + " to " +
+				   this.getLastDataTime());
+		return true;
+	    } else {
+		return false;
+	    }
+	} else {
+	    if (TimeCalculator.lessThanEquals(this.getFirstTime(), t) &&
+		TimeCalculator.lessThanEquals(t, this.getLastTime())) {
+		System.err.println("IndexTS = " + t + " is contained in " +
+				   this.getFirstTime() + " to " +
+				   this.getLastTime());
+		return true;
+	    } else {
+		return false;
+	    }
+	}
     }
 
     /**
      * Try and determine the position associated
-     * with the speicifed data Timestamp.
+     * with the speicifed Timestamp.
      * @return null if no position is found
-      */
-    public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
-	return indexCache.locate(t, sel, lifetime);
+     */
+    public TimestampMapping locate(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
+	System.err.println("AbstractIndex: locate: " + "TS = " + t);
+
+	if (! contains(t, selector)) { // timestamp t is not in this index
+	    // now try and determine if it is too low or too high
+	    if (selector == IndexTimestampSelector.DATA) {
+		if (TimeCalculator.lessThan(t, this.getFirstDataTime())) {
+		    return new TimestampMapping(t, Position.TOO_LOW);
+		} else if (TimeCalculator.greaterThan(t, this.getLastDataTime())) {
+		    return new TimestampMapping(t, Position.TOO_HIGH);
+		} else {
+		    throw new RuntimeException("AbstractIndex: locate failed to process timestamp " + t + ". First Data time = " + this.getFirstDataTime() + ". Last Data time = " + this.getLastDataTime() + ".");
+		}
+	    } else {
+		if (TimeCalculator.lessThan(t, this.getFirstTime())) {
+		    return new TimestampMapping(t, Position.TOO_LOW);
+		} else if (TimeCalculator.greaterThan(t, this.getLastTime())) {
+		    return new TimestampMapping(t, Position.TOO_HIGH);
+		} else {
+		    throw new RuntimeException("AbstractIndex: locate failed toprocess  timestamp " + t + ". First Index time = " + this.getFirstTime() + ". Last Index time = " + this.getLastTime() + ".");
+		}
+	    }
+	} else {
+	    // ensure the searchTree i set up
+	    if (searchTree == null) {
+		searchTree = new TreeMap(itemComparator);
+
+	    }
+	    // now search for the timestamp
+	    // and build up a tree cache for later reuse.
+	    try {
+		TimestampMapping mapping = binarySearch(t, 0, getLength()-1, selector, lifetime, 0);
+		System.err.println("AbstractIndex: locate: " + "mapping = " + mapping);
+		return mapping;
+	    } catch (GetItemException gie) {
+		return null;
+	    }
+	}	
     }
 
 
+    /**
+     * Do a binary search of the list.
+     */
+    protected TimestampMapping binarySearch(Timestamp t, long start, long end, IndexTimestampSelector selector, Lifetime lifetime, int depth) throws GetItemException {
+	IndexItem item = null;
+	IndexItem itemN = null;
+
+	Timestamp itemTS = null;
+	Timestamp itemTSN = null;
+	
+
+	long halfway = (start + end) / 2;
+	long halfwayN = halfway+1;
+	AbsolutePosition halfwayPos = new AbsolutePosition(halfway);
+	AbsolutePosition halfwayPosNext = new AbsolutePosition(halfway+1);
+	
+	//System.err.print("binarySearch " + depth + ": " + t + "\t" + start + "\t" + end + "\t");
+
+	// try and find index item in search tree, if not found
+	// go and get it from list
+	if ((item = (IndexItem)searchTree.get(halfwayPos)) == null) {
+	    // position not in the tree
+	    // so get it from the index and put it in the tree
+	    item = getItem(halfway);
+	    searchTree.put(halfwayPos, item);
+	    //System.err.print("GET " + halfway + "\t");
+	} else {
+	    //System.err.print("TREE " + halfway + "\t");
+	}
+
+	// try and find index item in search tree, if not found
+	// go and get it from list
+	if ((itemN = (IndexItem)searchTree.get(halfwayPosNext)) == null) {
+	    // position not in the tree
+	    // so get it from the index and put it in the tree
+	    itemN = getItem(halfwayN);
+	    searchTree.put(halfwayPosNext, itemN);
+	    //System.err.print("GET " + halfwayN + "\t");
+	} else {
+	    //System.err.print("TREE " + halfwayN + "\t");
+	}
+
+	// get the relevant timestamps out of rge Index Items
+	if (selector == IndexTimestampSelector.DATA) {
+	    itemTS = item.getDataTimestamp();
+	    itemTSN =itemN.getDataTimestamp();
+	} else {
+	    itemTS = item.getIndexTimestamp();
+	    itemTSN = itemN.getIndexTimestamp();
+	}
+
+
+	//System.err.print(itemTS + "\t" + itemTSN);
+	//System.err.println();
+	    
+
+	if (TimeCalculator.greaterThanEquals(t, itemTS) &&
+	    TimeCalculator.lessThan(t, itemTSN)) {
+
+	    // if the timestamp is between itemTS and itemTSN
+	    // then we are close
+
+	    // the time is between two timestamps
+	    if (lifetime == Lifetime.CONTINUOUS) {
+		// if lifetimes are continuous then item has a lifetime
+		// from its own timestamp upto itemN's timestamp
+		// which means that item is the IndexItem to return
+		return new TimestampMapping(itemTS, item.getPosition());
+	    } else {
+		// if lifetimes are discrete then item's lifetime
+		// is a point in time and Timestamp t is after item,
+		// which means that itemN is the IndexItem to return
+		return new TimestampMapping(itemTSN,  itemN.getPosition());
+	    }
+	} else if (TimeCalculator.equals(t, itemTSN)) {
+	    // if the timestamp equals  itemTSN
+	    // we are there
+	    return new TimestampMapping(itemTSN,  itemN.getPosition());
+	} else if (TimeCalculator.lessThan(t, itemTS)) {
+	    // the timestamp is in first half, so search that half
+	    return binarySearch(t, start, halfway, selector, lifetime, depth+1);
+	} else {
+	    // the timestamp is in second half, so search that half
+	    return binarySearch(t, halfway, end, selector, lifetime, depth+1);
+	}
+    }
+
+
+    private Comparator itemComparator = new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		Position p1 = (Position)o1;
+		Position p2 = (Position)o2;
+		
+		long vp1 = p1.value();
+		long vp2 = p2.value();
+
+		if (vp1 < vp2) {
+		    return -1;
+		} else if (vp1 > vp2) {
+		    return 1;
+		} else { // vp1 == vp2
+		    return 0;
+		}
+	    }
+
+	    public boolean equals(Object obj) {
+		return super.equals(obj);
+	    }
+	};
+		
     /**
      * Is the Index activated.
      */
