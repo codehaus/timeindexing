@@ -2,5 +2,8 @@
 
 package com.timeindexing.io;
 
-public class IndexFileInteractor { // implements IndexPrimaryEventListener, IndexAddEventListener, IndexAccessEventListener {
+/**
+ * An interface for readers and writers of index files.
+ */
+public interface IndexFileInteractor extends IndexFileReader, IndexFileWriter { 
 }
