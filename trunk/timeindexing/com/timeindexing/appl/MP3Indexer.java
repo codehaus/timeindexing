@@ -90,8 +90,6 @@ public class MP3Indexer {
 	    item = new ReaderResultItem(result);
 
 	    indexSize = index.addItem(item, dataTS);
-
-	    index.hollowItem(indexSize - 1);
 	}
 
 	System.err.print('\n');
