@@ -118,7 +118,15 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
 	closed = false;
-	activate();
+
+	// activate the index
+	try {
+	    activate();
+	} catch (TimeIndexException ioe) {
+	    // this can't happen in this kind of index
+	    // but this is here, just in case 
+	    throw new IndexCreateException(ioe);
+	}
 
 
 	// register myself in the TimeIndex directory
@@ -159,6 +167,22 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      */
     public Offset getLastOffset() {
 	return new Offset(getLength()-1);
+    }
+
+    /**
+     * Make the Index activated.
+     */
+    public Index activate() throws IndexReadOnlyException, IndexWriteLockedException {
+	activated = true;
+	return this;
+    }
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	// an Incore Index can NEVER be write-locked
+	return false;
     }
 
    /**
@@ -300,6 +324,16 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    indexName = indexProperties.getProperty("name");
 	} else {
 	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("readonly")) {
+	    String readonly = indexProperties.getProperty("readonly").toLowerCase();
+
+	    if (readonly.equals("true")) {
+		readOnly = Boolean.TRUE;
+	    } else {
+		readOnly = Boolean.FALSE;
+	    }
 	}
     }
 
