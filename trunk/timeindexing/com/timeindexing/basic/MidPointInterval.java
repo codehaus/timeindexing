@@ -11,6 +11,7 @@ import com.timeindexing.time.Lifetime;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexTimestampSelector;
+import com.timeindexing.index.GetItemException;
 
 /**
  * A mid-point interval is an interval where the arguments
@@ -227,10 +228,16 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 	    }
 
 	    case POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: {
-		IndexItem item = index.getItem(midPosition);
+		IndexItem item = null;
 		Timestamp midTS = null;
 		Timestamp startTS = null;
 		Timestamp endTS = null;
+
+		try {
+		    index.getItem(midPosition);
+		} catch (GetItemException gie) {
+		    return null;
+		}
 
 		if (selector == IndexTimestampSelector.DATA) {
 		    midTS = item.getDataTimestamp();
