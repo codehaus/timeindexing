@@ -155,7 +155,7 @@ public class TimeIndexDirectory {
      * Unregister an Index.
      */
     public boolean unregisterIndex(ManagedIndex index) {
-	String name = index.getName();
+	String name = index.getURI().toString();
 	ID anID = index.getID();
 
 	boolean result =  removeIndex(name) && removeIndex(anID);
@@ -214,26 +214,14 @@ public class TimeIndexDirectory {
     }
 
     /**
-     * Register an Index using its name and its ID.
-     */
-    public static long register(ManagedIndex index, String name, ID anID) { 
-	return directory.registerIndex(index, name, anID);
-    }
-
-    /**
-     * Unregister an Index 
-     */
-    public static boolean unregister(ManagedIndex index) { 
-	return directory.unregisterIndex(index);
-    }
-
-    /**
      * Add an extra handle on an Index.
      */
     public static long addHandle(ManagedIndex index) {
-	if (directory.getIndex(index.getName()) == null) {
+	String indexSpec = index.getURI().toString();
+
+	if (directory.getIndex(indexSpec) == null) {
 	    // the index has not been registered yet;
-	    return directory.registerIndex(index, index.getURI().toString(), index.getID());
+	    return directory.registerIndex(index, indexSpec, index.getID());
 	} else {
 	    return directory.incrementCount(index);
 	}
