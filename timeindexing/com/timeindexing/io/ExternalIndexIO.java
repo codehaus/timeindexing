@@ -155,8 +155,18 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 
 
 	// determine the URI
+	// if the index path name is relative we need to make it an absolute path name
+	File indexSpecFile = new File(headerFileName);
+	String uriPath = null;
+
+	if (indexSpecFile.isAbsolute()) {
+	    uriPath = headerFileName;
+	} else {
+	    uriPath = indexSpecFile.getAbsolutePath();
+	}
+
 	try {
-	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(headerInteractor.getIndexPathName()), null));
+	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(uriPath), null));
 	} catch (URISyntaxException use) {
 	    ;
 	}
