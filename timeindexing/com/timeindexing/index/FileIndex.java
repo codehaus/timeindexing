@@ -190,15 +190,16 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @return the no of items in the cache
      */
     public long retrieveItem(IndexItem item, long position) {
-	// add the item to the index item cache
-	// the cache will return the size of the index
-	long cacheSize = indexCache.addItem(item, position);
-
 	// now set the item's position and
 	// bind it to the index
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
 	itemM.setPosition(new AbsolutePosition(position));
 	itemM.setIndex(this);
+
+	// add the item to the index item cache
+	// the cache will return the size of the index
+	long cacheSize = indexCache.addItem(item, position);
+
 
 	return cacheSize;
     }
@@ -213,26 +214,6 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	return indexInteractor.convertDataReference(dataReference);
     }
      
-    /**
-     * Hollow out the IndexItem at the speicifed position.
-     */
-    public boolean hollowItem(long pos) {
-	return indexCache.hollowItem(pos);
-    }
- 
-    /**
-     * Hollow the IndexItem at the position.
-     */
-    public boolean hollowItem(Position p) {
-        if (p == Position.TOO_LOW) {
-	    throw new PositionOutOfBoundsException("Position TOO_LOW");
-	} else if (p == Position.TOO_HIGH) {
-	    throw  new PositionOutOfBoundsException("Position TOO_HIGH");
-	} else {
-	    return indexCache.hollowItem(p);
-	}
-    }
-
    /**
      * Get the path of the index header.
      */
