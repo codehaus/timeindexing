@@ -530,7 +530,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * @return whether the index was really closed. It might still be held open
      * by another TimeIndex.
      */
-    public boolean close(Index index) {
+    public boolean close(Index index) throws IndexFlushException, IndexCloseException {
 	// flush out the contents
 	boolean flushed = index.flush();
 
