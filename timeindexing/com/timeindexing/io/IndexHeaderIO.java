@@ -12,7 +12,8 @@ import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexHeader;
 import com.timeindexing.index.HeaderOption;
 import com.timeindexing.index.DataType;
-import com.timeindexing.index.Description;import com.timeindexing.time.Timestamp;
+import com.timeindexing.index.Description;
+import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Clock;
 import com.timeindexing.event.*;
@@ -119,6 +120,9 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 
 	// open the channel
 	boolean opened =  open(filename);
+
+	// clear it
+	headerFile.setLength(0);
 
 	// Check to see if the Index is already locked.
 	// This stops two processes trying to create the same
