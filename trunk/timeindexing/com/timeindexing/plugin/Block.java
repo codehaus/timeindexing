@@ -3,6 +3,7 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.index.DataType;
 
 import java.nio.ByteBuffer;
 import java.io.InputStream;
@@ -93,7 +94,7 @@ public class Block extends DefaultReader implements ReaderPlugin {
 			   " B(C) = " + block.capacity());
 
 	*/
-	return new DefaultReaderResult(block, null);
+	return new DefaultReaderResult(block, null, DataType.ANY_DT);
     }
 
     /**

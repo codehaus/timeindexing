@@ -4,6 +4,7 @@ package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
+import com.timeindexing.index.DataType;
 
 import java.nio.ByteBuffer;
 import java.io.InputStream;
@@ -132,7 +133,7 @@ public class MailServerLogLine extends Line {
 	    } catch (ParseException pe) {
 		// coudln;t parse a date out of the match characters
 		// return now, without a timestamp
-		 return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null);
+		 return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
 	    }
 
 	    // we got here so we parsed a date successfully
@@ -141,9 +142,9 @@ public class MailServerLogLine extends Line {
 	    timestamp = new MillisecondTimestamp(date.getTime());
 
 	    // return the line as a ReaderResult with the timestamp
-	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp);
+	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp, DataType.TEXT_DT);
 	} else {
-	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null);
+	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
 	}
     }
 
@@ -154,6 +155,14 @@ public class MailServerLogLine extends Line {
     protected MailServerLogLine setYear(int yr) {
 	year = yr;
 	return this;
+    }
+
+    /**
+     * Processing at EOF.
+     * Return values states if something happended.
+     */
+    protected boolean eofProcess() {
+	 return true;
     }
 }
 		    
