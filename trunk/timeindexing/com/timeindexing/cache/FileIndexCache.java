@@ -49,7 +49,16 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		policy.notifyGetItemBegin(fileItem, pos);
 	    }
 
+
 	    if (fileItem.hasData()) {
+		// call the policy
+		if (policy != null) {
+		    policy.notifyGetItemEnd(fileItem, pos);
+		}
+
+		return fileItem;
+
+	    } else if (fileItem.isReference()) {
 		// call the policy
 		if (policy != null) {
 		    policy.notifyGetItemEnd(fileItem, pos);
@@ -74,7 +83,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		    fileItem.setData(dataObj);
 
 		    // calculate the held volume
-		    volumeHeld += dataObj.getSize().value();
+		    volumeHeld += fileItem.getDataSize().value(); 
 
 		    //System.err.println("Volume + = " + volumeHeld);
 
@@ -120,7 +129,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		fileItem.setData(dataRef);
 
 		// calculate the held volume
-		volumeHeld -= dataObj.getSize().value();
+		volumeHeld -= fileItem.getDataSize().value();
 
 		//System.err.println("Volume - = " + volumeHeld);
 
@@ -155,7 +164,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
 
 		// calculate the held volume
-		volumeHeld -= dataObj.getSize().value();
+		volumeHeld -= fileItem.getDataSize().value();
 
 		//System.err.println("Volume - = " + volumeHeld);
 	    } 
