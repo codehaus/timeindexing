@@ -143,7 +143,7 @@ public class TimeIndexDirectory {
     public long registerIndex(ManagedIndex index, String name, ID anID) {
 	boolean result =  putIndex(name, index) && putIndex(anID, index);
 
-	System.err.println("Registering " + name);
+	//System.err.println("Registering " + name);
 
 	// set the count to 1
 	countTable.put(anID, new RelativeAdjustableCount(0));
@@ -176,7 +176,7 @@ public class TimeIndexDirectory {
 	RelativeAdjustableCount count = (RelativeAdjustableCount)countTable.get(anID);
 	count.adjust(1);
 
-	System.err.println("Ref count to " + index.getURI() + " = " + count.value());
+	//System.err.println("Ref count to " + index.getURI() + " = " + count.value());
 
 	return count.value();
     }
@@ -191,7 +191,7 @@ public class TimeIndexDirectory {
 	RelativeAdjustableCount count = (RelativeAdjustableCount)countTable.get(anID);
 	count.adjust(-1);
 
-	System.err.println("Ref count to " + index.getURI() + " = " + count.value());
+	//System.err.println("Ref count to " + index.getURI() + " = " + count.value());
 
 	return count.value();
     }
