@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Iterator;
-
+import java.net.URI;
 
 /**
  * Header of a timeindex file to stdout.
@@ -71,6 +71,7 @@ public class TIHeader extends TIAbstractRestore {
 	buf.append("Type: " + index.getIndexType());
 	buf.append("  Name: \"" + index.getName() + "\"");
 	buf.append("  ID: " + index.getID());
+	buf.append("  URI: " + index.getURI());
 	buf.append("  Length: " + index.getLength() + " items, ");
 	buf.append("\n");
 

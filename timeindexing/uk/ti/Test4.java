@@ -112,6 +112,7 @@ public class Test4 {
 
     public static void printIndex(Index index) throws TimeIndexException {
 	System.out.print("Name: " + index.getName() + "\n");
+	System.out.print("URI: " + index.getURI() + "\n");
 	System.out.print("Start:\t" + index.getStartTime() + "\n");
 	System.out.print("First:\t" + index.getFirstTime() + "\n");
 	System.out.print("Last:\t" + index.getLastTime() + "\n");
