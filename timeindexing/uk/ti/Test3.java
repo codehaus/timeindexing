@@ -20,6 +20,7 @@ import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.nio.ByteBuffer;
 
 /**
@@ -30,10 +31,12 @@ public class Test3 {
 	try {
 	    GregorianCalendar calendar = new GregorianCalendar();
 
-	    IncoreIndex index = new IncoreIndex("index-Test3");
+	    IncoreIndex index = new IncoreIndex();
 
 	    // needs to be told to create itself
-	    index.create();
+	    Properties properties = new Properties();
+	    properties.put("name" , "index-Test3");
+	    index.create(properties);
 
 	    /* Item 0 */
 

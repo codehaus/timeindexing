@@ -1,11 +1,11 @@
 package uk.ti;
 
-import com.timeindexing.io.IndexHeaderImpl;
+import com.timeindexing.io.IndexDecoder;
 
 import java.io.IOException;
 
 /**
- * First test of IndexHeaderImpl
+ * First test of IndexDecoder
  */
 public class TestIHR {
     public static void main(String [] args) throws IOException {
@@ -19,7 +19,7 @@ public class TestIHR {
 	}
 	    
 
-	IndexHeaderImpl header = new IndexHeaderImpl(headerName);
+	IndexDecoder header = new IndexDecoder(headerName);
 
 	header.open();
 
