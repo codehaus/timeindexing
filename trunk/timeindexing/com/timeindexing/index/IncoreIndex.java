@@ -174,26 +174,6 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	return addItem(item);
     }
 
-
-    /**
-     * Hollow out the IndexItem at the speicifed position.
-     * This does nothing as it will throw away data that cannot be 
-     * retrieved.
-     */
-    public boolean hollowItem(long pos) {
-	return false;
-    }
- 
-    /**
-     * Hollow the IndexItem at the position.
-     * This does nothing as it will throw away data that cannot be 
-     * retrieved.
-     */
-    public boolean hollowItem(Position p) {
-	return false;
-    }
-
-
    
    /**
      * Close this index.
