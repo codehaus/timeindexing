@@ -335,7 +335,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     /**
      * Flush this index.
      */
-    public boolean flush() {
+    public boolean flush() throws IndexFlushException {
 
 	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.FLUSHED, this));
 
@@ -346,9 +346,13 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     /**
      * Close this index.
      */
-    public synchronized boolean close() {
+    public synchronized boolean close() throws IndexCloseException {
 	// flush out the contents
-	boolean flushed = flush();
+	try {
+	    flush();
+	} catch (IndexFlushException ife) {
+	    throw new IndexCloseException("Couldn't flush index " + getURI().toString() + " when attemting to close");
+	}
 
 	// close any Indexes that have been opened due
 	// to following a reference
@@ -378,7 +382,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
    /**
      * Really close this index.
      */
-    public boolean reallyClose() {
+    public boolean reallyClose()  throws IndexCloseException {
 	closed = true;
 	activated = false;
 

@@ -42,7 +42,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
     /**
      * Flush this index.
      */
-    public boolean flush() {
+    public boolean flush() throws IndexFlushException  {
 	// if the index is activated and has changed
 	// then flush out any changes
 	if (this.isActivated() && isChanged()) {
@@ -60,7 +60,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
 		return true;
 	    } catch (IOException ioe) {
-		return false;
+		throw new IndexFlushException("Got IOException message '" + ioe.getMessage() + "' from index " + getURI().toString() + " when attemting to flush");
 	    }
 	} else {
 	    // nothing to do, and notihg flushed
@@ -71,7 +71,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
    /**
      * Close this index.
      */
-    public boolean reallyClose() {
+    public boolean reallyClose() throws IndexCloseException  {
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
@@ -93,7 +93,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
 	    return true;
 	} catch (IOException ioe) {
-	    return false;
+	    throw new IndexCloseException("Got IOException message '" + ioe.getMessage() + "' from index " + getURI().toString() + " when attemting to close");
 	}
 
     }
