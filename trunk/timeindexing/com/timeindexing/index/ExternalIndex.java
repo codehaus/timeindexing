@@ -33,47 +33,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     /**
      * Create an ExternalIndex
      */
-    public ExternalIndex(Properties indexProperties) throws IndexSpecificationException {
-	if (indexProperties.containsKey("name")) {
-	    indexName = indexProperties.getProperty("name");
-	} else {
-	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
-	}
-
-	if (indexProperties.containsKey("indexpath")) {
-	    headerPathName = indexProperties.getProperty("indexpath");
-	} else {
-	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
-	}
-
-
-	if (indexProperties.containsKey("datapath")) {
-	    dataPathName = indexProperties.getProperty("datapath");
-	} else {
-	    // cant; find a datapath property
-	    // assume they are the same
-	    dataPathName = headerPathName;
-	}
-
-	if (indexProperties.containsKey("datatype")) {
-	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
-	}
-
-	if (indexProperties.containsKey("loadstyle")) {
-	    String loadstyle = indexProperties.getProperty("loadstyle").toLowerCase();
-
-	    if (loadstyle.equals("all")) {
-		loadStyle = LoadStyle.ALL;
-	    } else if (loadstyle.equals("hollow")) {
-		loadStyle = LoadStyle.HOLLOW;
-	    } else if (loadstyle.equals("none")) {
-		loadStyle = LoadStyle.NONE;
-	    } else {
-		loadStyle = LoadStyle.HOLLOW;
-	    }
-	}
-
-	init();
+    public ExternalIndex() throws IndexSpecificationException {
     }
 
     /**
@@ -92,7 +52,13 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     /**
      * Called when an ExternalIndex needs to be opend.
      */
-    public boolean open() throws IndexOpenException {
+    public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
 	try {
 	    // open the index header
 	    headerInteractor.open(headerPathName);
@@ -146,12 +112,17 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     /**
      * Called when an ExternalIndex needs to be created.
      */
-    public boolean create() throws IndexCreateException {
+    public boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
 	// things to do the first time in
-	// set the ID, the startTime, and the index type
+	// set the ID, the startTime, first offset, last offset
 	ID indexID = new UID();
 	header.setID(indexID);
-	//header.setIndexType(indexType);
 	header.setStartTime(Clock.time.asMicros());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
@@ -189,6 +160,47 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    throw new IndexCreateException(ioe);
 	}
 	    
+    }
+
+    protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
+	if (indexProperties.containsKey("name")) {
+	    indexName = indexProperties.getProperty("name");
+	} else {
+	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("indexpath")) {
+	    headerPathName = indexProperties.getProperty("indexpath");
+	} else {
+	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
+	}
+
+
+	if (indexProperties.containsKey("datapath")) {
+	    dataPathName = indexProperties.getProperty("datapath");
+	} else {
+	    // cant; find a datapath property
+	    // assume they are the same
+	    dataPathName = headerPathName;
+	}
+
+	if (indexProperties.containsKey("datatype")) {
+	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
+	}
+
+	if (indexProperties.containsKey("loadstyle")) {
+	    String loadstyle = indexProperties.getProperty("loadstyle").toLowerCase();
+
+	    if (loadstyle.equals("all")) {
+		loadStyle = LoadStyle.ALL;
+	    } else if (loadstyle.equals("hollow")) {
+		loadStyle = LoadStyle.HOLLOW;
+	    } else if (loadstyle.equals("none")) {
+		loadStyle = LoadStyle.NONE;
+	    } else {
+		loadStyle = LoadStyle.HOLLOW;
+	    }
+	}
     }
 
     /**

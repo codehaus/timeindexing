@@ -30,38 +30,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     /**
      * Create an InlineIndex
      */
-    public InlineIndex(Properties indexProperties) throws IndexSpecificationException {
-	if (indexProperties.containsKey("name")) {
-	    indexName = indexProperties.getProperty("name");
-	} else {
-	    throw new IndexSpecificationException("No 'name' specified for InlineIndex");
-	}
-
-	if (indexProperties.containsKey("indexpath")) {
-	    headerPathName = indexProperties.getProperty("indexpath");
-	} else {
-	    throw new IndexSpecificationException("No 'indexpath' specified for InlineIndex");
-	}
-
-	if (indexProperties.containsKey("datatype")) {
-	    dataType = DataTypeDirectory.find(indexProperties.getProperty("datatype"));
-	}
-
-	if (indexProperties.containsKey("loadstyle")) {
-	    String loadstyle = indexProperties.getProperty("loadstyle").toLowerCase();
-
-	    if (loadstyle.equals("all")) {
-		loadStyle = LoadStyle.ALL;
-	    } else if (loadstyle.equals("hollow")) {
-		loadStyle = LoadStyle.HOLLOW;
-	    } else if (loadstyle.equals("none")) {
-		loadStyle = LoadStyle.NONE;
-	    } else {
-		loadStyle = LoadStyle.HOLLOW;
-	    }
-	}
-
-	init();
+    public InlineIndex() {
     }
 
     /**
@@ -70,8 +39,6 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     public InlineIndex(String name, String indexPath) {
 	indexName = name;
 	headerPathName = indexPath;
-
-	init();
     }
 
     /**
@@ -90,7 +57,13 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     /**
      * Called when an InlineIndex needs to be opend.
      */
-    public boolean open() throws IndexOpenException {
+    public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
 	try {
 	    headerInteractor.open(headerPathName);
 
@@ -137,14 +110,17 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     /**
      * Called when an InlineIndex needs to be created.
      */
-    public boolean create() throws IndexCreateException {
+    public boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
+	// check the passed in properties
+	checkProperties(properties);
+
+	// init the objects
+	init();
+
 	// things to do the first time in
-	// set the ID, the startTime, and the index type
+	// set the ID, the startTime, first offset, last offset
 	ID indexID = new UID();
 	header.setID(indexID);
-	// already done in constructor
-	// header.setIndexType(indexType);
-
 	header.setStartTime(Clock.time.asMicros());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
@@ -182,6 +158,38 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    
     }
 
+    protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
+	if (indexProperties.containsKey("name")) {
+	    indexName = indexProperties.getProperty("name");
+	} else {
+	    throw new IndexSpecificationException("No 'name' specified for InlineIndex");
+	}
+
+	if (indexProperties.containsKey("indexpath")) {
+	    headerPathName = indexProperties.getProperty("indexpath");
+	} else {
+	    throw new IndexSpecificationException("No 'indexpath' specified for InlineIndex");
+	}
+
+	if (indexProperties.containsKey("datatype")) {
+	    dataType = DataTypeDirectory.find(indexProperties.getProperty("datatype"));
+	}
+
+	if (indexProperties.containsKey("loadstyle")) {
+	    String loadstyle = indexProperties.getProperty("loadstyle").toLowerCase();
+
+	    if (loadstyle.equals("all")) {
+		loadStyle = LoadStyle.ALL;
+	    } else if (loadstyle.equals("hollow")) {
+		loadStyle = LoadStyle.HOLLOW;
+	    } else if (loadstyle.equals("none")) {
+		loadStyle = LoadStyle.NONE;
+	    } else {
+		loadStyle = LoadStyle.HOLLOW;
+	    }
+	}
+
+}
     /**
      * Get the headerfor the index.
      */

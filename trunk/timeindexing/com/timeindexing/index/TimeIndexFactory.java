@@ -38,11 +38,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 	switch (kind.value()) {
 	case IndexType.INLINE: {
-	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
+	    ManagedIndex newIndex = new InlineIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.create();
+	    newIndex.create(indexProperties);
 
 	    // get the ID and name values
 	    ID indexID = newIndex.getID();
@@ -55,11 +55,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.EXTERNAL: {
-	    ManagedIndex newIndex = new ExternalIndex(indexProperties); 
+	    ManagedIndex newIndex = new ExternalIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.create();
+	    newIndex.create(indexProperties);
 
 	    // get the ID and name values
 	    ID indexID = newIndex.getID();
@@ -73,11 +73,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.SHADOW: {
-	    ManagedIndex newIndex = new ShadowIndex(indexProperties); 
+	    ManagedIndex newIndex = new ShadowIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.create();
+	    newIndex.create(indexProperties);
 
 	    // get the ID and name values
 	    ID indexID = newIndex.getID();
@@ -91,11 +91,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.INCORE: {
-	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+	    ManagedIndex newIndex = new IncoreIndex();
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.create();
+	    newIndex.create(indexProperties);
 
 	    // get the ID and name values
 	    ID indexID = newIndex.getID();
@@ -197,11 +197,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 	switch (kind.value()) {
 	case IndexType.INLINE: {
-	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
+	    ManagedIndex newIndex = new InlineIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
@@ -210,11 +210,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.EXTERNAL: {
-	    ManagedIndex newIndex = new ExternalIndex(indexProperties); 
+	    ManagedIndex newIndex = new ExternalIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
@@ -223,11 +223,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.SHADOW: {
-	    ManagedIndex newIndex = new ShadowIndex(indexProperties); 
+	    ManagedIndex newIndex = new ShadowIndex(); 
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
@@ -236,11 +236,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	}
 
 	case IndexType.INCORE: {
-	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+	    ManagedIndex newIndex = new IncoreIndex();
 
 	    newIndex.addPrimaryEventListener(this);
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    // save these in the TimeIndex directories
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
