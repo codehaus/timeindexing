@@ -8,6 +8,11 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.TimeIndexFactory;
+import com.timeindexing.index.TimeIndexFactoryException;
+import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.index.IndexCreateException;
+import com.timeindexing.index.IndexSpecificationException;
+import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
 import com.timeindexing.data.DataItem;
@@ -130,64 +135,70 @@ public class TIAppend {
 
 	init();
 
-	indexProperties.setProperty("filename", tiFileName);
-	
-	// open and load the Index
-	index = factory.append(indexProperties);
+	indexProperties.setProperty("indexpath", tiFileName);
 
-	DataItem item = null;
-
-	ReaderPlugin plugin = null;
-	ReaderResult result = null;
-	Timestamp dataTS = null;
-
-	// set up plugin based on system property
-	String pluginname = System.getProperty("plugin");
-
-	if (pluginname == null) {
-	    plugin = new Line(input);
-	} else if (pluginname.equals("line")) {
-	    plugin = new Line(input);
-	} else 	if (pluginname.equals("web")) {
-	    plugin = new  WebServerLogLine(input);
-	} else 	if (pluginname.equals("mail")) {
-	    plugin = new  MailServerLogLine(input);
-	} else 	if (pluginname.equals("block")) {
-	    plugin = new  Block(input);
-	    ((Block)plugin).setBlockSize(16);
-	} else if (pluginname.equals("file")) {
-	    plugin = new FileItem((FileInputStream)input);
-	} else {
-	     plugin = new Line(input);
-	}
-
-	// do stuff
-	index.activate();
 	try {
-	    long indexSize = 0;
+	    // open and load the Index
+	    index = factory.append(indexProperties);
 
-	    while ((result = plugin.read()) != null) {
-		dataTS = result.getDataTimestamp();
-		item = new ByteBufferItem(result.getData());
+	    DataItem item = null;
 
-		indexSize = index.addItem(item, dataTS);
+	    ReaderPlugin plugin = null;
+	    ReaderResult result = null;
+	    Timestamp dataTS = null;
 
-		//index.hollowItem(indexSize - 1);
+	    // set up plugin based on system property
+	    String pluginname = System.getProperty("plugin");
+
+	    if (pluginname == null) {
+		plugin = new Line(input);
+	    } else if (pluginname.equals("line")) {
+		plugin = new Line(input);
+	    } else 	if (pluginname.equals("web")) {
+		plugin = new  WebServerLogLine(input);
+	    } else 	if (pluginname.equals("mail")) {
+		plugin = new  MailServerLogLine(input);
+	    } else 	if (pluginname.equals("block")) {
+		plugin = new  Block(input);
+		((Block)plugin).setBlockSize(16);
+	    } else if (pluginname.equals("file")) {
+		plugin = new FileItem((FileInputStream)input);
+	    } else {
+		plugin = new Line(input);
 	    }
 
-	    // wind it up
-	    index.close();
+	    // do stuff
+	    index.activate();
+	    try {
+		long indexSize = 0;
 
-	}  catch (IOException ioe) {
-	    System.err.println("Read error on input");
-	}
+		while ((result = plugin.read()) != null) {
+		    dataTS = result.getDataTimestamp();
+		    item = new ByteBufferItem(result.getData());
 
-	try {
-	    input.close();
-	} catch (IOException ioe) {
-	    System.err.println("Failed to close input");
-	}
+		    indexSize = index.addItem(item, dataTS);
+
+		    //index.hollowItem(indexSize - 1);
+		}
+
+		// wind it up
+		index.close();
+
+	    }  catch (IOException ioe) {
+		System.err.println("Read error on input");
+	    }
+
+	    try {
+		input.close();
+	    } catch (IOException ioe) {
+		System.err.println("Failed to close input");
+	    }
 	 
-	return true;
+	    return true;
+	} catch (TimeIndexException tie) {
+	    System.err.println("Failed on index \"" + indexProperties.getProperty("indexpath") + "\"" + tie);
+	    return false;  // this keeps the compiler happy
+	}	    
+
     }
 }

@@ -4,6 +4,7 @@ package uk.ti;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexException;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -18,18 +19,24 @@ public class TIDump extends TIAbstractRestore {
     /*
      * How many bytes of the data to dump
      */
-    int dataView = 34;
+    int dataView = 32;
 
     public static void main(String [] args) {
-	if (args.length == 1) {
-	    // have tifile name only,
-	    new TIDump(args[0]);
-	} else if (args.length > 1) {
-	    //for (int argc=0; argc < args.length; argc++) {
-	    help(System.err);
-	} else {
-	    help(System.err);
+	try {
+	    if (args.length == 1) {
+		// have tifile name only,
+		new TIDump(args[0]);
+	    } else if (args.length > 1) {
+		//for (int argc=0; argc < args.length; argc++) {
+		help(System.err);
+	    } else {
+		help(System.err);
+	    }
+
+	} catch (TimeIndexException tie) {
+	    System.err.println("Cannot open index \"" + args[0] + "\"");
 	}
+
     }
 
     public static void help(PrintStream out) {
@@ -39,7 +46,7 @@ public class TIDump extends TIAbstractRestore {
     /**
      * Build a TIDump object with a timeindex filename only
      */
-    public TIDump(String tiFileName) {
+    public TIDump(String tiFileName) throws TimeIndexException {
 	init();
 	dump(tiFileName, System.out);
     }
@@ -47,7 +54,7 @@ public class TIDump extends TIAbstractRestore {
     /**
      * Dump the output.
      */
-    public boolean dump(String filename, OutputStream output) {
+    public boolean dump(String filename, OutputStream output) throws TimeIndexException {
 	return doit(filename, output);
     }
 

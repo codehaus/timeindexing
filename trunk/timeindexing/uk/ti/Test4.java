@@ -8,6 +8,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.TimeIndexFactory;
 import com.timeindexing.index.DataType;
+import com.timeindexing.index.IndexCreateException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
 import com.timeindexing.time.ElapsedMillisecondTimestamp;
@@ -34,72 +35,78 @@ public class Test4 {
 
 	TimeIndexFactory factory = new TimeIndexFactory();
 
-	IndexView index = factory.create(IndexType.INCORE, createProperties);
+	try {
 
-	/* Item 0 */
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
-	// ZERO timestamp
-	Timestamp dTS = new ElapsedMillisecondTimestamp();
-	// now
-	Timestamp rTS = null;
+	    /* Item 0 */
 
-	// A chunk of data
-	DataItem data = null;
+	    // ZERO timestamp
+	    Timestamp dTS = new ElapsedMillisecondTimestamp();
+	    // now
+	    Timestamp rTS = null;
+
+	    // A chunk of data
+	    DataItem data = null;
 
 
-	/* Item 0 */
-	data = new StringItem("quite a lot of stuff");
+	    /* Item 0 */
+	    data = new StringItem("quite a lot of stuff");
 
-	rTS = new MillisecondTimestamp();
+	    rTS = new MillisecondTimestamp();
 
-	index.addItem(data, dTS);
+	    index.addItem(data, dTS);
 
-	delay(100);
+	    delay(100);
 
-	/* Item 1 */
+	    /* Item 1 */
 
-	// work out elasped time
+	    // work out elasped time
 
-	data = new StringItem("on item 1");
-
-	// work out elasped time
-	dTS = TimeCalculator.elapsedSince(rTS);
-
-	index.addItem(data, dTS);
-
-	delay(100);
-
-	/* Item 2 */
-
-	data = new StringItem("this is the voice of the mysterons");
-
-	// work out elasped time
-	dTS = TimeCalculator.elapsedSince(rTS);
-
-	index.addItem(data, dTS);
-
-	/* A few more */
-	for (int few = 0; few < 10; few++) {
-
-	    int myDelay = 100 + (few * 10);
-
-	    data = new StringItem("delay was " + myDelay);
-
-	    delay(myDelay);
+	    data = new StringItem("on item 1");
 
 	    // work out elasped time
 	    dTS = TimeCalculator.elapsedSince(rTS);
 
 	    index.addItem(data, dTS);
 
+	    delay(100);
+
+	    /* Item 2 */
+
+	    data = new StringItem("this is the voice of the mysterons");
+
+	    // work out elasped time
+	    dTS = TimeCalculator.elapsedSince(rTS);
+
+	    index.addItem(data, dTS);
+
+	    /* A few more */
+	    for (int few = 0; few < 10; few++) {
+
+		int myDelay = 100 + (few * 10);
+
+		data = new StringItem("delay was " + myDelay);
+
+		delay(myDelay);
+
+		// work out elasped time
+		dTS = TimeCalculator.elapsedSince(rTS);
+
+		index.addItem(data, dTS);
+
+	    }
+
+	    delay(50);
+
+	    index.close();
+
+	    printIndex(index);
+
+	} catch (IndexCreateException ice) {
+	    System.err.println("Test4: " + ice.getMessage());
+	    System.exit(1);
 	}
-
-	delay(50);
-
-	index.close();
-
-	printIndex(index);
-
     }
 
     public static void printIndex(Index index) {

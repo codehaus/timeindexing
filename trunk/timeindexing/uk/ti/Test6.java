@@ -5,6 +5,7 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
@@ -40,29 +41,35 @@ public class Test6 {
 
 	if (args.length == 1) {
 	    // have tifile name,
-	    properties.setProperty("filename", args[0]);
+	    properties.setProperty("indexpath", args[0]);
 	} else if (args.length == 0) {
 	    // use default from Test5
-	    properties.setProperty("filename", "/tmp/test5");
+	    properties.setProperty("indexpath", "/tmp/test5");
 	} else {
 	    ;
 	}
 
 	Timestamp t0 = Clock.time.asMillis();
 
-	Index index = factory.open(new File(properties.getProperty("filename")));
+	try { 
+	    Index index = factory.open(new File(properties.getProperty("indexpath")));
 
-	Timestamp t1 = Clock.time.asMillis();
+	    Timestamp t1 = Clock.time.asMillis();
 
-	System.out.print("t0: " + t0 + " ");
-	System.out.print("t1: " + t1 + " ");
-	System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
-	System.out.print("Length: " + index.getLength() + " items, ");
-	System.out.println();
+	    System.out.print("t0: " + t0 + " ");
+	    System.out.print("t1: " + t1 + " ");
+	    System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
+	    System.out.print("Length: " + index.getLength() + " items, ");
+	    System.out.println();
 	
-	printIndex(index);
+	    printIndex(index);
 
-	factory.close(index);
+	    factory.close(index);
+	} catch (IndexOpenException ioe) {
+	    System.err.println("Test6: " + ioe.getMessage());
+	    System.exit(1);
+	}
+
 
     }
 

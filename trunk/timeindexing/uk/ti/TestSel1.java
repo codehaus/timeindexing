@@ -6,6 +6,7 @@ import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
@@ -50,51 +51,56 @@ public class TestSel1 {
 
 	if (args.length == 1) {
 	    // have tifile name,
-	    properties.setProperty("filename", args[0]);
+	    properties.setProperty("indexpath", args[0]);
 	} else if (args.length == 0) {
 	    // use default from Test5
-	    properties.setProperty("filename", "/tmp/test5");
+	    properties.setProperty("indexpath", "/tmp/test5");
 	} else {
 	    ;
 	}
 
 	Timestamp t0 = Clock.time.asMillis();
 
-	IndexView index = factory.open(new File(properties.getProperty("filename")));
+	try {
+	    IndexView index = factory.open(new File(properties.getProperty("indexpath")));
 
-	Timestamp t1 = Clock.time.asMillis();
+	    Timestamp t1 = Clock.time.asMillis();
 
-	System.out.print("t0: " + t0 + " ");
-	System.out.print("t1: " + t1 + " ");
-	System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
-	System.out.print("Length: " + index.getLength() + " items, ");
-	System.out.println();
+	    System.out.print("t0: " + t0 + " ");
+	    System.out.print("t1: " + t1 + " ");
+	    System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
+	    System.out.print("Length: " + index.getLength() + " items, ");
+	    System.out.println();
 	
-	IndexView narrow1 = index.select(new EndPointInterval(new AbsolutePosition(10),
-							 new AbsolutePosition(40)),
-					 IndexTimestampSelector.DATA, Overlap.FREE,
-					 Lifetime.CONTINUOUS);
+	    IndexView narrow1 = index.select(new EndPointInterval(new AbsolutePosition(10),
+								  new AbsolutePosition(40)),
+					     IndexTimestampSelector.DATA, Overlap.FREE,
+					     Lifetime.CONTINUOUS);
 
 
-	if (narrow1 == null) {
-	    System.err.println("Didn't do selection properly");
-	} else {
-	    printIndex(narrow1);
-	}
+	    if (narrow1 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow1);
+	    }
 
-	IndexView narrow2 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
-								new AbsolutePosition(20)),
-					   IndexTimestampSelector.DATA, Overlap.FREE,
-					   Lifetime.CONTINUOUS);
+	    IndexView narrow2 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
+								    new AbsolutePosition(20)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.CONTINUOUS);
 
 
-	if (narrow2 == null) {
-	    System.err.println("Didn't do selection properly");
-	} else {
-	    printIndex(narrow2);
-	}
+	    if (narrow2 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow2);
+	    }
 
-	factory.close(index);
+	    factory.close(index);
+	} catch (IndexOpenException ioe) {
+	    System.err.println("Cannot open index \"" +  properties.getProperty("indexpath") + "\"");
+	    System.exit(1);
+	}	    
 
     }
 
