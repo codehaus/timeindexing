@@ -18,7 +18,7 @@ import com.timeindexing.cache.IndexCache;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
-//import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.Comparator;
 import java.net.URI;
@@ -30,6 +30,9 @@ import java.net.URI;
 public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeader,  IndexEventGenerator {
     // The Index name
     String indexName = null;
+
+    // data type
+    DataType dataType = DataType.NOTSET_DT;
 
     // Is the Index closed.
     // Items can only be added when the Index is NOT closed.
@@ -62,10 +65,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     //int indexType = -1;
 
 
-    // data type
-    DataType dataType = DataType.NOTSET_DT;
-
-
     TreeMap searchTree = null;
 
 
@@ -77,7 +76,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Get the name of the index.
      */
     public String getName() {
-	return indexName;
+	return header.getName();
     }
 
     /**
@@ -278,15 +277,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	long indexSize = header.getLength();
 	AbsolutePosition itemPosition = new AbsolutePosition(indexSize);
 
-
-	// add the item to the index item cache
-	// the new size of the cache is returned
-	long cacheSize = indexCache.addItem(item, itemPosition);
-
 	// now set the item's position and
 	// bind it to the index
 	itemM.setPosition(itemPosition);
 	itemM.setIndex(this);
+
+	// add the item to the index item cache
+	// the new size of the cache is returned
+	long cacheSize = indexCache.addItem(item, itemPosition);
 
 	// get the time this item was set
 	Timestamp last = item.getIndexTimestamp();
@@ -311,7 +309,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	changed = true;
 
 	// tell all the listeners that an item has been added
-	eventMulticaster.fireAddEvent(new IndexAddEvent(indexName, header.getID(), item, this));
+	eventMulticaster.fireAddEvent(new IndexAddEvent(getURI().toString(), header.getID(), item, this));
 
 	return newSize;
     }
@@ -326,7 +324,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	IndexItem item = indexCache.getItem(n);
 
 	// tell all the listeners that an item has been accessed
-	eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+	eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
 
 	return item;
     }
@@ -345,7 +343,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    IndexItem item = getItem(p.value());
 
 	    // tell all the listeners that an item has been accessed
-	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
 
 	    return item;
 	}
@@ -650,6 +648,13 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	return changed;
     }
     
+    /**
+     * Get an iterator over the IndexItems in the Index.
+     */
+    public Iterator iterator() {
+	return new IndexIterator(this);
+    }
+
     /**
      * Get the event listener.
      */
