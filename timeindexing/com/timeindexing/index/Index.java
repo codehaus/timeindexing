@@ -20,8 +20,6 @@ import java.util.LinkedList;
  */
 public interface Index extends IndexHeader {
     /**
-
-    /**
      * Get the size of the index items.
      */
     public int getItemSize();
@@ -55,22 +53,6 @@ public interface Index extends IndexHeader {
     public int getAnnotationStyle();
 
     /**
-     * Get the index URI of a nominated index.
-     */
-    public String getIndexURI(ID indexID);
-
-    /**
-     * Does this index have the URI of some other index
-     */
-    public boolean hasIndexURI(String URIName);
-
-    /**
-     * Add a new indexID/indexURI
-     * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
-     */
-    public boolean addIndexURI(ID indexID, String URIName);
-
-    /**
      * Update the description of this index.
      */
     public Index updateDescription(Description description);
@@ -84,6 +66,18 @@ public interface Index extends IndexHeader {
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
     public long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is passed into this Index.
+     */
+    public long addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is the one specified.
+     */
+    public long addReference(IndexItem item, Index other, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Get an Index Item from the Index.
@@ -159,4 +153,9 @@ public interface Index extends IndexHeader {
      * and this sets the end time too.
      */
     public boolean close();
+
+    /**
+     * Get a view onto the Index.
+     */
+    public IndexView asView();
 }
