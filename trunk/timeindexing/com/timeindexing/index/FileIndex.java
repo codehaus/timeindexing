@@ -252,7 +252,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    // do a write now
 	    // TODO: have non immediate write version
 	    // and get flush() to do the work
-	    indexInteractor.writeItem(item);
+	    indexInteractor.addItem(item);
 
 
 	    if (newSize == 1) { // this is the first index item
