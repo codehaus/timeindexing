@@ -13,6 +13,7 @@ import com.timeindexing.index.DataAbstraction;
 import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.DataReference;
 import com.timeindexing.index.DataReferenceObject;
+import com.timeindexing.index.DataTypeDirectory;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.index.IndexCreateException;
@@ -225,7 +226,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    indexBufWrite.putLong(item.getDataTimestamp().value());
 	    indexBufWrite.putLong(currentDataPosition);
 	    indexBufWrite.putLong(item.getDataSize().value());
-	    indexBufWrite.putInt(item.getDataType());
+	    indexBufWrite.putInt(item.getDataType().value());
 	    indexBufWrite.putLong(item.getItemID().value());
 	    indexBufWrite.putLong(item.getAnnotations().value()); // TODO: fix annoation code
 
@@ -424,7 +425,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    data = new DataReferenceObject(new Offset(offset), new Size(size));
 	}
 
-	indexItem = new FileIndexItem(dataTS, indexTS, data, type, new SID(id), new SID(annotationID));
+	indexItem = new FileIndexItem(dataTS, indexTS, data, DataTypeDirectory.find(type), new SID(id), new SID(annotationID));
 
 	// tell the IndexItem where its index is
 	indexItem.setIndexOffset(new Offset(currentIndexPosition));
@@ -624,7 +625,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 	} else if (loadStyle == LoadStyle.NONE) {
 	    // where is last item
-	    Offset lastOffset = myIndex.getLastOffset();
+	    Offset lastOffset = headerInteractor.getLastOffset();
 
             if (lastOffset.value() == 0) {
 		 // the index has zero items
@@ -633,6 +634,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
                 setAppendPosition();
 	    } else {
 		// get last item
+                // lastOffset points to just before the last IndexItem
 		ManagedFileIndexItem item = (ManagedFileIndexItem)readItem(lastOffset.value(), false);
 
 		// work out append position
@@ -657,8 +659,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     private long loadAll(boolean doLoadData) throws IOException {
 	ManagedIndexItem item = null;
 	long position = indexChannelPosition;
-	long itemCount = myIndex.getLength();
-	Offset lastOffset = myIndex.getLastOffset();
+	long itemCount = headerInteractor.getLength();
+	Offset lastOffset = headerInteractor.getLastOffset();
 	long count = 0;
 
 
@@ -678,6 +680,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 		position = indexChannelPosition;
 
 		// post the read item into the index
+		// this is the Index callback
 		myIndex.retrieveItem(item);
 	    }
 	}
@@ -711,7 +714,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Set the append position from the indexChannelPosition.
      */
     public boolean setAppendPosition() throws IOException {
-	System.err.println("Index append position = " + indexChannelPosition);
+	//System.err.println("Index append position = " + indexChannelPosition);
 	indexAppendPosition = indexChannelPosition;
 
 	return true;
