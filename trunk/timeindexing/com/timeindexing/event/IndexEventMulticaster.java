@@ -9,7 +9,7 @@ import javax.swing.event.EventListenerList;
  * Usage based on javax.swing.event.EventListenerList.
  * @see javax.swing.event.EventListenerList
  */
-public class IndexEventMulticaster {
+public class IndexEventMulticaster implements IndexEventGenerator {
     /*
      * EventListenerList for Primary Events.
      */
