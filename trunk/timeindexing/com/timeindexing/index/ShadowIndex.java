@@ -4,7 +4,7 @@ package com.timeindexing.index;
 
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.ShadowIndexIO;
-import com.timeindexing.cache.FileIndexCache;
+import com.timeindexing.cache.*;
 import java.util.Properties;
 
 /**
@@ -28,6 +28,8 @@ public class ShadowIndex extends ExternalIndex  implements ManagedIndex  {
     protected void init() {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
+
+	indexCache.setPolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy());
 
 	setIndexType(IndexType.SHADOW_DT);
 

@@ -11,7 +11,7 @@ import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
-import com.timeindexing.cache.FileIndexCache;
+import com.timeindexing.cache.*;
 import com.timeindexing.io.LoadStyle;
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
@@ -42,6 +42,8 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     protected void init() {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
+
+	indexCache.setPolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy());
 
 	setIndexType(IndexType.EXTERNAL_DT);
 
@@ -188,8 +190,10 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    } else if (loadstyle.equals("none")) {
 		loadStyle = LoadStyle.NONE;
 	    } else {
-		loadStyle = LoadStyle.HOLLOW;
+		loadStyle = LoadStyle.NONE;
 	    }
+	} else {
+	    loadStyle = LoadStyle.NONE;
 	}
     }
 
