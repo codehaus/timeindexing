@@ -7,6 +7,7 @@ import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -73,6 +74,26 @@ public abstract  class AbstractCachePolicy implements CachePolicy {
 	// do nothing
 	return null;
     }
+
+
+    /**
+     * Is an item in the first N elements of a List.
+     */
+    public boolean isInFirst(int n, List list, IndexItem item) {
+	// visit first N, or whole list if size of list < N
+	int max = list.size() > n ? n : list.size();
+
+	for (int i=0; i<max; i++) {
+	    if (item.equals((IndexItem)list.get(i))) {
+		// found the item, so it is in the first N
+		return true;
+	    }
+	}
+
+	// haven't found the item
+	return false;
+    }
+	    
 
     /**
      * Show the monitorList.
