@@ -155,6 +155,11 @@ public interface Index extends IndexHeader {
     public boolean close();
 
     /**
+     * Has the index changed in any way.
+     */
+    public boolean isChanged();
+
+    /**
      * Get a view onto the Index.
      */
     public IndexView asView();
