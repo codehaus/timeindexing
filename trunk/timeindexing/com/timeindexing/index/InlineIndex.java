@@ -21,6 +21,8 @@ import com.timeindexing.event.*;
 import java.util.Properties;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * An implementation of an inline Index object.
@@ -48,7 +50,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	indexCache.setPolicy(new HollowAfterTimeoutPolicy());
+	indexCache.setPolicy(new HollowAtDataVolumePolicy());  // (new HollowAfterTimeoutPolicy());
 
 	setIndexType(IndexType.INLINE_DT);
 
@@ -60,11 +62,17 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
      */
     public synchronized boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
 	// check the passed in properties
-	checkProperties(properties);
+	checkOpenProperties(properties);
 
 	// check to see if this index is already open and registered
-	if (isOpen(headerPathName)) {
-	    throw new IndexOpenException("Index is already created and is open");
+	try {
+	    String uri = generateURI(headerPathName).toString();
+
+	    if (isOpen(uri)) {
+		throw new IndexOpenException("Index is already created and is open");
+	    }
+	} catch (URISyntaxException use) {
+	    throw new IndexSpecificationException("Index badly specified as " + headerPathName);
 	}
 
 	// init the objects
@@ -82,7 +90,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    indexInteractor.loadIndex(loadStyle);
 
 
-	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
+	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.OPENED, this));
 	    
 	    // now we're open
 	    closed = false;
@@ -102,15 +110,23 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
      */
     public synchronized boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
 	// check the passed in properties
-	checkProperties(properties);
-
-	// check to see if this index is already open and registered
-	if (isOpen(headerPathName)) {
-	    throw new IndexCreateException("Index is already created and is open");
-	}
+	checkCreateProperties(properties);
 
 	// init the objects
 	init();
+
+	setName(indexName);
+
+	// check to see if this index is already open and registered
+	try {
+	    String uri = generateURI(headerPathName).toString();
+
+	    if (isOpen(uri)) {
+		throw new IndexCreateException("Index is already created and is open");
+	    }
+	} catch (URISyntaxException use) {
+	    throw new IndexSpecificationException("Index badly specified as " + headerPathName);
+	}
 
 	// things to do the first time in
 	// set the ID, the startTime, first offset, last offset
@@ -137,7 +153,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    activate();
 
 	    // pass an event to the listeners
-	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
 
 	    // now we're open
 	    closed = false;
@@ -153,7 +169,39 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    
     }
 
-    protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
+
+    /**
+     * Check that all the properties needed to open are passed in.
+     */
+    protected void checkOpenProperties(Properties indexProperties) throws IndexSpecificationException {
+	if (indexProperties.containsKey("indexpath")) {
+	    headerPathName = indexProperties.getProperty("indexpath");
+	} else {
+	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("loadstyle")) {
+	    String loadstyle = indexProperties.getProperty("loadstyle").toLowerCase();
+
+	    if (loadstyle.equals("all")) {
+		loadStyle = LoadStyle.ALL;
+	    } else if (loadstyle.equals("hollow")) {
+		loadStyle = LoadStyle.HOLLOW;
+	    } else if (loadstyle.equals("none")) {
+		loadStyle = LoadStyle.NONE;
+	    } else {
+		loadStyle = LoadStyle.HOLLOW;
+	    }
+	} else {
+	    loadStyle = LoadStyle.HOLLOW;
+	}
+    }
+
+
+    /**
+     * Check that all the properties needed to create are passed in.
+     */
+    protected void checkCreateProperties(Properties indexProperties) throws IndexSpecificationException {
 	if (indexProperties.containsKey("name")) {
 	    indexName = indexProperties.getProperty("name");
 	} else {
