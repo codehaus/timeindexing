@@ -19,7 +19,7 @@ import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.basic.ID;
-
+import java.net.URI;
 
 /**
  * This is the generic object that applications interact with.
@@ -111,6 +111,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public ID getID() {
 	return indexModel.getID();
+    }
+
+   /**
+     * Get the Index specification in the form of a URI.
+     */
+    public URI getURI() {
+	return indexModel.getURI();
     }
 
     /**
@@ -287,29 +294,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	return indexModel.getAnnotationStyle();
     }
 
-
-    /**
-     * Get the index URI of a nominated index.
-     */
-    public String getIndexURI(ID indexID) {
-	return indexModel.getIndexURI(indexID);
-    }
-
-    /**
-     * Does this index have the URI of some other index
-     */
-    public boolean hasIndexURI(String URIName) {
-	return indexModel.hasIndexURI(URIName);
-    }
-
-    /**
-     * Add a new indexID/indexURI
-     * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
-     */
-    public boolean addIndexURI(ID indexID, String URIName) {
-	return indexModel.addIndexURI(indexID, URIName);
-    }
-
     /**
      * Add a Data Item to the Index.
      */
@@ -329,6 +313,29 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
 	    return indexModel.addItem(item, datatime);
+	}
+    }
+
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public long addReference(IndexItem otherItem, Index otherIndex) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	if (isSelection) {
+	    throw new IndexTerminatedException("Can't add data to an Index selection");
+	} else {
+	    return indexModel.addReference(otherItem, otherIndex);
+	}
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	if (isSelection) {
+	    throw new IndexTerminatedException("Can't add data to an Index selection");
+	} else {
+	    return indexModel.addReference(otherItem, otherIndex, dataTS);
 	}
     }
 
@@ -372,7 +379,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	TimestampMapping tsm = locate(t, sel, lifetime);
 	return getItem(tsm.position());
     }
-
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
@@ -740,6 +746,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
+     * Get a view onto the Index.
+     */
+    public IndexView asView() {
+	return indexModel.asView();
+    }
+
+    /**
      * Clone me
      */
     public Object clone() throws  CloneNotSupportedException {
@@ -896,6 +909,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	position = mark;
 	mark = temp;
 	return this;
+    }
+
+    /**
+     * The finalize behviour is to call close().
+     */
+    protected void finalize() throws Throwable {
+	close();
     }
 
 }
