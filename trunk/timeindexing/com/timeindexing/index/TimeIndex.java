@@ -746,6 +746,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
+     *  Has the index changed in any way.
+     */
+    public boolean isChanged() {
+	return indexModel.isChanged();
+    }
+
+    /**
      * Get a view onto the Index.
      */
     public IndexView asView() {
