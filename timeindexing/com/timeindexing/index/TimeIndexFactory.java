@@ -75,7 +75,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 			    return new TimeIndex(anIndex);
 			} 
-		    } catch (IndexOpenException ioe) {
+		    } catch (Exception ioe) {
 			// it doesnt exist, so we will carry on and create it
 		    }
 		} else {
