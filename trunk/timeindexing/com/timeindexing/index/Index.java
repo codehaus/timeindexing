@@ -127,7 +127,7 @@ public interface Index extends IndexHeader {
      * It is not possible to add items to an Index
      * that is not active.
      */
-    public Index activate();
+    public Index activate() throws IndexReadOnlyException, IndexWriteLockedException;
 
     /**
      * Make the Index finalized.
@@ -159,6 +159,11 @@ public interface Index extends IndexHeader {
      * Has the index changed in any way.
      */
     public boolean isChanged();
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked();
 
     /**
      * Get an iterator over the IndexItems in the Index.
