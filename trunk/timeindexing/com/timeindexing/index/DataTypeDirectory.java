@@ -26,6 +26,8 @@ import java.io.Serializable;
  *
  */
 public class DataTypeDirectory implements Serializable {
+    final static long serialVersionUID = 789782781860612814L;
+
     protected static DataTypeDirectory directory = new DataTypeDirectory();
 
     /**
@@ -42,6 +44,11 @@ public class DataTypeDirectory implements Serializable {
      * The next allocatable ID.
      */
     protected int nextID = 10000;
+
+    /**
+     * The read-in loaded ID
+     */
+    private int loadedID = nextID;
 
     /**
      * Construct a DataTypeDirectory
@@ -78,10 +85,68 @@ public class DataTypeDirectory implements Serializable {
 	registerDataType(DataType.TIFF_DT);
 	registerDataType(DataType.BMP_DT);
 	registerDataType(DataType.REFERENCE_DT);
+	registerDataType(DataType.REFERENCE_LIST_DT);
  
 	// now try and get the saved ID
 	getSavedID();
     }
+
+    /*
+     * Static directory methods.
+     */
+
+	
+    /**
+     *  Find a DataType by dataType name.
+     */
+    public static DataType find(String name) {
+	return directory.getDataType(name);
+    }
+
+    /**
+     * Find a DataType by ID.
+     */
+    public static DataType find(ID anID) {
+	return directory.getDataType(anID);
+    }
+
+    /**
+     * Find a DataType by value.
+     */
+    public static DataType find(int value) {
+	return directory.getDataType(new SID(value));
+    }
+
+    /**
+     * Register a new DataType given a mime-type and an int id.
+     * It will create a new DataType if necessary.
+     */
+    public static DataType register(String name) {
+	return directory.registerDataType(name);
+    }
+
+    /**
+     * Register a new DataType given a mime-type and an int id.
+     * It will create a new DataType if necessary.
+     */
+    public static DataType register(String name, int value) {
+	return directory.registerDataType(name, value);
+    }
+
+    /**
+     * Register an DataType
+     */
+    public static DataType register(DataType dataType) { 
+	return directory.registerDataType(dataType);
+    }
+
+    /**
+     * Unregister an DataType 
+     */
+    public static boolean unregister(DataType index) { 
+	return directory.unregisterDataType(index);
+    }
+
 
     /**
      * Find a DataType by dataType name.
@@ -96,7 +161,7 @@ public class DataTypeDirectory implements Serializable {
 	    DataType dataType = (DataType)indexByNameDirectory.get(name);
 
 	    if (dataType == null) {
-		return null;
+		return DataType.UNKNOWN_DT;
 	    } else {
 		return dataType;
 	    }
@@ -143,7 +208,7 @@ public class DataTypeDirectory implements Serializable {
 	    DataType dataType = (DataType)indexByIDDirectory.get(anID);
 
 	    if (dataType == null) {
-		return null;
+		return DataType.UNKNOWN_DT;
 	    } else {
 		return dataType;
 	    }
@@ -261,6 +326,7 @@ public class DataTypeDirectory implements Serializable {
      */ 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 	nextID  = in.readInt();
+	loadedID = nextID;
     }
 
 
@@ -274,9 +340,11 @@ public class DataTypeDirectory implements Serializable {
 	    DataTypeDirectory copy = (DataTypeDirectory)ois.readObject();
 	    ois.close();
 	    nextID = copy.nextID;
+	    loadedID = nextID;
 
 	} catch (IOException ioe) {
 	    System.err.println("getSavedID: IOException");
+            ioe.printStackTrace();
 	} catch (ClassNotFoundException cnfe) {
 	     System.err.println("getSavedID: ClassNotFoundException");
 	}
@@ -300,64 +368,12 @@ public class DataTypeDirectory implements Serializable {
      * On finalize, save the ID.
      */
     protected void finalize() {
-	System.err.println("finalize: save next ID");
-	saveNextID();
+	if (nextID != loadedID) {
+	    // something has changed
+	    System.err.println("finalize: save next ID");
+	    saveNextID();
+	}
     }
 
-    /*
-     * Static directory methods.
-     */
-
-	
-    /**
-     *  Find a DataType by dataType name.
-     */
-    public static DataType find(String name) {
-	return directory.getDataType(name);
-    }
-
-    /**
-     * Find a DataType by ID.
-     */
-    public static DataType find(ID anID) {
-	return directory.getDataType(anID);
-    }
-
-    /**
-     * Find a DataType by value.
-     */
-    public static DataType find(int value) {
-	return directory.getDataType(new SID(value));
-    }
-
-    /**
-     * Register a new DataType given a mime-type and an int id.
-     * It will create a new DataType if necessary.
-     */
-    public static DataType register(String name) {
-	return directory.registerDataType(name);
-    }
-
-    /**
-     * Register a new DataType given a mime-type and an int id.
-     * It will create a new DataType if necessary.
-     */
-    public static DataType register(String name, int value) {
-	return directory.registerDataType(name, value);
-    }
-
-    /**
-     * Register an DataType
-     */
-    public static DataType register(DataType dataType) { 
-	return directory.registerDataType(dataType);
-    }
-
-    /**
-     * Unregister an DataType 
-     */
-    public static boolean unregister(DataType index) { 
-	return directory.unregisterDataType(index);
-    }
 }
 
