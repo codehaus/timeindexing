@@ -70,14 +70,15 @@ public class DefaultOutputPlugin implements OutputPlugin {
     /**
      * Does nothing.
      */
-    public Object begin() {
+    public Object begin() throws IOException {
 	return null;
     }
 
     /**
-     * Does nothing.
+     * Close the OutputStream by default.
      */
-    public Object end() {
+    public Object end() throws IOException {
+	out.close();
 	return null;
     }
    
