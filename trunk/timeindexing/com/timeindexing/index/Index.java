@@ -71,6 +71,11 @@ public interface Index extends IndexHeader {
     public boolean addIndexURI(ID indexID, String URIName);
 
     /**
+     * Update the description of this index.
+     */
+    public Index updateDescription(Description description);
+
+    /**
      * Add a Data Item to the Index.
      */
     public long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;

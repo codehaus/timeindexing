@@ -432,13 +432,10 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Set the description.
      * This is one of the few attributes of an index that can be set directly.
      */
-    public IndexHeader setDescription(Description description) {
-	indexModel.setDescription(description);
+    public Index updateDescription(Description description) {
+	indexModel.updateDescription(description);
 	return this;
     }
-
-
-
 
     /**
      * Does a timestamp fall within the bounds of the Index.

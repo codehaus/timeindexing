@@ -107,12 +107,6 @@ public interface IndexHeader {
     public Description getDescription();
 
     /**
-     * Set the description.
-     * This is one of the few attributes of an index that can be set directly.
-     */
-    public IndexHeader setDescription(Description description);
-
-    /**
      * Is the Index terminated.
      */
     public boolean isTerminated();
