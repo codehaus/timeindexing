@@ -4,11 +4,17 @@ package com.timeindexing.index;
 
 import com.timeindexing.basic.ID;
 import com.timeindexing.io.IndexDecoder;
+import com.timeindexing.data.DataItem;
+import com.timeindexing.data.ByteBufferItem;
+import com.timeindexing.event.*;
 
 import java.util.Properties;
+import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
-import com.timeindexing.event.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 
 /**
  * This is the TimeIndexFactory which returns different implementations
@@ -29,9 +35,41 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
     /**
-     * Get a new Time Index object given a constant, as defined in TimeType.
-     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE,
-     * IndexType.JAVASERIAL.
+     * Create a new Time Index object given an IndexType.
+     * If the index already exists then an IndexView onto
+     * that index will be returned.
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.SHADOW, IndexType.INCORE.
+     * @param indexFile  the file spec of the index
+     */
+    public IndexView create(IndexType kind, File indexFile) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
+	Properties indexProperties = new Properties();
+	indexProperties.setProperty("indexpath", indexFile.getPath());
+
+	return create(kind, indexProperties);
+    }
+
+
+    /**
+     * Create a new Time Index object given an IndexType.
+     * If the index already exists then an IndexView onto
+     * that index will be returned.
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.SHADOW, IndexType.INCORE.
+     * @param uri the uri spec of the index
+     */
+    public IndexView create(IndexType kind, URI uri) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
+	Properties indexProperties = new Properties();
+	indexProperties.setProperty("uri", uri.toString());
+
+	return create(kind, indexProperties);
+    }
+
+
+
+    /**
+     * Create a new Time Index object given an IndexType.
+     * If the index already exists then an IndexView onto
+     * that index will be returned.
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.SHADOW, IndexType.INCORE.
      * @param indexProperties properties of the index needed at creat time, such as  its name.
      */
     public IndexView create(IndexType kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
@@ -44,59 +82,132 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	// check indexpath for non incore indexes
 	if (kind.value() != IndexType.INCORE) {
 	    
-	    try {
-		if (indexProperties.containsKey("indexpath")) {
-		    fileName = indexProperties.getProperty("indexpath");
-		    indexFile = new File(fileName);
+	    if (indexProperties.containsKey("indexpath")) {
+		fileName = indexProperties.getProperty("indexpath");
+		indexFile = new File(fileName);
+
+		try {
+
 		    indexPath = indexFile.getCanonicalPath();
 		    //indexPath = indexFile.toURI().toString();
+		} catch (IOException ioe) {
+		    // there was an I/O error detemrining the canonical path
+		    // thorw an exception
+		    throw new IndexCreateException("Bad index 'indexpath' for TimeIndexFactory in create()");
+		}
 
-		    // patch up indexpath to canonical form
-		    indexProperties.setProperty("indexpath", indexPath);
+
+		// patch up indexpath to canonical form
+		indexProperties.setProperty("indexpath", indexPath);
 
 		    
-		    // we don;t want ot do a create() followed by a create()
-		    // so we check to see if it exists
-		    IndexDecoder decoder = null;
-		    try {
-			// this will succeed if the index exists
-			decoder = openDecoder(indexProperties);
+		// now create a URI from the canonical path
+		try {
+		    URI indexURI = new URI("index", "", indexPath, null);
+		
+		    if ((anIndex = TimeIndexDirectory.find(indexURI.toString())) != null) {
+			// the index is already opened and registered 
+			// so return a new TimeIndex object
 
-			// get some values out of the header
+			return anIndex.asView();
+		    } else {
+			// it doesnt exist, so we will carry on and create it
+		    }
+		} catch (URISyntaxException usi) {
+		    // there was an error detemrining the URI
+		    // thorw an exception
+		    throw new IndexCreateException("Bad index 'indexpath' for TimeIndexFactory in create()");
+		}
 
-			ID indexID = decoder.getID();
+	    } else if (indexProperties.containsKey("uri")) {
+		try {
+		    URI indexURI = new URI(indexProperties.getProperty("uri"));
 
-			if ((anIndex = TimeIndexDirectory.find(indexID)) != null) {
+		    if (! indexURI.isOpaque()) {
+			// its a URI for a stored Index.
+
+			if ((anIndex = TimeIndexDirectory.find(indexURI.toString())) != null) {
 			    // the index is already opened and registered 
 			    // so return a new TimeIndex object
 
 			    return anIndex.asView();
-			} 
-		    } catch (Exception ioe) {
-			// it doesnt exist, so we will carry on and create it
+			} else {
+			    // it doesnt exist, so we will carry on and create it
+			    // we'll set the "indexpath" property
+			    indexPath = indexURI.getPath();
+			    indexProperties.setProperty("indexpath", indexPath);
+			}
+		    } else {
+			// the URI was not valid for a stored index
+			// thorw an exception
+			throw new IndexCreateException("Bad index 'uri' for TimeIndexFactory in create()");
 		    }
-		} else {
-		    throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory in create()");
+		} catch (URISyntaxException usi) {
+		    // there was an error detemrining the URI
+		    // thorw an exception
+		    throw new IndexCreateException("Bad index 'uri' for TimeIndexFactory in create()");
 		}
-	    } catch (IOException ioe) {
-		// there was an I/O error detemrining the canonical path
-		// thorw an exception
-		throw new IndexCreateException(ioe);
+
+	    } else {
+		throw new IndexSpecificationException("No 'indexpath' or 'uri' specified for TimeIndexFactory in create()");
 	    }
 
 	} else {
-	    String indexName = indexProperties.getProperty("name");
+	    // check indexProperties for an INCORE index
 
-	    if ((anIndex = TimeIndexDirectory.find(indexName)) != null) {
-		// the index is already opened and registered 
-		// so return a new TimeIndex object
+	    if (indexProperties.containsKey("name")) {
+		// it's an incore index
+		String indexName = indexProperties.getProperty("name");
+		
+		try {
+		    URI indexURI = new URI("index", indexName, null);
 
-		return anIndex.asView();
-	    } 
+		    if ((anIndex = TimeIndexDirectory.find(indexURI.toString())) != null) {
+			// the index is already opened and registered 
+			// so return a new TimeIndex object
+
+			return anIndex.asView();
+		    } 
+		} catch (URISyntaxException use) {
+		    throw new IndexSpecificationException("Bad index 'name' for TimeIndexFactory in create()");
+		}
+	    } else if (indexProperties.containsKey("uri")) {
+		try {
+		    URI indexURI = new URI(indexProperties.getProperty("uri"));
+
+		    if (indexURI.isOpaque()) {
+			// its a URI for an INCORE Index.
+
+			if ((anIndex = TimeIndexDirectory.find(indexURI.toString())) != null) {
+			    // the index is already opened and registered 
+			    // so return a new TimeIndex object
+
+			    return anIndex.asView();
+			} else {
+			    // it doesnt exist, so we will carry on and create it
+			    // we'll set the "name" property
+			    String indexName = indexURI.getSchemeSpecificPart();
+			    indexProperties.setProperty("name", indexName);
+			}
+		    } else {
+			// the URI was not valid for an INCORE index
+			// thorw an exception
+			throw new IndexCreateException("Bad index 'uri' for TimeIndexFactory in create()");
+		    }
+		} catch (URISyntaxException usi) {
+		    // there was an error detemrining the URI
+		    // thorw an exception
+		    throw new IndexCreateException("Bad index 'uri' for TimeIndexFactory in create()");
+		}
+
+	    } else {
+		throw new IndexSpecificationException("No 'name' or 'uri' specified for TimeIndexFactory in create()");
+	    }
 	} 
 
 
-	// it can't be opened so really do the create
+	// it can't be opened so we really need to do the create
+
 	switch (kind.value()) {
 	case IndexType.INLINE: {
 	    ManagedIndex newIndex = new InlineIndex(); 
@@ -145,18 +256,6 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
     /**
-     * Create a new Index object for an existing Index object.
-     * The type of the new Index is based on a constant, as defined in TimeType.
-     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE,
-     * IndexType.JAVASERIAL.
-     * @param indexProperties properties of the index needed at creat time, such as  its name.
-     */
-    public IndexView convert(Index index, int kind, Properties indexProperties) throws TimeIndexFactoryException { // IndexSpecificationException, IndexCreateException {
-	// TODO: implement me
-	throw new TimeIndexFactoryException("Not implemented yet");
-    }
-
-    /**
      * Retrieve a TimeIndex object by file name.
      * e.g. TimeIndexFactory.open(new File(someDirectory, fileName))
      *
@@ -170,6 +269,19 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
     /**
+     * Retrieve a TimeIndex object by URI.
+     * e.g. TimeIndexFactory.open(new URI("index", "", "/path/to/index", null));
+     *
+     * @param indexURI  the URI  of the index
+     */
+    public IndexView open(URI indexURI) throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
+	Properties indexProperties = new Properties();
+	indexProperties.setProperty("uri", indexURI.toString());
+	
+	return open(indexProperties);
+    }
+
+    /**
      * Retrieve a TimeIndex object by file name.
      * e.g. TimeIndexFactory.open(properties)
      *
@@ -177,48 +289,83 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * @return null if the index can't be opened
      */
     public IndexView open(Properties indexProperties)  throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException {
-	// an IndexDecoder
-	IndexDecoder decoder = null;
-
 	ManagedIndex anIndex = null;
 	String fileName = null;
 	File indexFile = null;
 	String indexPath = null;
 	boolean incore = false;
 
-	try {
-	    if (indexProperties.containsKey("indexpath")) {
+	// first pass over the properties
+	if (indexProperties.containsKey("indexpath")) {
+	    try {
 		fileName = indexProperties.getProperty("indexpath");
 		indexFile = new File(fileName);
 		indexPath = indexFile.getCanonicalPath();
-	    } else if (indexProperties.containsKey("incore")) {
-		incore = true;
-	    } else {
-		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory in open()");
+		incore = false;
+
+	    } catch (IOException ioe) {
+		// there was an I/O error detemrining the canonical path
+		// thorw an exception
+		throw new IndexOpenException("Bad index 'indexpath' for TimeIndexFactory in open()");
 	    }
-	} catch (IOException ioe) {
-	    // there was an I/O error detemrining the canonical path
-	    // thorw an exception
-	    throw new IndexOpenException(ioe);
+
+	} else if (indexProperties.containsKey("name")) {
+	    incore = true;
+
+	} else if (indexProperties.containsKey("uri")) {
+	    try {
+		URI indexURI = new URI(indexProperties.getProperty("uri"));
+
+		if (indexURI.isOpaque()) {
+		    // its a URI for an INCORE Index.
+		    String indexName = indexURI.getSchemeSpecificPart();
+		    indexProperties.setProperty("name", indexName);
+		    incore = true;
+
+		} else {
+		    // its a URI for a stored Index.
+		    indexPath = indexURI.getPath();
+		    indexProperties.setProperty("indexpath", indexPath);
+		    incore = false;
+
+		}
+	    } catch (URISyntaxException usi) {
+		// there was an error detemrining the URI
+		// thorw an exception
+		throw new IndexOpenException("Bad index 'uri' for TimeIndexFactory in create()");
+	    }
+	} else {
+	    throw new IndexSpecificationException("No 'indexpath' or 'name' or 'uri' specified for TimeIndexFactory in open()");
 	}
 
-	// process incore indexes differently from other indexes
+	// we had enough property data to try and actually open an index
+
+	// process INCORE indexes differently from other indexes
+	// if the index is in the Directory return a view on it
 	if (incore) {
 	    String indexName = indexProperties.getProperty("name");
 
-	    if ((anIndex = TimeIndexDirectory.find(indexName)) != null) {
-		// the index is already opened and registered 
-		// so return a new TimeIndex object
+	    try {
+		URI indexURI = new URI("index", indexName, null);
 
-		return anIndex.asView();
-	    } else {
-		throw new IndexOpenException("Can't open non-existant IncoreIndex. Specified name is " + indexName);
+		if ((anIndex = TimeIndexDirectory.find(indexURI.toString())) != null) {
+		    // the index is already opened and registered 
+		    // so return a new TimeIndex object
+
+		    return anIndex.asView();
+		} else {
+		    throw new IndexOpenException("Can't open non-existant IncoreIndex. Specified name is " + indexName);
+		}
+
+	    } catch (URISyntaxException use) {
+		throw new IndexSpecificationException("Bad index 'name' for TimeIndexFactory in create()");
 	    }
-
 	} else {
-
+	    // its a stored Index, so it really needs to be opened
+	    
+	    // an IndexDecoder
 	    // try and open the index and decode the header
-	    decoder = openDecoder(indexProperties);
+	    IndexDecoder decoder = indexDecoder(indexProperties);
 	    
 	    // get some values out of the header
 
@@ -281,6 +428,49 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
     /**
+     * Create a new Index object from an existing Index object.
+     * The type of the new Index is based on a constant, as defined in TimeType.
+     * @param index the original index to convert
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE.
+     * @param indexProperties properties of the index needed at creat time, such as  its name.
+     */
+    public IndexView save(Index index, IndexType kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException, TimeIndexException {
+	IndexView newIndexView = create(kind, indexProperties);
+
+	// Get a direct handle on the index
+	ManagedIndex newIndex = TimeIndexDirectory.find(newIndexView.getID());
+
+	Iterator itemIterator = index.iterator();
+
+	while (itemIterator.hasNext()) {
+	    ManagedIndexItem anItem = (ManagedIndexItem)itemIterator.next();
+
+	    if (anItem.isReference()) {
+		IndexReferenceDataHolder reference =  (IndexReferenceDataHolder)anItem.getDataAbstraction();
+
+		// add a new reference to the index
+		newIndex.addReference(reference, anItem.getDataTimestamp());
+
+	    } else {
+		// the index item is unpacked
+		// and a DataItem created
+		// so it can b added to the new index properly
+		DataItem dataItem = new ByteBufferItem(anItem.getData(), anItem.getDataType());
+
+		// the DataItem is added to the new index with the 
+		// data timestamp from the original index item
+		newIndex.addItem(dataItem, anItem.getDataTimestamp());
+	    }
+	}
+
+	newIndex.flush();
+	    
+	return newIndexView;
+	    
+    }
+
+
+    /**
      * Append to an index.
      * e.g. TimeIndexFactory.append(new File(someDirectory, fileName))
      *
@@ -295,9 +485,22 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
     /**
      * Append to an index.
+     * e.g. TimeIndexFactory.append(new File(someDirectory, fileName))
+     *
+     * @param uri  the URI  of the index
+     */
+    public IndexView append(URI uri) throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
+	Properties indexProperties = new Properties();
+	indexProperties.setProperty("uri", uri.toString());
+	
+	return append(indexProperties);
+    }
+
+    /**
+     * Append to an index.
      * e.g. TimeIndexFactory.appemd(properties)
      *
-     * @param indexFilename  the filename of the index
+     * @param indexProperties  a Properties spec of the index
      */
     public IndexView append(Properties indexProperties)  throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
 	indexProperties.setProperty("loadstyle", "none");
@@ -339,7 +542,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	return closed;
     }
 
-    protected IndexDecoder openDecoder(Properties indexProperties) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
+    /**
+     * Open an Index and decode the header.
+     * The Index is closed when this method returns.
+     */
+    private IndexDecoder indexDecoder(Properties indexProperties) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
 	IndexDecoder decoder = null;
 
 	// decode the named file
