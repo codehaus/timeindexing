@@ -14,7 +14,7 @@ import java.util.Properties;
  * It has the methods needed to manage an index,
  * but are not needed by the application  layer.
  */
-public interface ManagedIndex extends ExtendedIndex, IndexEventGenerator  {
+public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEventGenerator  {
     /**
      * Open this index.
      */
@@ -26,18 +26,19 @@ public interface ManagedIndex extends ExtendedIndex, IndexEventGenerator  {
      public boolean create(Properties props) throws IndexSpecificationException, IndexCreateException;
 
     /**
-     * Flush this index.
-     */
-    public boolean flush();
-
-    /**
      * Close this index.
      */
-     public boolean close();
+     public boolean reallyClose();
 
     /**
      * Get the headerfor the index.
      */
     public ManagedIndexHeader getHeader();
+
+    /**
+     * Get the path name of the header of the index.
+     */
+    public String getIndexPathName();
+
     
 }

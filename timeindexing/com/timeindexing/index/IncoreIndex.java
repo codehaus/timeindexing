@@ -18,7 +18,7 @@ import java.util.Properties;
  * An implementation of an incore Index object.
  * It represents the index header, the index stream and the data stream.
  */
-public class IncoreIndex extends AbstractIndex implements ManagedIndex {
+public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
     /**
      * Create an IncoreIndex
      */
@@ -32,7 +32,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	header = new IncoreIndexHeader(this,indexName);
 	indexCache = new DefaultIndexCache(this);
 
-	header.setIndexType(IndexType.INCORE_DT);
+	setIndexType(IndexType.INCORE_DT);
 
 	// creating an Incore Index is effectively opening it
 	closed = false;
@@ -43,12 +43,22 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
     /**
      * Open this index.
      */
-     public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
+    public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
 	// check the passed in properties
 	checkProperties(properties);
 
+	// check to see if this index is already open and registered
+	if (isOpen(getName())) {
+	    throw new IndexOpenException("Index is already created and is open");
+	}
+
 	// init the objects
 	init();
+
+
+	// register myself in the TimeIndex directory
+	TimeIndexDirectory.register(this, getName(), getID());
+
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
 	return true;
@@ -60,6 +70,11 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
     public boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
 	// check the passed in properties
 	checkProperties(properties);
+
+	// check to see if this index is already open and registered
+	if (isOpen(getName())) {
+	    throw new IndexCreateException("Index is already created and is open");
+	}
 
 	// init the objects
 	init();
@@ -81,6 +96,9 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	closed = false;
 	activate();
 
+
+	// register myself in the TimeIndex directory
+	TimeIndexDirectory.register(this, getName(), getID());
 
 	return true;
     }
@@ -179,7 +197,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
    /**
      * Close this index.
      */
-    public boolean close() {
+    public boolean reallyClose() {
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
@@ -204,13 +222,6 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	if (indexProperties.containsKey("datatype")) {
 	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
 	}
-    }
-
-    /**
-     * Get the headerfor the index.
-     */
-    public ManagedIndexHeader getHeader() {
-	return header;
     }
 
 
