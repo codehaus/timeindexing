@@ -36,6 +36,73 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      */
     public IndexView create(IndexType kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
 
+	ManagedIndex anIndex = null;
+	String fileName = null;
+	File indexFile = null;
+	String indexPath = null;
+
+	// check indexpath for non incore indexes
+	if (kind.value() != IndexType.INCORE) {
+	    
+	    try {
+		if (indexProperties.containsKey("indexpath")) {
+		    fileName = indexProperties.getProperty("indexpath");
+		    indexFile = new File(fileName);
+		    indexPath = indexFile.getCanonicalPath();
+		    //indexPath = indexFile.toURI().toString();
+
+		    // patch up indexpath to canonical form
+		    indexProperties.setProperty("indexpath", indexPath);
+
+		    
+		    // we don;t want ot do a create() followed by a create()
+		    // so we check to see if it exists
+		    IndexDecoder decoder = null;
+		    try {
+			// this will succeed if the index exists
+			decoder = openDecoder(indexProperties);
+
+			// get some values out of the header
+
+			ID indexID = decoder.getID();
+
+			if ((anIndex = TimeIndexDirectory.find(indexID)) != null) {
+			    // the index is already opened and registered 
+			    // so return a new TimeIndex object
+
+			    // tell the directory there is another handle
+			    TimeIndexDirectory.addHandle(anIndex);
+
+			    return new TimeIndex(anIndex);
+			} 
+		    } catch (IndexOpenException ioe) {
+			// it doesnt exist, so we will carry on and create it
+		    }
+		} else {
+		    throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory in create()");
+		}
+	    } catch (IOException ioe) {
+		// there was an I/O error detemrining the canonical path
+		// thorw an exception
+		throw new IndexCreateException(ioe);
+	    }
+
+	} else {
+	    String indexName = indexProperties.getProperty("name");
+
+	    if ((anIndex = TimeIndexDirectory.find(indexName)) != null) {
+		// the index is already opened and registered 
+		// so return a new TimeIndex object
+
+		// tell the directory there is another handle
+		TimeIndexDirectory.addHandle(anIndex);
+
+		return new TimeIndex(anIndex);
+	    } 
+	} 
+
+
+	// it can't be opened so really do the create
 	switch (kind.value()) {
 	case IndexType.INLINE: {
 	    ManagedIndex newIndex = new InlineIndex(); 
@@ -43,13 +110,6 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    newIndex.addPrimaryEventListener(this);
 
 	    newIndex.create(indexProperties);
-
-	    // get the ID and name values
-	    ID indexID = newIndex.getID();
-	    String indexName = newIndex.getName();
-	    
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
 	    return new TimeIndex(newIndex);
 	}
@@ -61,15 +121,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 	    newIndex.create(indexProperties);
 
-	    // get the ID and name values
-	    ID indexID = newIndex.getID();
-	    String indexName = newIndex.getName();
-	    
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
-
 	    return new TimeIndex(newIndex);
-
 	}
 
 	case IndexType.SHADOW: {
@@ -79,15 +131,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 	    newIndex.create(indexProperties);
 
-	    // get the ID and name values
-	    ID indexID = newIndex.getID();
-	    String indexName = newIndex.getName();
-	    
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
-
 	    return new TimeIndex(newIndex);
-
 	}
 
 	case IndexType.INCORE: {
@@ -96,13 +140,6 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    newIndex.addPrimaryEventListener(this);
 
 	    newIndex.create(indexProperties);
-
-	    // get the ID and name values
-	    ID indexID = newIndex.getID();
-	    String indexName = newIndex.getName();
-	    
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
 	    return new TimeIndex(newIndex);
 	}
@@ -148,113 +185,113 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     public IndexView open(Properties indexProperties)  throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException {
 	// an IndexDecoder
 	IndexDecoder decoder = null;
-	// decode the named file
+
+	ManagedIndex anIndex = null;
 	String fileName = null;
 	File indexFile = null;
 	String indexPath = null;
+	boolean incore = false;
 
 	try {
 	    if (indexProperties.containsKey("indexpath")) {
 		fileName = indexProperties.getProperty("indexpath");
 		indexFile = new File(fileName);
 		indexPath = indexFile.getCanonicalPath();
+	    } else if (indexProperties.containsKey("incore")) {
+		incore = true;
 	    } else {
-		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory");
+		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory in open()");
 	    }
-
-	    // create an index decoder
-	    decoder = new IndexDecoder(indexFile);
-
-	    // read the header
-	    decoder.read();
 	} catch (IOException ioe) {
-	    // there was an I/O error opening or reading the header so 
+	    // there was an I/O error detemrining the canonical path
 	    // thorw an exception
 	    throw new IndexOpenException(ioe);
-	} finally {
-	    try {
-		// close it
-		if (decoder != null) {
-		    decoder.close();
-		}
-	    } catch (IOException ioeClose) {
-		// there was an I/O error on closing
-		// things are very bad
-		throw new IndexOpenException("Can't close " + fileName + " when attempting to decode the index header");
+	}
+
+	// process incore indexes differently from other indexes
+	if (incore) {
+	    String indexName = indexProperties.getProperty("name");
+
+	    if ((anIndex = TimeIndexDirectory.find(indexName)) != null) {
+		// the index is already opened and registered 
+		// so return a new TimeIndex object
+
+		// tell the directory there is another handle
+		TimeIndexDirectory.addHandle(anIndex);
+
+		return new TimeIndex(anIndex);
+	    } else {
+		throw new IndexOpenException("Can't open non-existant IncoreIndex. Specified name is " + indexName);
 	    }
-	}	    
 
+	} else {
+
+	    // try and open the index and decode the header
+	    decoder = openDecoder(indexProperties);
 	    
-	// now open the index properly
+	    // get some values out of the header
 
-	String indexName = decoder.getName();
-	ID indexID = decoder.getID();
-	IndexType kind = decoder.getIndexType();
+	    String indexName = decoder.getName();
+	    ID indexID = decoder.getID();
+	    IndexType kind = decoder.getIndexType();
 
-	//Properties indexProperties = new Properties();
-	indexProperties.setProperty("name", indexName);
-	indexProperties.setProperty("indexpath", indexPath);
+	    if ((anIndex = TimeIndexDirectory.find(indexID)) != null) {
+		// the index is already opened and registered 
+		// so return a new TimeIndex object
 
-	switch (kind.value()) {
-	case IndexType.INLINE: {
-	    ManagedIndex newIndex = new InlineIndex(); 
+		// tell the directory there is another handle
+		TimeIndexDirectory.addHandle(anIndex);
 
-	    newIndex.addPrimaryEventListener(this);
+		return new TimeIndex(anIndex);
 
-	    newIndex.open(indexProperties);
+	    } else {
+		// actually open the index
+		//Properties indexProperties = new Properties();
+		indexProperties.setProperty("name", indexName);
+		indexProperties.setProperty("indexid", indexID.toString());
+		indexProperties.setProperty("indexpath", indexPath);
 
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
+		switch (kind.value()) {
+		case IndexType.INLINE: {
+		    ManagedIndex newIndex = new InlineIndex(); 
 
-	    return new TimeIndex(newIndex);
+		    newIndex.addPrimaryEventListener(this);
+
+		    newIndex.open(indexProperties);
+
+		    return new TimeIndex(newIndex);
+		}
+
+		case IndexType.EXTERNAL: {
+		    ManagedIndex newIndex = new ExternalIndex(); 
+
+		    newIndex.addPrimaryEventListener(this);
+
+		    newIndex.open(indexProperties);
+
+		    return new TimeIndex(newIndex);
+		}
+
+		case IndexType.SHADOW: {
+		    ManagedIndex newIndex = new ShadowIndex(); 
+
+		    newIndex.addPrimaryEventListener(this);
+
+		    newIndex.open(indexProperties);
+
+		    return new TimeIndex(newIndex);
+		}
+
+		case IndexType.INCORE: {
+		    throw new TimeIndexFactoryException("TimeIndexFactory: Unexpected value for kind: " + kind + ". A stored index cant have this kind??");
+		}
+
+		default:
+		    throw new TimeIndexFactoryException("TimeIndexFactory: Illegal value for kind: " + kind);
+		}
+	    }
 	}
-
-	case IndexType.EXTERNAL: {
-	    ManagedIndex newIndex = new ExternalIndex(); 
-
-	    newIndex.addPrimaryEventListener(this);
-
-	    newIndex.open(indexProperties);
-
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
-
-	    return new TimeIndex(newIndex);
-	}
-
-	case IndexType.SHADOW: {
-	    ManagedIndex newIndex = new ShadowIndex(); 
-
-	    newIndex.addPrimaryEventListener(this);
-
-	    newIndex.open(indexProperties);
-
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
-
-	    return new TimeIndex(newIndex);
-	}
-
-	case IndexType.INCORE: {
-	    ManagedIndex newIndex = new IncoreIndex();
-
-	    newIndex.addPrimaryEventListener(this);
-
-	    newIndex.open(indexProperties);
-
-	    // save these in the TimeIndex directories
-	    TimeIndexDirectory.register(newIndex, indexName, indexID);
-
-	    return new TimeIndex(newIndex);
-	}
-
-
-	default:
-	    throw new TimeIndexFactoryException("TimeIndexFactory: Illegal value for kind: " + kind);
-	}
-
     }
-
 
     /**
      * Append to an index.
@@ -283,6 +320,8 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
     /**
      * Close an index
+     * @return whether the index was really closed. It might still be held open
+     * by another TimeIndex.
      */
     public boolean close(Index index) {
 	// flush out the contents
@@ -293,10 +332,50 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	// close all the objects in the index
 	boolean closed = index.close();
 
-	// tell the directory to remove the index 
-	TimeIndexDirectory.unregister(index);
-
 	return closed;
+    }
+
+    protected IndexDecoder openDecoder(Properties indexProperties) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
+	IndexDecoder decoder = null;
+
+	// decode the named file
+	String fileName = null;
+	File indexFile = null;
+	String indexPath = null;
+
+	try {
+	    if (indexProperties.containsKey("indexpath")) {
+		fileName = indexProperties.getProperty("indexpath");
+		indexFile = new File(fileName);
+		indexPath = indexFile.getCanonicalPath();
+	    } else {
+		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory");
+	    }
+
+	    // create an index decoder
+	    decoder = new IndexDecoder(indexFile);
+
+	    // read the header
+	    decoder.read();
+
+	    return decoder;
+	} catch (IOException ioe) {
+	    // there was an I/O error opening or reading the header so 
+	    // thorw an exception
+	    throw new IndexOpenException(ioe);
+	} finally {
+	    try {
+		// close it
+		if (decoder != null) {
+		    decoder.close();
+		}
+	    } catch (IOException ioeClose) {
+		// there was an I/O error on closing
+		// things are very bad
+		throw new IndexOpenException("Can't close " + fileName + " when attempting to decode the index header");
+	    }
+	}	    
+
     }
 
     /*
