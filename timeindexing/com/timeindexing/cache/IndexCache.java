@@ -17,6 +17,11 @@ import com.timeindexing.index.IndexItem;
  */
 public interface IndexCache {
     /**
+     * Get the no of items in the index.
+     */
+    public long size();
+
+    /**
      * Add an Index Item to the Index.
      */
     public long addItem(IndexItem item, Position position);
@@ -27,11 +32,6 @@ public interface IndexCache {
     public long addItem(IndexItem item, long position);
 
     /**
-     * Get the no of items in the index.
-     */
-    public long cacheSize();
-
-    /**
      * Get an Index Item from the Index.
      */
     public IndexItem getItem(long n);
@@ -40,7 +40,6 @@ public interface IndexCache {
      * Get an Index Item from the Index.
      */
     public IndexItem getItem(Position p);
-
 
     /**
      * Contains the IndexItem at the speicifed position.
@@ -65,6 +64,26 @@ public interface IndexCache {
     public boolean hollowItem(Position p);
 
     /**
+     * Remove the IndexItem at the speicifed position.
+     */
+    public boolean removeItem(long pos);
+
+    /**
+     * Remove the IndexItem at the speicifed position.
+     */
+    public boolean removeItem(Position p);
+
+    /**
+     * Clear the whole cache
+     */
+    public boolean clear();
+
+     /**
+     * Get the current data volume held by IndexItems in a cache.
+     */
+    public long getDataVolume();
+
+    /**
      * Get the time the first IndexItem was put into the Index.
      */
     public Timestamp getFirstIndexTime();
@@ -83,5 +102,16 @@ public interface IndexCache {
      * Get the time the last IndexItem was put into the Index.
      */
     public Timestamp getLastDataTime();
+
+    /**
+     * Set the cache policy.
+     * @return the old cache policy
+     */
+    public CachePolicy setPolicy(CachePolicy policy);
+
+    /**
+     * Get the current cache policy.
+     */
+    public CachePolicy getPolicy();
 
 }
