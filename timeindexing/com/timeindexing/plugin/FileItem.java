@@ -3,6 +3,7 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.index.DataType;
 
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -51,7 +52,7 @@ public class FileItem implements ReaderPlugin {
 	    eof = true;
 
 	    // return the buffer
-	    return new DefaultReaderResult(buffer, null);
+	    return new DefaultReaderResult(buffer, null, DataType.ANY_DT);
 	}
     }
 

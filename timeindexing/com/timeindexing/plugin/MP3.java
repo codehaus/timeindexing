@@ -6,6 +6,7 @@ package com.timeindexing.plugin;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.NanosecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
+import com.timeindexing.index.DataType;
 
 import java.nio.ByteBuffer;
 import java.io.InputStream;
@@ -87,7 +88,7 @@ public class MP3 extends DefaultReader implements ReaderPlugin {
 
 
 	// create a Result object
-	DefaultReaderResult result = new DefaultReaderResult(buffer, elapsedTime);
+	DefaultReaderResult result = new DefaultReaderResult(buffer, elapsedTime, DataType.MP3_DT);
 
 	bitstream.closeFrame();
 

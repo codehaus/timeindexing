@@ -3,6 +3,7 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.index.DataType;
 
 import java.nio.ByteBuffer;
 import java.io.InputStream;
@@ -61,7 +62,7 @@ public class Line extends DefaultReader implements ReaderPlugin {
      */
     protected ReaderResult process(String line) {
 	// return the line as a ReaderResult
-	return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null);
+	return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
     }
 
     /**
