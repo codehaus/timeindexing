@@ -134,6 +134,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
 
+	    // now we're open
+	    closed = false;
+
 	    return true;
 	} catch (IOException ioe) {
 	    throw new IndexOpenException(ioe);
