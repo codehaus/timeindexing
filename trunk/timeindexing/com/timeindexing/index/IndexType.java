@@ -18,14 +18,15 @@ public interface IndexType {
     public final int EXTERNAL = 1;
 
     /**
-     * An incore based TimeIndex, which has no storage capabilities.
+     * A separate file based TimeIndex that writes no data only the idnex.
      */
-    public final int INCORE = 2;
+    public final int SHADOW = 2;
 
     /**
-     * A Java serialization based TimeIndex
+     * An incore based TimeIndex, which has no storage capabilities.
      */
-    public final int JAVASERIAL = 3;
+    public final int INCORE = 3;
+
 
 }
 

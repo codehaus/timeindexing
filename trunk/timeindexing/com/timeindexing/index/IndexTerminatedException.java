@@ -6,7 +6,7 @@ package com.timeindexing.index;
  * An IndexTerminatedException is thrown when an attempt is made
  * to add data to a terminated index.
  */
-public class IndexTerminatedException extends RuntimeException {
+public class IndexTerminatedException extends TimeIndexException {
     /**
      * Throw a IndexTerminatedException with no message.
      */

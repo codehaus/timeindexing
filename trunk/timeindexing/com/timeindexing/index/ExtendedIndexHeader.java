@@ -5,6 +5,7 @@ package com.timeindexing.index;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
+import java.util.Set;
 
 /**
  * An extendedindex header.
@@ -36,13 +37,6 @@ public interface ExtendedIndexHeader extends IndexHeader {
      * @return true, if a new type was added; false, if the index had this ID/typeName pair already
      */
     public boolean addDataType(ID typeID, String typeName);
-
-    /**
-     * Get the data style.
-     * Either inline or external.
-     */
-    public int getDataStyle();
-
 
     /**
      * Does this index have annotations.

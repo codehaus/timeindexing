@@ -19,11 +19,6 @@ public interface ExtendedIndex extends Index, ExtendedIndexHeader {
     public int getIndexType();
 
     /**
-     * Get the file name of the header.
-     */
-    public String getFileName();
-
-    /**
      * Get the  last time the index was flushed.
      */
     public Timestamp getLastFlushTime();

@@ -6,7 +6,7 @@ package com.timeindexing.index;
  * A TimeIndexFactoryException is thrown when the TimeIndexFactory 
  * cannot resolve a value.
  */
-public class TimeIndexFactoryException extends RuntimeException {
+public class TimeIndexFactoryException extends TimeIndexException {
     /**
      * Throw a TimeIndexFactoryException with no message.
      */

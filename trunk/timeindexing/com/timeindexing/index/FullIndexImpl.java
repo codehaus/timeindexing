@@ -27,7 +27,7 @@ import java.util.Properties;
  * This is an UNFINISHED implementation of a full index.
  * It represents the index header, the index stream and the data stream.
  */
-public class FullIndexImpl implements ManagedIndex, Serializable {
+public class FullIndexImpl implements ManagedStoredIndex, Serializable {
     String indexName = null;
     ID indexID = null;
     int indexType = -1;
@@ -94,7 +94,7 @@ public class FullIndexImpl implements ManagedIndex, Serializable {
      * Get the filename of the index.
      * An Serializable index has no access to the filename.
      */
-    public String getFileName() {
+    public String getIndexPathName() {
 	return null;
     }
 
@@ -484,7 +484,7 @@ public class FullIndexImpl implements ManagedIndex, Serializable {
      * given a DataReference.
      */
     public DataHolderObject readData(DataReference dataReference) {
-	throw new Error("No need to read data. All data is available");
+	throw new RuntimeException("No need to read data. All data is available.  This should never happen.");
     }
 
 
@@ -571,6 +571,13 @@ public class FullIndexImpl implements ManagedIndex, Serializable {
      * @return null if no position is found
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
+	return null;
+    }
+
+    /**
+     * Get the headerfor the index.
+     */
+    public ManagedIndexHeader getHeader() {
 	return null;
     }
 

@@ -20,13 +20,20 @@ import java.util.Properties;
  * It represents the index header, the index stream and the data stream.
  */
 public class IncoreIndex extends AbstractIndex implements ManagedIndex {
-    IndexEventMulticaster eventMulticaster = null;
-    
     /**
      * Create an IncoreIndex
      */
-    public IncoreIndex(Properties indexProperties) {
-	indexName = indexProperties.getProperty("name");
+    public IncoreIndex(Properties indexProperties) throws IndexSpecificationException  {
+	if (indexProperties.containsKey("name")) {
+	    indexName = indexProperties.getProperty("name");
+	} else {
+	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("datatype")) {
+	    dataType = DataTypeDirectory.find(indexProperties.getProperty("dataType"));
+	}
+
 
 	init();
     }
@@ -44,26 +51,12 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * Initialize the object.
      */
     protected void init() {
-	ID indexID = new UID();
-	Timestamp startTime = Clock.time.asMicros();
+	header = new IncoreIndexHeader(this,indexName);
+	indexCache = new DefaultIndexCache(this);
 
 	indexType = IndexType.INCORE;
-
-	header = new IncoreIndexHeader(this,indexName);
-	header.setID(indexID);
-	header.setStartTime(startTime);
-	indexCache = new DefaultIndexCache(this);
-	eventMulticaster = new IndexEventMulticaster();
     }
 
-
-    /**
-     * Get the filename of the index.
-     * An IncoreIndex has no file - it's in-core!
-     */
-    public String getFileName() {
-	return null;
-    }
 
     /**
      * Get the  last time the index was flushed.
@@ -74,13 +67,17 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 
     /**
      * Get the IndexItem Position when the index was last flushed.
+     * There is nothing to flush in an IncoreIndex, so
+     * the Position of the last item is returned.
      */
     public Position getLastFlushPosition() {
-	return null;
+	return new AbsolutePosition(getLength()-1);
     }
     
     /**
      * Get the Offset of the fisrt item.
+     * There are no file offsets for an IncoreIndex, so
+     * The offset into the index is returned.
      */
     public Offset getFirstOffset() {
 	return new Offset(0);
@@ -88,6 +85,8 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 
     /**
      * Get the Offset of the last item.
+     * There are no file offsets for an IncoreIndex, so
+     * The offset into the index is returned.
      */
     public Offset getLastOffset() {
 	return new Offset(getLength()-1);
@@ -101,7 +100,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem) {
+    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexActivationException   {
 	return addItem(dataitem, null);
     }
 
@@ -114,7 +113,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) {
+    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexActivationException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();
@@ -127,24 +126,6 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), new SID(0));
 
 	return addItem(item);
-    }
-
-
-    /**
-     * Retrieve an Index Item into the Index.
-     * @param item the IndexItem to add
-     * @return the no of items in the index.
-     */
-    public long retrieveItem(IndexItem item) {
-	return addItem(item);
-    }
-
-    /**
-     * Read data for an index item
-     * given a DataReference.
-     */
-    public DataHolderObject readData(DataReference dataReference) {
-	throw new Error("No need to read data. All data is available");
     }
 
 
@@ -173,6 +154,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * Open this index.
      */
     public boolean open() {
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
 	return true;
     }
 
@@ -180,7 +162,30 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * Create this index.
      */
     public boolean create() {
+	// things to do the first time in
+	// set the ID, the startTime, and the index type
+	ID indexID = new UID();
+	header.setID(indexID);
+	header.setIndexType(indexType);
+
+	header.setStartTime(Clock.time.asMicros());
+	header.setFirstOffset(new Offset(0));
+	header.setLastOffset(new Offset(0));
+
+
+	if (dataType != null) {
+	    header.setIndexDataType(dataType);
+	}
+
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
 	return true;
+    }
+
+    /**
+     * Get the headerfor the index.
+     */
+    public ManagedIndexHeader getHeader() {
+	return header;
     }
 
 

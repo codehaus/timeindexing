@@ -5,6 +5,7 @@ package com.timeindexing.index;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
+import java.util.Set;
 
 /**
  * A managed extended index header.
@@ -82,12 +83,71 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
      */
     public ManagedIndexHeader setLastOffset(Offset offset);
 
+    /**
+     * Get the data style.
+     * Either inline or external or shadow.
+     */
+    public ManagedIndexHeader setIndexType(int type);
+
+    /**
+     * Set the data type of the index.
+     * Some indexes have the same type throughout,
+     * other have mixed type data.
+     */
+    public ManagedIndexHeader setIndexDataType(DataType dataType);
+
+    /**
+     * Set the path of the index file.
+     */
+    public ManagedIndexHeader setIndexPathName(String path);
+
+    /**
+     * Set the path of the data if the index data style
+     * is external or shadow.
+     */
+    public ManagedIndexHeader setDataPathName(String path);
+
+    /**
+     * State that the index is not in time order any more.
+     */
+    public ManagedIndexHeader notInTimeOrder();
+
+    /**
+     * Get an option from the header.
+     */
+    public Object getOption(HeaderOption option);
+
+    /**
+     * Does an option exist in the header.
+     */
+    public boolean hasOption(HeaderOption option);
+
+    /**
+     * Get the set of optional header values used in this header.
+     */
+    public Set listOptions();
+
+
+    /**
+     * Get all the option from the header.
+     */
+    public IndexProperties getAllOptions();
+
+    /**
+     * Set an option in the header.
+     */
+    public ManagedIndexHeader setOption(HeaderOption option, Object object);
+
+    /**
+     * Set options in the header based on the passed IndexProperties.
+     */
+    public ManagedIndexHeader setOptions(IndexProperties someProperties);
 
     /**
      * Syncrhronize the values in this index header 
      * from values in a specified IndexHeader object.
      */
-    public boolean syncHeader(ExtendedIndexHeader indexHeader);
+    public boolean syncHeader(ManagedIndexHeader indexHeader);
 
 
 }

@@ -8,22 +8,39 @@ import com.timeindexing.io.IndexDecoder;
 import java.util.Properties;
 import java.io.File;
 import java.io.IOException;
+import com.timeindexing.event.*;
 
 /**
  * This is the TimeIndexFactory which returns different implementations
  * of a TimeIndex, depending on the arguments to create() or retrieve().
+ * <p>
+ * The factory listens to events from Indexes, and will pass them
+ * on to any of its listeners.
  */
-public class TimeIndexFactory {
+public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEventListener, IndexAccessEventListener, IndexEventGenerator {
+    // an event multicaster
+    IndexEventMulticaster eventMulticaster = null;
+
+    /**
+     * Create a TimeIndexFactory.
+     */
+    public TimeIndexFactory() {
+	eventMulticaster = new IndexEventMulticaster();
+    }
+
     /**
      * Get a new Time Index object given a constant, as defined in TimeType.
      * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE,
      * IndexType.JAVASERIAL.
      * @param indexProperties properties of the index needed at creat time, such as  its name.
      */
-    public IndexView create(int kind, Properties indexProperties) throws IndexCreateException {
+    public IndexView create(int kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
+
 	switch (kind) {
 	case IndexType.INLINE: {
 	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
+
+	    newIndex.addPrimaryEventListener(this);
 
 	    newIndex.create();
 
@@ -38,12 +55,9 @@ public class TimeIndexFactory {
 	}
 
 	case IndexType.EXTERNAL: {
-	    throw new TimeIndexFactoryException("TimeIndexFactory: No code for EXTERNAL yet.");
-	    //break;
-	}
+	    ManagedIndex newIndex = new ExternalIndex(indexProperties); 
 
-	case IndexType.INCORE: {
-	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+	    newIndex.addPrimaryEventListener(this);
 
 	    newIndex.create();
 
@@ -55,11 +69,31 @@ public class TimeIndexFactory {
 	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
 	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+
 	}
 
-	case IndexType.JAVASERIAL: {
-	    // create the new index object
-	    ManagedIndex newIndex = new FullIndexImpl(indexProperties);
+	case IndexType.SHADOW: {
+	    ManagedIndex newIndex = new ShadowIndex(indexProperties); 
+
+	    newIndex.addPrimaryEventListener(this);
+
+	    newIndex.create();
+
+	    // get the ID and name values
+	    ID indexID = newIndex.getID();
+	    String indexName = newIndex.getName();
+	    
+	    // save these in the TimeIndex directories
+	    TimeIndexDirectory.register(newIndex, indexName, indexID);
+
+	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+
+	}
+
+	case IndexType.INCORE: {
+	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+
+	    newIndex.addPrimaryEventListener(this);
 
 	    newIndex.create();
 
@@ -86,9 +120,9 @@ public class TimeIndexFactory {
      * IndexType.JAVASERIAL.
      * @param indexProperties properties of the index needed at creat time, such as  its name.
      */
-    public IndexView convert(Index index, int kind, Properties indexProperties) {
+    public IndexView convert(Index index, int kind, Properties indexProperties) throws TimeIndexFactoryException { // IndexSpecificationException, IndexCreateException {
 	// TODO: implement me
-	return null;
+	throw new TimeIndexFactoryException("Not implemented yet");
     }
 
     /**
@@ -97,9 +131,9 @@ public class TimeIndexFactory {
      *
      * @param indexFile  the file  of the index
      */
-    public IndexView open(File indexFile) {
+    public IndexView open(File indexFile) throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
 	Properties indexProperties = new Properties();
-	indexProperties.setProperty("filename", indexFile.getPath());
+	indexProperties.setProperty("indexpath", indexFile.getPath());
 	
 	return open(indexProperties);
     }
@@ -109,86 +143,116 @@ public class TimeIndexFactory {
      * e.g. TimeIndexFactory.open(properties)
      *
      * @param indexFilename  the filename of the index
+     * @return null if the index can't be opened
      */
-    public IndexView open(Properties indexProperties) {
-	try {
-	    // decode the named file
-	    File indexFile = null;
+    public IndexView open(Properties indexProperties)  throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException {
+	// an IndexDecoder
+	IndexDecoder decoder = null;
+	// decode the named file
+	String fileName = null;
+	File indexFile = null;
+	String indexPath = null;
 
-	    if (indexProperties.containsKey("filename")) {
-		String fileName = indexProperties.getProperty("filename");
+	try {
+	    if (indexProperties.containsKey("indexpath")) {
+		fileName = indexProperties.getProperty("indexpath");
 		indexFile = new File(fileName);
+		indexPath = indexFile.getCanonicalPath();
 	    } else {
-		throw new Error("No 'filename' specified for TimeIndexFactory");
+		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory");
 	    }
 
 	    // create an index decoder
-	    IndexDecoder decoder = new IndexDecoder(indexFile);
+	    decoder = new IndexDecoder(indexFile);
 
 	    // read the header
 	    decoder.read();
-	    // close it
-	    decoder.close();
+	} catch (IOException ioe) {
+	    // there was an I/O error opening or reading the header so 
+	    // thorw an exception
+	    throw new IndexOpenException(ioe);
+	} finally {
+	    try {
+		// close it
+		if (decoder != null) {
+		    decoder.close();
+		}
+	    } catch (IOException ioeClose) {
+		// there was an I/O error on closing
+		// things are very bad
+		throw new IndexOpenException("Can't close " + fileName + " when attempting to decode the index header");
+	    }
+	}	    
 
 	    
-	    // now open the index properly
+	// now open the index properly
 
-	    String indexName = decoder.getName();
-	    ID indexID = decoder.getID();
-	    int kind = decoder.getIndexType();
+	String indexName = decoder.getName();
+	ID indexID = decoder.getID();
+	int kind = decoder.getIndexType();
 
-	    //Properties indexProperties = new Properties();
-	    indexProperties.setProperty("name", indexName);
-	    indexProperties.setProperty("filename", indexFile.getCanonicalPath());
+	//Properties indexProperties = new Properties();
+	indexProperties.setProperty("name", indexName);
+	indexProperties.setProperty("indexpath", indexPath);
 
-	    switch (kind) {
-	    case IndexType.INLINE: {
-		ManagedIndex newIndex = new InlineIndex(indexProperties); 
+	switch (kind) {
+	case IndexType.INLINE: {
+	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
 
-		newIndex.open();
+	    newIndex.addPrimaryEventListener(this);
 
-		// save these in the TimeIndex directories
-		TimeIndexDirectory.register(newIndex, indexName, indexID);
+	    newIndex.open();
 
-		return new TimeIndex(new TimeIndexInteractor(newIndex));
-	    }
+	    // save these in the TimeIndex directories
+	    TimeIndexDirectory.register(newIndex, indexName, indexID);
 
-	    case IndexType.EXTERNAL: {
-		throw new TimeIndexFactoryException("TimeIndexFactory: No code for EXTERNAL yet.");
-		//break;
-	    }
-
-	    case IndexType.INCORE: {
-		ManagedIndex newIndex = new IncoreIndex(indexProperties);
-
-		newIndex.open();
-
-		// save these in the TimeIndex directories
-		TimeIndexDirectory.register(newIndex, indexName, indexID);
-
-		return new TimeIndex(new TimeIndexInteractor(newIndex));
-	    }
-
-	    case IndexType.JAVASERIAL: {
-		// create the new index object
-		ManagedIndex newIndex = new FullIndexImpl(indexProperties);
-
-		newIndex.open();
-
-		// save these in the TimeIndex directories
-		TimeIndexDirectory.register(newIndex, indexName, indexID);
-
-		return new TimeIndex(new TimeIndexInteractor(newIndex));
-	    }
-
-	    default:
-		throw new TimeIndexFactoryException("TimeIndexFactory: Illegal value for kind: " + kind);
-	    }
-
-	} catch (IOException ioe) {
-	    ioe.printStackTrace();
+	    return new TimeIndex(new TimeIndexInteractor(newIndex));
 	}
-	return null;
+
+	case IndexType.EXTERNAL: {
+	    ManagedIndex newIndex = new ExternalIndex(indexProperties); 
+
+	    newIndex.addPrimaryEventListener(this);
+
+	    newIndex.open();
+
+	    // save these in the TimeIndex directories
+	    TimeIndexDirectory.register(newIndex, indexName, indexID);
+
+	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	}
+
+	case IndexType.SHADOW: {
+	    ManagedIndex newIndex = new ShadowIndex(indexProperties); 
+
+	    newIndex.addPrimaryEventListener(this);
+
+	    newIndex.open();
+
+	    // save these in the TimeIndex directories
+	    TimeIndexDirectory.register(newIndex, indexName, indexID);
+
+	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	}
+
+	case IndexType.INCORE: {
+	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+
+	    newIndex.addPrimaryEventListener(this);
+
+	    newIndex.open();
+
+	    // save these in the TimeIndex directories
+	    TimeIndexDirectory.register(newIndex, indexName, indexID);
+
+	    return new TimeIndex(new TimeIndexInteractor(newIndex));
+	}
+
+
+	default:
+	    throw new TimeIndexFactoryException("TimeIndexFactory: Illegal value for kind: " + kind);
+	}
+
     }
 
 
@@ -198,9 +262,9 @@ public class TimeIndexFactory {
      *
      * @param indexFile  the file  of the index
      */
-    public IndexView append(File indexFile) {
+    public IndexView append(File indexFile) throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
 	Properties indexProperties = new Properties();
-	indexProperties.setProperty("filename", indexFile.getPath());
+	indexProperties.setProperty("indexpath", indexFile.getPath());
 	
 	return append(indexProperties);
     }
@@ -211,7 +275,7 @@ public class TimeIndexFactory {
      *
      * @param indexFilename  the filename of the index
      */
-    public IndexView append(Properties indexProperties) {
+    public IndexView append(Properties indexProperties)  throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
 	indexProperties.setProperty("loadstyle", "none");
 	return open(indexProperties);
     }
@@ -234,4 +298,108 @@ public class TimeIndexFactory {
 
 	return closed;
     }
-}	
+
+    /*
+     * Methods for the event generation.
+     */
+
+    /**
+     * Get the event listener.
+     */
+    public IndexEventMulticaster eventMulticaster() {
+	return eventMulticaster;
+    }
+
+    /**
+     * Add a IndexPrimaryEventListener.
+     */
+    public void addPrimaryEventListener(IndexPrimaryEventListener l) {
+	eventMulticaster.addPrimaryEventListener(l);
+    }
+
+    /**
+     * Remove a IndexPrimaryEventListener.
+     */
+     public void removePrimaryEventListener(IndexPrimaryEventListener l) {
+	 eventMulticaster.removePrimaryEventListener(l);
+     }
+
+    /**
+     * Add a IndexAddEventListener.
+     */
+    public void addAddEventListener(IndexAddEventListener l) {
+	eventMulticaster.addAddEventListener(l);
+    }
+
+    /**
+     * Remove a IndexAddEventListener.
+     */
+    public void removeAddEventListener(IndexAddEventListener l) {
+	eventMulticaster.removeAddEventListener(l);
+    }
+
+    /**
+     * Add a IndexAccessEventListener.
+     */
+    public void addAccessEventListener(IndexAccessEventListener l) {
+	eventMulticaster.addAccessEventListener(l);
+    }
+
+    /**
+     * Remove a IndexAccessEventListener.
+     */
+    public void removeAccessEventListener(IndexAccessEventListener l) {
+	eventMulticaster.removeAccessEventListener(l);
+    }
+
+    /*
+     * Methods for listening to events from indexes.
+     */
+
+    /**
+     * A notification that an Index has been created.
+     */
+    public  void created(IndexPrimaryEvent ipe) {
+	//System.err.println("Create event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
+	eventMulticaster.firePrimaryEvent(ipe);
+    }
+
+    /**
+     * A notification that an Index has been opened.
+     */
+    public  void opened(IndexPrimaryEvent ipe) {
+	//System.err.println("Open event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
+	eventMulticaster.firePrimaryEvent(ipe);
+    }
+
+    /**
+     * A notification that an Index has been closed.
+     */
+    public  void closed(IndexPrimaryEvent ipe) {
+	//System.err.println("Closed event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
+	eventMulticaster.firePrimaryEvent(ipe);
+    }
+
+    /**
+     * A notification that an Index has been flushed.
+     */
+    public  void flushed(IndexPrimaryEvent ipe) {
+	//System.err.println("Flush event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
+	eventMulticaster.firePrimaryEvent(ipe);
+    }
+
+	
+    /**
+     * A notification that an IndexItem has been added to an Index.
+     */
+    public void itemAdded(IndexAddEvent iae) {
+	eventMulticaster.fireAddEvent(iae);
+    }
+
+    /**
+     * A notification that an IndexItem has been accessed in an Index.
+     */
+    public void itemAccessed(IndexAccessEvent iae) {
+	eventMulticaster.fireAccessEvent(iae);
+    }
+}

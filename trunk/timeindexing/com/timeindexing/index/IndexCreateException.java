@@ -8,7 +8,7 @@ package com.timeindexing.index;
  * This usually because the Properties passed at create time
  * do not have enough information.
  */
-public class IndexCreateException extends RuntimeException {
+public class IndexCreateException extends TimeIndexException {
     /**
      * Throw a IndexCreateException with no message.
      */
@@ -22,4 +22,12 @@ public class IndexCreateException extends RuntimeException {
     public IndexCreateException(String s) {
 	super(s);
     }
+
+    /**
+     * Throw a IndexCreateException with an  exception from the underlying cause.
+     */
+    public IndexCreateException(Exception e) {
+	super(e);
+    }
+
 }
