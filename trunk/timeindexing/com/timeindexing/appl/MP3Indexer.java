@@ -70,7 +70,7 @@ public class MP3Indexer {
 	long indexSize = 0;
 	int count = 0;
 
-	System.err.print( NanosecondElapsedFormat.dayFormat(prevDataTS));
+	System.err.print(new NanosecondElapsedFormat().dayFormat(prevDataTS));
 	System.err.print('\r');
 
 	// do stuff
@@ -82,7 +82,7 @@ public class MP3Indexer {
 
 	    // print the times occassionally, once a second-ish
 	    if (difference.getSeconds() >= 1) {
-		System.err.print( NanosecondElapsedFormat.dayFormat(dataTS));
+		System.err.print(new NanosecondElapsedFormat().dayFormat(dataTS));
 		System.err.print('\r');
 		prevDataTS = dataTS;
 	    }
