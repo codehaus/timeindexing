@@ -116,29 +116,35 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	} else {
 	    fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
 
-	    if (fileItem.hasData()) {
-		//System.err.println("HollowItem " + fileItem.getPosition() + " hollowing");
-
-		// get the data object for this index item
-		DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
-
-		// hollow it
-		DataReference dataRef = new DataReferenceObject(fileItem.getDataOffset(), fileItem.getDataSize());
-
-		// then set the data
-		fileItem.setData(dataRef);
-
-		// calculate the held volume
-		volumeHeld -= fileItem.getDataSize().value();
-
-		//System.err.println("Volume - = " + volumeHeld);
-
-		return true;
-	    } else {
-		//System.err.println("HollowItem " + fileItem.getPosition() + " nothing");
-		// it's already a reference
-		// do notihng
+	    if (fileItem == null) {
+		// the fileItem has been removed already
+		// so there's nothing to do
 		return false;
+	    } else {
+		if (fileItem.hasData()) {
+		    //System.err.println("HollowItem " + fileItem.getPosition() + " hollowing");
+
+		    // get the data object for this index item
+		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
+
+		    // hollow it
+		    DataReference dataRef = new DataReferenceObject(fileItem.getDataOffset(), fileItem.getDataSize());
+
+		    // then set the data
+		    fileItem.setData(dataRef);
+
+		    // calculate the held volume
+		    volumeHeld -= fileItem.getDataSize().value();
+
+		    //System.err.println("Volume - = " + volumeHeld);
+
+		    return true;
+		} else {
+		    //System.err.println("HollowItem " + fileItem.getPosition() + " nothing");
+		    // it's already a reference
+		    // do notihng
+		    return false;
+		}
 	    }
 	}
     }
@@ -158,24 +164,31 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 
 	    ManagedFileIndexItem fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
 
-	    // update the data volume held 
-	    if (fileItem.hasData()) {
-		// get the data object for this index item
-		DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
 
-		// calculate the held volume
-		volumeHeld -= fileItem.getDataSize().value();
+	    if (fileItem == null) {
+		// the fileItem has been removed already
+		// so there's nothing to do
+		return false;
+	    } else {
+		// update the data volume held 
+		if (fileItem.hasData()) {
+		    // get the data object for this index item
+		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
 
-		//System.err.println("Volume - = " + volumeHeld);
-	    } 
+		    // calculate the held volume
+		    volumeHeld -= fileItem.getDataSize().value();
 
-	    // clear the reference to the IndexItem at position pos
-	    indexItems.set(pos, null);
+		    //System.err.println("Volume - = " + volumeHeld);
+		} 
+
+		// clear the reference to the IndexItem at position pos
+		indexItems.set(pos, null);
 	
-	    // clear the bit in the loaded map
-	    loadedMask.clear(pos);
+		// clear the bit in the loaded map
+		loadedMask.clear(pos);
 
-	    return true;
+		return true;
+	    }
 	}
     }
 
