@@ -38,8 +38,6 @@ import java.net.URI;
  * of index is represented.
  */
 public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHeader, IndexHeaderReader {
-    String openMode = "r";
-
     String originalFileSpecifier = null;
     String fileName = null;
     RandomAccessFile headerFile = null;
@@ -99,6 +97,8 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	try {
 	    fileName = FileUtils.resolveFileName(originalFileSpecifier, ".tih");
 	    File file = new File(fileName);
+
+	    String openMode = "r";
 
 	    headerFile = new RandomAccessFile(file, openMode);
 
