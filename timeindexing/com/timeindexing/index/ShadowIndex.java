@@ -4,6 +4,7 @@ package com.timeindexing.index;
 
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.ShadowIndexIO;
+import com.timeindexing.cache.FileIndexCache;
 import java.util.Properties;
 
 /**
