@@ -6,6 +6,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
@@ -67,24 +68,23 @@ public class TestLoca1 {
 	    ;
 	}
 
-	Timestamp t0 = Clock.time.asMillis();
-
 	try {
-	    IndexView index = factory.open(properties);
+	    //IndexView index = factory.open(new File(properties.getProperty("indexpath")));
+	    IndexView index = null;
 
-	    Timestamp t1 = Clock.time.asMillis();
+	    try {
+		index = factory.open(properties);
+	    } catch (IndexOpenException ioe) {
+		System.err.println("Couldn't open \"/tmp/test5\".  You need to run Test5 first");
+		System.exit(0);
+	    }
 
-	    System.out.print("t0: " + t0 + " ");
-	    System.out.print("t1: " + t1 + " ");
-	    System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
-	    System.out.print("Length: " + index.getLength() + " items, ");
-	    System.out.println();
 
 	    Random rseq = new Random(System.currentTimeMillis());
 	    // range 0 to indexLength-1
 	    int rand = rseq.nextInt((int)index.getLength()-1);
 
-	    System.err.println("rand = " + rand);
+	    System.err.println("Random position = " + rand);
 
 	    IndexItem randomItem = null;
 
@@ -98,7 +98,10 @@ public class TestLoca1 {
 	    Timestamp elapsed = new ElapsedSecondTimestamp(5 * 60);
 	    Timestamp newTS = ts; //TimeCalculator.addTimestamp(ts, elapsed);
 
-	    System.err.println("ts = " + ts + " elapsed = " + elapsed + " asMicros = " + TimeCalculator.toMicros((ElapsedSecondTimestamp)elapsed) + " newTS = " + newTS);
+	    System.err.println("Timestamp = " + ts );
+
+	    
+	    //System.err.println(" elapsed = " + elapsed + " asMicros = " + TimeCalculator.toMicros((ElapsedSecondTimestamp)elapsed) + " newTS = " + newTS);
 
 	    TimestampMapping foundM = index.locate(newTS, IndexTimestampSelector.DATA, Lifetime.DISCRETE);
 
@@ -169,13 +172,13 @@ public class TestLoca1 {
 
 
 	    factory.close(index);
-	} catch (IndexOpenException ioe) {
-	    System.err.println("Cannot open index \"" + properties.getProperty("indexpath") + "\"");
+	} catch (TimeIndexException ioe) {
+	    System.err.println("Error with index \"" + properties.getProperty("indexpath") + "\"");
 	    System.exit(1);
 	}	    
     }
 
-    public static void printIndex(Index index) {
+    public static void printIndex(Index index) throws TimeIndexException  {
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print(" End: " + index.getEndTime() + " ");
@@ -205,7 +208,7 @@ public class TestLoca1 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException  {
 	StringBuffer out = new StringBuffer(256);
 
 	out.append(item.getDataTimestamp() + "\t");

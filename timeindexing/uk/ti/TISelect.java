@@ -102,7 +102,7 @@ public class TISelect extends TIAbstractSelect {
     /**
      * Do something with the selection.
      */
-    public void processSelection(IndexView selection, OutputStream out) {
+    public void processSelection(IndexView selection, OutputStream out) throws TimeIndexException  {
 	// output the selection
 	long total = selection.getLength();
 

@@ -12,6 +12,9 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 /**
  * Dump a timeindex file to stdout.
  */
@@ -22,6 +25,20 @@ public class TIDump extends TIAbstractRestore {
     int dataView = 32;
 
     public static void main(String [] args) {
+	/*
+	 * Handle broken pipes properly
+	 */
+	final Signal sigpipe = new Signal("PIPE");
+
+	SignalHandler handler = new SignalHandler () {
+		public void handle(Signal sig) {
+		    System.exit(sigpipe.hashCode());
+		}
+	    };
+	Signal.handle(sigpipe, handler);
+ 
+
+
 	try {
 	    if (args.length == 1) {
 		// have tifile name only,
@@ -61,7 +78,7 @@ public class TIDump extends TIAbstractRestore {
     /**
      * Print an index to the OutputStream.
      */
-    protected void printIndex(Index index, OutputStream out) {
+    protected void printIndex(Index index, OutputStream out) throws TimeIndexException {
 	long total = index.getLength();
 	for (long i=0; i<total; i++) {
 	    IndexItem itemN = index.getItem(i);
@@ -106,6 +123,8 @@ public class TIDump extends TIAbstractRestore {
 	    outData = rawData.replace('\n', (char)182);
 	    buf.append(outData + "\t");
 	}
+
+	buf.append(itemM.getDataType() + "\t");
 
 	buf.append(itemM.getPosition() + "\t");
 

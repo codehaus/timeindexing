@@ -34,7 +34,7 @@ public class Test2 {
 
 	System.out.println("Data = " + data);
 
-	IndexItem item0 = new IncoreIndexItem(t0,t1,data, DataType.ANY, id, annotations); // not size - calculate it.
+	IndexItem item0 = new IncoreIndexItem(t0,t1,data, DataType.ANY_DT, id, annotations); // not size - calculate it.
 	print(item0);
 
     }

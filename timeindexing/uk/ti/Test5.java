@@ -6,9 +6,10 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
-import com.timeindexing.index.FullIndexImpl;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.TimeIndexFactory;
+import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.index.IndexCreateException;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.IndexCreateException;
 import com.timeindexing.time.Timestamp;
@@ -38,7 +39,14 @@ public class Test5 {
 	properties.setProperty("indexpath", "/tmp/test5");
 
 	try {
-	    IndexView index = factory.create(IndexType.INLINE, properties);
+	    IndexView index = null;
+
+	    try {
+		index = factory.create(IndexType.INLINE_DT, properties);
+	    } catch (IndexCreateException ice) {
+		System.err.println("Couldn't create \"/tmp/test5\".");
+		System.exit(0);
+	    }
 
 	    /* Item 0 */
 
@@ -89,7 +97,7 @@ public class Test5 {
 	    factory.close(index);
 
 	    printIndex(index);
-	} catch (IndexCreateException ice) {
+	} catch (TimeIndexException ice) {
 	    System.err.println("Test5: " + ice.getMessage());
 	    System.exit(1);
 	}
@@ -97,7 +105,7 @@ public class Test5 {
 
     }
 
-    public static void printIndex(Index index) {
+    public static void printIndex(Index index) throws TimeIndexException {
 	System.out.print("Name: " + index.getName() + "\t");
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print("End: " + index.getEndTime() + " ");
@@ -115,7 +123,7 @@ public class Test5 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException {
 	System.out.print(item.getDataTimestamp() + "\t");
 
 	System.out.print(item.getIndexTimestamp() + "\t");

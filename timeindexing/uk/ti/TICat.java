@@ -11,13 +11,30 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 /**
  * Cat a timeindex file to stdout.
  */
 public class TICat extends TIAbstractRestore {
-    boolean newline = true;
+    boolean newline = false;
 
     public static void main(String [] args) {
+	/*
+	 * Handle broken pipes properly
+	 */
+	final Signal sigpipe = new Signal("PIPE");
+
+	SignalHandler handler = new SignalHandler () {
+		public void handle(Signal sig) {
+		    System.exit(sigpipe.hashCode());
+		}
+	    };
+	Signal.handle(sigpipe, handler);
+ 
+
+
 
 	try {
 	    if (args.length == 1) {
@@ -26,9 +43,9 @@ public class TICat extends TIAbstractRestore {
 	    } else if (args.length == 2) {
 		// have flag andtifile name 
 		if (args[0].charAt(0) == '-') {
-		    new TICat(args[1], false);
-		} else {
 		    new TICat(args[1], true);
+		} else {
+		    new TICat(args[1], false);
 		}
 	    } else {
 		help(System.err);
@@ -61,7 +78,7 @@ public class TICat extends TIAbstractRestore {
     /**
      * Print an index to the OutputStream.
      */
-    protected void printIndex(Index index, OutputStream out) {
+    protected void printIndex(Index index, OutputStream out)  throws TimeIndexException {
 	long total = index.getLength();
 	for (long i=0; i<total; i++) {
 	    IndexItem itemN = index.getItem(i);
@@ -89,7 +106,7 @@ public class TICat extends TIAbstractRestore {
 	    itemdata.get(outbuf, 0, remaining);
 	    out.write(outbuf, 0, remaining);
 
-	    if (newline) out.write('\n');
+	    //if (newline) out.write('\n');
 	} catch (java.io.IOException ioe) {
 	    ;
 	}

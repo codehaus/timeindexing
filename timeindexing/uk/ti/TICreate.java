@@ -15,7 +15,7 @@ import com.timeindexing.index.IndexSpecificationException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
 import com.timeindexing.data.DataItem;
-import com.timeindexing.data.ByteBufferItem;
+import com.timeindexing.data.ReaderResultItem;
 import com.timeindexing.plugin.ReaderPlugin;
 import com.timeindexing.plugin.ReaderResult;
 import com.timeindexing.plugin.*;
@@ -102,19 +102,19 @@ public class TICreate {
     public IndexView allocate(Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException,  IndexCreateException {
 	TimeIndexFactory factory = new TimeIndexFactory();
 
-	int indexType = 0;
+	IndexType indexType = null;
 
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE;
+	    indexType = IndexType.INLINE_DT;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL;
+	    indexType = IndexType.EXTERNAL_DT;
 	} else if (type.equals("shadow")) {
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW;
+		indexType = IndexType.SHADOW_DT;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
@@ -132,7 +132,7 @@ public class TICreate {
 	}
 
 	// set up the Index based on system property
-	type = System.getProperty("indextype");
+	type = System.getProperty("indextype", "shadow");
 
 	// allocate local objs
 	//BufferedReader buffered = new BufferedReader (new InputStreamReader(input));
@@ -168,6 +168,8 @@ public class TICreate {
 		plugin = new  WebServerLogLine(input);
 	    } else 	if (pluginname.equals("mail")) {
 		plugin = new  MailServerLogLine(input);
+	    } else 	if (pluginname.equals("ftp")) {
+		plugin = new  FtpServerLogLine(input);
 	    } else 	if (pluginname.equals("block")) {
 		plugin = new  Block(input);
 		((Block)plugin).setBlockSize(16);
@@ -187,7 +189,7 @@ public class TICreate {
 
 		while ((result = inputPlugin.read()) != null) {
 		    dataTS = result.getDataTimestamp();
-		    item = new ByteBufferItem(result.getData());
+		    item = new ReaderResultItem(result);
 
 		    indexSize = index.addItem(item, dataTS);
 

@@ -41,7 +41,7 @@ public abstract class TIAbstractRestore {
     public boolean doit(String filename, OutputStream output) throws TimeIndexException {
 	// set the filename property
 	properties.setProperty("indexpath", filename);
-	properties.setProperty("datapath", filename);
+	//properties.setProperty("datapath", filename);
 
 	// set he close property if it's not already set
 	if (! properties.containsKey("close")) {
@@ -71,7 +71,7 @@ public abstract class TIAbstractRestore {
 	// close the index
 	boolean doClose = Boolean.valueOf(properties.getProperty("close")).booleanValue();
 	if (doClose) {
-	    System.err.println("Closing \"" + index.getName() + "\"");
+	    //System.err.println("Closing \"" + index.getName() + "\"");
 	    factory.close(index);
 	}
     }
@@ -79,7 +79,7 @@ public abstract class TIAbstractRestore {
     /**
      * Print an index to the OutputStream.
      */
-    protected abstract void printIndex(Index index, OutputStream out);
+    protected abstract void printIndex(Index index, OutputStream out) throws TimeIndexException ;
 
 
 
