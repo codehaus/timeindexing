@@ -12,6 +12,7 @@ import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.FileIndexCache;
+import com.timeindexing.cache.HollowAfterUsePolicy;
 import com.timeindexing.io.LoadStyle;
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
@@ -47,6 +48,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     protected void init() {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
+
+	indexCache.setPolicy(new HollowAfterUsePolicy());
 
 	setIndexType(IndexType.INLINE_DT);
 
@@ -180,6 +183,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    } else {
 		loadStyle = LoadStyle.HOLLOW;
 	    }
+	} else {
+	    loadStyle = LoadStyle.NONE;
 	}
 
     }
