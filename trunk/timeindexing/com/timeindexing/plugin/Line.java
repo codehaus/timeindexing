@@ -53,7 +53,7 @@ public class Line extends DefaultReader implements ReaderPlugin {
 	    return null;
 	} else {
 	    // return the processed line and add back the EOL 
-	    return process(line + System.getProperty("line.separator"));
+	    return process(line);
 	}
     }
 
@@ -62,7 +62,12 @@ public class Line extends DefaultReader implements ReaderPlugin {
      */
     protected ReaderResult process(String line) {
 	// return the line as a ReaderResult
-	return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null, DataType.TEXT_DT);
+	// allocate a Buffer big enough for the line plus a newline
+	byte [] lineBytes = line.getBytes();
+	ByteBuffer lineBuffer = ByteBuffer.allocate(lineBytes.length + 1);
+	lineBuffer.put(lineBytes);
+	lineBuffer.put(System.getProperty("line.separator").getBytes());
+	return new DefaultReaderResult(lineBuffer, null, DataType.TEXT_DT);
     }
 
     /**
