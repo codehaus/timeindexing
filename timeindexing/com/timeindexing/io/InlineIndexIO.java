@@ -97,6 +97,8 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	try {
 	    open();
 
+	    indexFile.setLength(0);
+
 	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 
 	    long position = writeHeader(FileType.INLINE_INDEX);

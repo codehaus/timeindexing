@@ -112,6 +112,8 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	try {
 	    open();
 
+	    indexFile.setLength(0);
+
 	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
