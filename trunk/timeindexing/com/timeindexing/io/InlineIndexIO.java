@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * This does I/O for an Index with inline data.
@@ -79,10 +81,23 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	headerInteractor.create(originalIndexSpecifier);
 	
 
+
+	// determine the URI
+	try {
+	    URI uri = new URI("index", "", FileUtils.removeExtension(originalIndexSpecifier), null);
+
+	    System.err.println("InlineIndexIO: settign URI to " + uri);
+	    headerInteractor.setURI(uri);
+	    // tell the index
+	    getIndex().setURI(uri);
+	} catch (URISyntaxException use) {
+	    System.err.println("InlineIndexIO: setting URI failed using " + originalIndexSpecifier + " => " + FileUtils.removeExtension(originalIndexSpecifier));
+	}
+
 	try {
 	    open();
 
-	    myIndex.setOption(HeaderOption.INDEXPATH_HO, indexFileName);
+	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 
 	    long position = writeHeader(FileType.INLINE_INDEX);
 	    indexAppendPosition = position;
@@ -111,6 +126,13 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
 
+	// determine the URI
+	try {
+	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(headerInteractor.getIndexPathName()), null));
+	} catch (URISyntaxException use) {
+	    ;
+	}
+
 	open();
 
 	long position = readHeader(FileType.INLINE_INDEX);
@@ -123,7 +145,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    // must be looking in the right place.
 	    
 	    // sync the read header with the index object
-	    myIndex.syncHeader(headerInteractor);
+	    getIndex().syncHeader(headerInteractor);
 
 	    return position;
 	} else {
