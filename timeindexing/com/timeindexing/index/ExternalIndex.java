@@ -45,7 +45,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	indexCache.setPolicy(new HollowAfterTimeoutPolicy()); //new HollowAtDataVolumeRemoveAfterTimeoutPolicy());
+	indexCache.setPolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy()); // new HollowAfterTimeoutPolicy()); 
 
 	setIndexType(IndexType.EXTERNAL_DT);
 
