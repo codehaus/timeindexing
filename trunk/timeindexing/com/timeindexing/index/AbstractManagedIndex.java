@@ -31,6 +31,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      */
     public ManagedIndexHeader setName(String name) {
 	header.setName(name);
+
 	return this;
     }
 
@@ -203,6 +204,28 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     }
 
     /**
+     * Get the index URI of a nominated index.
+     */
+    public URI getIndexURI(ID indexID) {
+	return header.getIndexURI(indexID);
+    }
+
+    /**
+     * Does this index have the URI of some other index
+     */
+    public boolean hasIndexURI(URI URIName) {
+	return header.hasIndexURI(URIName);
+    }
+
+    /**
+     * Add a new indexID/indexURI
+     * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
+     */
+    public boolean addIndexURI(ID indexID, URI URIName) {
+	return header.addIndexURI(indexID, URIName);
+    }
+
+    /**
      * Get an option from the header.
      */
     public Object getOption(HeaderOption option) {
@@ -308,6 +331,17 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     public boolean syncHeader(ManagedIndexHeader indexHeader) {
 	return header.syncHeader(indexHeader);
     }
+
+    /**
+     * Flush this index.
+     */
+    public boolean flush() {
+
+	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
+
+	return true;
+    }
+
 
     /**
      * Close this index.
