@@ -68,4 +68,36 @@ public class FileUtils {
 
     }
 
+    /**
+     * Strip the extention off of a filename.
+     * @param filename The filename
+     */
+    public static String removeExtension(String filename) {
+	if (filename == null) {
+	    return null;
+	} else {
+// A pattern to match .ti? files
+	    String pattern = "\\.ti?";
+	    // the compiled regexp
+	    Pattern compPat = Pattern.compile(pattern);
+	    // a matcher
+	    Matcher matcher = compPat.matcher("");
+
+	    // pass the matcher the  filename
+	    matcher.reset(filename);
+
+	    // does the filename match the pattern
+	    if (matcher.find()) {
+		// the filename ends in .ti?
+		// so strip off that part
+		// and add the extension
+		String newFileName = filename.substring(0, matcher.start(0));
+
+		return newFileName;
+	    } else {
+		return filename;
+	    }
+	}
+    }
+
 }
