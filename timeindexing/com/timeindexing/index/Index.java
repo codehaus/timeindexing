@@ -101,16 +101,6 @@ public interface Index extends IndexHeader {
     public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException;
 
     /**
-     * Hollow the IndexItem at the position.
-     */
-    public boolean hollowItem(long position);
-
-    /**
-     * Hollow the IndexItem at the position.
-     */
-    public boolean hollowItem(Position p);
-
-    /**
      * Does a timestamp fall within the bounds of the Index.
      * The bounds are the first time data is put in and the last
      * time data is put in the Index.
