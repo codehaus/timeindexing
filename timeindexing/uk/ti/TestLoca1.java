@@ -6,6 +6,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.ElapsedSecondTimestamp;
@@ -58,117 +59,120 @@ public class TestLoca1 {
 
 	if (args.length == 1) {
 	    // have tifile name,
-	    properties.setProperty("filename", args[0]);
+	    properties.setProperty("indexpath", args[0]);
 	} else if (args.length == 0) {
 	    // use default from Test5
-	    properties.setProperty("filename", "/tmp/test5");
+	    properties.setProperty("indexpath", "/tmp/test5");
 	} else {
 	    ;
 	}
 
 	Timestamp t0 = Clock.time.asMillis();
 
-	//IndexView index = factory.open(new File(properties.getProperty("filename")));
-	IndexView index = factory.open(properties);
+	try {
+	    IndexView index = factory.open(properties);
 
-	Timestamp t1 = Clock.time.asMillis();
+	    Timestamp t1 = Clock.time.asMillis();
 
-	System.out.print("t0: " + t0 + " ");
-	System.out.print("t1: " + t1 + " ");
-	System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
-	System.out.print("Length: " + index.getLength() + " items, ");
-	System.out.println();
+	    System.out.print("t0: " + t0 + " ");
+	    System.out.print("t1: " + t1 + " ");
+	    System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
+	    System.out.print("Length: " + index.getLength() + " items, ");
+	    System.out.println();
 
-	Random rseq = new Random(System.currentTimeMillis());
-	// range 0 to indexLength-1
-	int rand = rseq.nextInt((int)index.getLength()-1);
+	    Random rseq = new Random(System.currentTimeMillis());
+	    // range 0 to indexLength-1
+	    int rand = rseq.nextInt((int)index.getLength()-1);
 
-	System.err.println("rand = " + rand);
+	    System.err.println("rand = " + rand);
 
-	IndexItem randomItem = null;
+	    IndexItem randomItem = null;
 
-	randomItem = index.getItem((long)rand);
-	//randomItem = index.getItem(index.getLength()-20);
-	//randomItem = index.getItem(index.getLength() / 2);
+	    randomItem = index.getItem((long)rand);
+	    //randomItem = index.getItem(index.getLength()-20);
+	    //randomItem = index.getItem(index.getLength() / 2);
 	
 
-	Timestamp ts = randomItem.getDataTimestamp();
-	// add 5 minutes to the timestamp
-	Timestamp elapsed = new ElapsedSecondTimestamp(5 * 60);
-	Timestamp newTS = ts; //TimeCalculator.addTimestamp(ts, elapsed);
+	    Timestamp ts = randomItem.getDataTimestamp();
+	    // add 5 minutes to the timestamp
+	    Timestamp elapsed = new ElapsedSecondTimestamp(5 * 60);
+	    Timestamp newTS = ts; //TimeCalculator.addTimestamp(ts, elapsed);
 
-	System.err.println("ts = " + ts + " elapsed = " + elapsed + " asMicros = " + TimeCalculator.toMicros((ElapsedSecondTimestamp)elapsed) + " newTS = " + newTS);
+	    System.err.println("ts = " + ts + " elapsed = " + elapsed + " asMicros = " + TimeCalculator.toMicros((ElapsedSecondTimestamp)elapsed) + " newTS = " + newTS);
 
-	TimestampMapping foundM = index.locate(newTS, IndexTimestampSelector.DATA, Lifetime.DISCRETE);
+	    TimestampMapping foundM = index.locate(newTS, IndexTimestampSelector.DATA, Lifetime.DISCRETE);
 
-	if (foundM == null) {
-	    System.err.println("Position not in index");
-	    System.exit(0);
-	}
+	    if (foundM == null) {
+		System.err.println("Position not in index");
+		System.exit(0);
+	    }
 
-	System.err.println(" position = " + foundM);
+	    System.err.println(" position = " + foundM);
 
-	if (foundM.position() == Position.TOO_LOW || foundM.position() == Position.TOO_HIGH) {
-	    System.err.println("Found Position out of index");
-	    System.exit(0);
-	}
+	    if (foundM.position() == Position.TOO_LOW || foundM.position() == Position.TOO_HIGH) {
+		System.err.println("Found Position out of index");
+		System.exit(0);
+	    }
 
-	Position foundP = foundM.position();
+	    Position foundP = foundM.position();
 
-	Interval interval1 = new MidPointInterval(new AbsolutePosition(foundP),
-						  new RelativeCount(-4),
-						  new RelativeCount(+4));
-	Index narrow1 = index.select(interval1, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
-
-
-	if (narrow1 == null) {
-	    System.err.println("Didn't do selection narrow 1 properly");
-	} else {
-	    System.err.println("Interval1 = " + interval1);
-	    printIndex(narrow1);
-	}
-
-	Interval interval2 = new EndPointInterval(new AbsolutePosition(foundP),
-						  (Position)new AbsoluteAdjustablePosition(foundP).adjust(9));
-	Index narrow2 = index.select(interval2, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
+	    Interval interval1 = new MidPointInterval(new AbsolutePosition(foundP),
+						      new RelativeCount(-4),
+						      new RelativeCount(+4));
+	    Index narrow1 = index.select(interval1, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 
-	if (narrow2 == null) {
-	    System.err.println("Didn't do selection narrow 2 properly");
-	} else {
-	    System.err.println("Interval2 = " + interval2);
-	    printIndex(narrow2);
-	}
+	    if (narrow1 == null) {
+		System.err.println("Didn't do selection narrow 1 properly");
+	    } else {
+		System.err.println("Interval1 = " + interval1);
+		printIndex(narrow1);
+	    }
 
-	// add 1 hour
-	Interval interval3 = new EndPointInterval(new AbsolutePosition(foundP),
-						  new ElapsedSecondTimestamp(1 * 60 * 60));
-	Index narrow3 = index.select(interval3, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
-
-	if (narrow3 == null) {
-	    System.err.println("Didn't do selection narrow 3 properly");
-	} else {
-	    System.err.println("Interval3 = " + interval3);
-	    printIndex(narrow3);
-	}
-
-	// foundP , - 1hour, + 1 hour
-	Interval interval4 = new MidPointInterval(new AbsolutePosition(foundP),
-						  new ElapsedSecondTimestamp(-1 * 60 * 60),
-						  new ElapsedSecondTimestamp(1 * 60 * 60));
-	Index narrow4 = index.select(interval4, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
+	    Interval interval2 = new EndPointInterval(new AbsolutePosition(foundP),
+						      (Position)new AbsoluteAdjustablePosition(foundP).adjust(9));
+	    Index narrow2 = index.select(interval2, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 
-	if (narrow4 == null) {
-	    System.err.println("Didn't do selection narrow 4 properly");
-	} else {
-	    System.err.println("Interval4 = " + interval4);
-	    printIndex(narrow4);
-	}
+	    if (narrow2 == null) {
+		System.err.println("Didn't do selection narrow 2 properly");
+	    } else {
+		System.err.println("Interval2 = " + interval2);
+		printIndex(narrow2);
+	    }
+
+	    // add 1 hour
+	    Interval interval3 = new EndPointInterval(new AbsolutePosition(foundP),
+						      new ElapsedSecondTimestamp(1 * 60 * 60));
+	    Index narrow3 = index.select(interval3, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
+
+	    if (narrow3 == null) {
+		System.err.println("Didn't do selection narrow 3 properly");
+	    } else {
+		System.err.println("Interval3 = " + interval3);
+		printIndex(narrow3);
+	    }
+
+	    // foundP , - 1hour, + 1 hour
+	    Interval interval4 = new MidPointInterval(new AbsolutePosition(foundP),
+						      new ElapsedSecondTimestamp(-1 * 60 * 60),
+						      new ElapsedSecondTimestamp(1 * 60 * 60));
+	    Index narrow4 = index.select(interval4, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 
-	factory.close(index);
+	    if (narrow4 == null) {
+		System.err.println("Didn't do selection narrow 4 properly");
+	    } else {
+		System.err.println("Interval4 = " + interval4);
+		printIndex(narrow4);
+	    }
 
+
+	    factory.close(index);
+	} catch (IndexOpenException ioe) {
+	    System.err.println("Cannot open index \"" + properties.getProperty("indexpath") + "\"");
+	    System.exit(1);
+	}	    
     }
 
     public static void printIndex(Index index) {

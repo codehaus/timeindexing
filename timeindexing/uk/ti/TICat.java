@@ -3,6 +3,7 @@ package uk.ti;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexException;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -18,18 +19,22 @@ public class TICat extends TIAbstractRestore {
 
     public static void main(String [] args) {
 
-	if (args.length == 1) {
-	    // have tifile name only,
-	    new TICat(args[0], true);
-	} else if (args.length == 2) {
-	    // have flag andtifile name 
-	    if (args[0].charAt(0) == '-') {
-		new TICat(args[1], false);
+	try {
+	    if (args.length == 1) {
+		// have tifile name only,
+		new TICat(args[0], true);
+	    } else if (args.length == 2) {
+		// have flag andtifile name 
+		if (args[0].charAt(0) == '-') {
+		    new TICat(args[1], false);
+		} else {
+		    new TICat(args[1], true);
+		}
 	    } else {
-		new TICat(args[1], true);
+		help(System.err);
 	    }
-	} else {
-	    help(System.err);
+ 	} catch (TimeIndexException tie) {
+	    System.err.println("Cannot open index \"" + args[0] + "\"");
 	}
     }
 
@@ -40,7 +45,7 @@ public class TICat extends TIAbstractRestore {
     /**
      * Build a TICat object with a timeindex filename only
      */
-    public TICat(String tiFileName, boolean nl) {
+    public TICat(String tiFileName, boolean nl)  throws TimeIndexException {
 	init();
 	newline = nl;
 	cat(tiFileName, System.out);
@@ -49,7 +54,7 @@ public class TICat extends TIAbstractRestore {
     /**
      * Cat the output.
      */
-    public boolean cat(String filename, OutputStream output) {
+    public boolean cat(String filename, OutputStream output) throws TimeIndexException {
 	return doit(filename, output);
     }
 

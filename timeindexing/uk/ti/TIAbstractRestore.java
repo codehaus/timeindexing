@@ -2,6 +2,7 @@ package uk.ti;
 
 import com.timeindexing.index.TimeIndexFactory;
 import com.timeindexing.index.Index;
+import com.timeindexing.index.TimeIndexException;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.io.File;
@@ -37,21 +38,30 @@ public abstract class TIAbstractRestore {
     /**
      * Do the main processing.
      */
-    public boolean doit(String filename, OutputStream output) {
+    public boolean doit(String filename, OutputStream output) throws TimeIndexException {
 	// set the filename property
-	properties.setProperty("filename", filename);
-	properties.setProperty("close", "true");
+	properties.setProperty("indexpath", filename);
+	properties.setProperty("datapath", filename);
+
+	// set he close property if it's not already set
+	if (! properties.containsKey("close")) {
+	    properties.setProperty("close", "true");
+	}
+
 
 	// open and load a hollow Index
 	index = factory.open(properties);
 
+
+
 	// print it out
 	printIndex(index, output);
-
+	    
 	// close 
 	close();
-
+	    
 	return true;
+
     }
    
     /**
@@ -61,6 +71,7 @@ public abstract class TIAbstractRestore {
 	// close the index
 	boolean doClose = Boolean.valueOf(properties.getProperty("close")).booleanValue();
 	if (doClose) {
+	    System.err.println("Closing \"" + index.getName() + "\"");
 	    factory.close(index);
 	}
     }

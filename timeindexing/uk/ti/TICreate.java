@@ -8,6 +8,10 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.TimeIndexFactory;
+import com.timeindexing.index.TimeIndexFactoryException;
+import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.index.IndexCreateException;
+import com.timeindexing.index.IndexSpecificationException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
 import com.timeindexing.data.DataItem;
@@ -30,6 +34,8 @@ import java.io.*;
  */
 public class TICreate {
     File inputFile = null;
+    String inputFileName = null;
+    String type = null;
 
     public static void main(String [] args) {
 	if (args.length == 2) {
@@ -54,6 +60,8 @@ public class TICreate {
     public TICreate(String tiFileName, String inputFileName) {
 	InputStream input = null;
 	TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+	this.inputFileName = inputFileName;
 
 	if (inputFileName.equals("-")) {
 	    input = System.in;
@@ -89,6 +97,33 @@ public class TICreate {
     }
 
     /**
+     * Allocate an View onto an Index
+     */
+    public IndexView allocate(Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException,  IndexCreateException {
+	TimeIndexFactory factory = new TimeIndexFactory();
+
+	int indexType = 0;
+
+	if (type == null) {
+	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
+	} else if (type.equals("inline")) {
+	    indexType = IndexType.INLINE;
+	} else if (type.equals("external")) {
+	    indexType = IndexType.EXTERNAL;
+	} else if (type.equals("shadow")) {
+	    if (inputFileName.equals("-")) {
+		throw new Error("Index can;t shadow stdin.  Use a filename");
+	    } else {
+		indexType = IndexType.SHADOW;
+	    }
+	} else {
+	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
+	} 
+
+	return factory.create(indexType, indexProperties);
+    }
+
+    /**
      * Create the output.
      */
     public boolean create(String tiFileName, InputStream input) {
@@ -96,75 +131,93 @@ public class TICreate {
 	    throw new NullPointerException("Input is null in TICreate::create()");
 	}
 
+	// set up the Index based on system property
+	type = System.getProperty("indextype");
+
 	// allocate local objs
 	//BufferedReader buffered = new BufferedReader (new InputStreamReader(input));
 
 	Properties indexProperties = new Properties();
 
-	indexProperties.setProperty("filename", tiFileName);
+	indexProperties.setProperty("indexpath", tiFileName);
+	if (inputFileName != null && type.equals("shadow")) {
+	    indexProperties.setProperty("datapath", inputFileName);
+	} else {
+	    indexProperties.setProperty("datapath", tiFileName);
+	}
+
 	indexProperties.setProperty("name", (inputFile == null ? "ticreate" : inputFile.getName()));
 
-
-	TimeIndexFactory factory = new TimeIndexFactory();
-
-	IndexView index = factory.create(IndexType.INLINE, indexProperties);
-	DataItem item = null;
-
-	ReaderPlugin plugin = null;
-	ReaderResult result = null;
-	Timestamp dataTS = null;
-
-	// set up plugin based on system property
-	String pluginname = System.getProperty("plugin");
-
-	if (pluginname == null) {
-	    plugin = new Line(input);
-	} else if (pluginname.equals("line")) {
-	    plugin = new Line(input);
-	} else 	if (pluginname.equals("web")) {
-	    plugin = new  WebServerLogLine(input);
-	} else 	if (pluginname.equals("mail")) {
-	    plugin = new  MailServerLogLine(input);
-	} else 	if (pluginname.equals("block")) {
-	    plugin = new  Block(input);
-	    ((Block)plugin).setBlockSize(16);
-	} else if (pluginname.equals("file")) {
-	    plugin = new FileItem((FileInputStream)input);
-	} else if (pluginname.equals("mp3")) {
-	    plugin = new MP3(input);
-	} else {
-	     plugin = new Line(input);
-	}
-
-	// do stuff
 	try {
-	    long indexSize = 0;
+	    IndexView index = allocate(indexProperties);
 
-	    while ((result = plugin.read()) != null) {
-		dataTS = result.getDataTimestamp();
-		item = new ByteBufferItem(result.getData());
+	    DataItem item = null;
 
-		indexSize = index.addItem(item, dataTS);
+	    ReaderPlugin plugin = null;
+	    ReaderResult result = null;
+	    Timestamp dataTS = null;
 
-		index.hollowItem(indexSize - 1);
+	    // set up plugin based on system property
+	    String pluginname = System.getProperty("plugin");
+
+	    if (pluginname == null) {
+		plugin = new Line(input);
+	    } else if (pluginname.equals("line")) {
+		plugin = new Line(input);
+	    } else 	if (pluginname.equals("web")) {
+		plugin = new  WebServerLogLine(input);
+	    } else 	if (pluginname.equals("mail")) {
+		plugin = new  MailServerLogLine(input);
+	    } else 	if (pluginname.equals("block")) {
+		plugin = new  Block(input);
+		((Block)plugin).setBlockSize(16);
+	    } else if (pluginname.equals("file")) {
+		plugin = new FileItem((FileInputStream)input);
+	    } else if (pluginname.equals("mp3")) {
+		plugin = new MP3(input);
+	    } else {
+		plugin = new Line(input);
 	    }
 
-	    // wind it up
-	    index.close();
+	    InputPlugin inputPlugin = new DefaultInputPlugin(index, input, plugin);
 
-	}  catch (IOException ioe) {
-	    System.err.println("Read error on input");
-	}
+	    // do stuff
+	    try {
+		long indexSize = 0;
 
-	try {
-	    //buffered.close();
-	    input.close();
-	} catch (IOException ioe) {
-	    System.err.println("Failed to close input");
-	}
+		while ((result = inputPlugin.read()) != null) {
+		    dataTS = result.getDataTimestamp();
+		    item = new ByteBufferItem(result.getData());
+
+		    indexSize = index.addItem(item, dataTS);
+
+		    index.hollowItem(indexSize - 1);
+		}
+
+		// wind it up
+		index.close();
+
+	    }  catch (IOException ioe) {
+		System.err.println("Read error on input");
+	    }
+
+	    try {
+		//buffered.close();
+		input.close();
+	    } catch (IOException ioe) {
+		System.err.println("Failed to close input");
+	    }
 	 
-	//index.close();
+	    //index.close();
 
-	return true;
+	    return true;
+	} catch (TimeIndexException tie) {
+	    System.err.println("Problem with index \"" + indexProperties.getProperty("indexpath") + "\"");
+	    tie.printStackTrace(System.err);
+	    
+	    return false;  // this keeps the compiler happy
+
+	} 
+
     }
 }
