@@ -32,9 +32,13 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     Timestamp firstDataTime = Timestamp.ZERO;
     Timestamp lastDataTime = Timestamp.ZERO;
     long length = 0;
-    boolean terminated = false;
     Offset firstOffset = null;
     Offset lastOffset = null;
+
+    // is the idnex terminated
+    boolean terminated = false;
+    // is the index being opened read-only
+    boolean readOnly = false;
 
     // a map from Index ID to Index URI
     //Map referencedIndexMap = null;
@@ -415,6 +419,22 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	return this;
     }
 
+
+    /**
+     * Is the Index only available for read-only operations.
+     */
+    public boolean isReadOnly() {
+	return readOnly;
+    }
+
+    /**
+     * Set the read only status.
+     */
+    public ManagedIndexHeader setReadOnly(boolean readonly) {
+	readOnly = readonly;
+	return this;
+    }
+
     /**
      * State that the index is not in time order any more.
      */
@@ -602,6 +622,12 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	// then set me to be terminated
 	if (indexHeader.isTerminated()) {
 	    setTerminated(true);
+	}
+
+	// if the other indexHeader is read-only
+	// then set me to be read-only
+	if (indexHeader.isReadOnly()) {
+	    setReadOnly(true);
 	}
 
 	//setItemSize(indexHeader.getItemSize());
