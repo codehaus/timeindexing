@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.util.LinkedList;
 
 /**
  * Has code for indexes that are file-based.
@@ -76,6 +78,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     
     // are we creating or opening
     boolean creating = false;
+    // Was the Index locked when we tried to activate it
+    boolean hasBeenLocked = false;
 
     /*
      * The size of a header
@@ -206,8 +210,6 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    return writeNormal(itemM);
 	}
     }
-
-
 
     /**
      * Write the contents of the item with normal data
@@ -382,12 +384,11 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Write a buffer of data.
      * This flushes out large buffers a slice at a time.
      */
-    protected long bufferedWrite(ByteBuffer buffer, FileChannel channel, ByteBuffer flushBuffer) throws IOException {
+    protected synchronized long bufferedWrite(ByteBuffer buffer, FileChannel channel, ByteBuffer flushBuffer) throws IOException {
         long written = 0;
         int origLimit = buffer.limit();
         ByteBuffer slice = null;
 
-        
         while (buffer.hasRemaining()) {
 
 	    /*
@@ -873,5 +874,76 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	return this;
     }
 
+    /**
+     * Get a write-lock on this index.
+     */
+    public FileLock getWriteLock() {
+	// Lock the Index, by locking the header
+	FileLock newLock = headerInteractor.getWriteLock();
+
+
+	if (newLock == null) {
+	    if (hasBeenLocked == false) {
+		// no lock was returned, so it's locked by someone else
+		// we remeber it's been locked
+		//System.err.println(originalIndexSpecifier + " first lock observation");
+		hasBeenLocked = true;
+		return null;
+	    } else {
+		// no lock was returned, and hasBeenLocked is true
+		// so we've notived it's been locked before
+		//System.err.println(originalIndexSpecifier + " still locked");
+		return null;
+	    }
+	} else {
+	    // got given a lock, so we have it locked
+
+	    // we have to check if the Index has been locked before
+	    // if it has, then it's state may have changed since
+	    // we opened it, so we need to get the Index's current state.
+	    // This is done by rereading the index data.
+	    if (hasBeenLocked) {
+		//System.err.println(originalIndexSpecifier + " has been locked and now free");
+
+		/*
+		// temporary
+		releaseWriteLock();
+		return null;
+		*/
+
+		//System.err.println(originalIndexSpecifier + " rereading meta data");
+		try {
+		    headerInteractor.read();
+		    readMetaData();
+		    loadIndex(LoadStyle.NONE);
+		    return newLock;
+		} catch (IOException ioe) {
+		    releaseWriteLock();
+		    return null;
+		} catch (IndexOpenException ioe) {
+		    releaseWriteLock();
+		    return null;
+		}
+
+	    } else {
+		//System.err.println(originalIndexSpecifier + "  LOCKED");
+		return newLock;
+	    }
+	}
+    }
+
+    /**
+     * Release a FileLock.
+     */
+    public boolean releaseWriteLock() {
+	return headerInteractor.releaseWriteLock();
+    }
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	return headerInteractor.isWriteLocked();
+    }
 
 }
