@@ -46,11 +46,14 @@ public abstract class AbstractElapsedFormat implements TimestampFormatting {
      * Format a time as seconds and nanoseconds.
      */
     public String format(long seconds, int nanoseconds) {
+	long secsPerMinute = 60;
 	long secsPerHour = 60 * 60;
 	long secsPerDay = 24 * 60 * 60;
 	long secsPerYear = 365 * 24 * 60 * 60;
 
-	if (seconds < secsPerHour) {
+	if (seconds < secsPerMinute) {
+	    return secondsFormat(seconds, nanoseconds);
+	} else if (seconds < secsPerHour) {
 	    return hourFormat(seconds, nanoseconds);
 	} else if (seconds < secsPerDay) {
 	    return dayFormat(seconds, nanoseconds);
