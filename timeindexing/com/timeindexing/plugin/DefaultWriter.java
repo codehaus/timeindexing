@@ -3,6 +3,7 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.index.IndexItem;
+import com.timeindexing.index.IndexProperties;
 
 import java.nio.ByteBuffer;
 import java.io.OutputStream;
@@ -16,14 +17,21 @@ public class DefaultWriter implements WriterPlugin {
     OutputStream out = null;
 
     private final static int BUFSIZE = 1024;
+    static byte[] eol = null;
+
+    static {
+	eol = new Character((char)182).toString().getBytes();
+    }
 
     /**
      * 
      */
-    public long write(IndexItem item) throws IOException {
+    public long write(IndexItem item, IndexProperties outputProperties) throws IOException {
 	ByteBuffer itemdata = item.getData();
 	byte [] outbuf = new byte[BUFSIZE];
 	long writeCount = 0;
+
+	boolean doMarkEOL = Boolean.valueOf((String)outputProperties.get("newline")).booleanValue();
 
 	// pump out the data
 
@@ -36,6 +44,11 @@ public class DefaultWriter implements WriterPlugin {
 	itemdata.get(outbuf, 0, remaining);
 	out.write(outbuf, 0, remaining);
 	writeCount += remaining;
+
+	if (doMarkEOL) {
+	    out.write(eol);
+	    writeCount += eol.length;
+	}
 
 	return writeCount;
     }
