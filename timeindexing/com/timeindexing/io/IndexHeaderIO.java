@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NonWritableChannelException;
 import java.net.URI;
 
 /**
@@ -264,6 +265,10 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	    } catch (IOException ioe) {
 		// some bizzare I/O error occured
 		// TODO: detemine what to do
+		return false;
+	    } catch (NonWritableChannelException nwce) {
+		// we tried to check for a lock
+		// on a file we don;t have write permission on
 		return false;
 	    }
 	} else {
