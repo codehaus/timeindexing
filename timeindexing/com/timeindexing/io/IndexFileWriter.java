@@ -8,6 +8,7 @@ import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.index.IndexCreateException;
 
 import java.io.IOException;
+import java.nio.channels.FileLock;
 
 /**
  * An interface for writers of indexes.
@@ -50,4 +51,19 @@ public interface IndexFileWriter {
      */
     public long close() throws IOException;
 
+    /**
+     * Get a write-lock on this index.
+     */
+    public FileLock getWriteLock();
+
+
+    /**
+     * Release a FileLock.
+     */
+    public boolean releaseWriteLock();
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked();
 }
