@@ -496,7 +496,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	}	
     }
 
-
     /**
      * Do a binary search of the list.
      */
@@ -517,25 +516,27 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
 	// try and find index item in search tree, if not found
 	// go and get it from list
-	if ((item = (IndexItem)searchTree.get(halfwayPos)) == null) {
+	if (searchTree.get(halfwayPos) == null) {
 	    // position not in the tree
 	    // so get it from the index and put it in the tree
 	    item = getItem(halfway);
-	    searchTree.put(halfwayPos, item);
+	    searchTree.put(halfwayPos, halfwayPos);
 	    //System.err.print("GET " + halfway + "\t");
 	} else {
+	    item = getItem(halfway);
 	    //System.err.print("TREE " + halfway + "\t");
 	}
 
 	// try and find index item in search tree, if not found
 	// go and get it from list
-	if ((itemN = (IndexItem)searchTree.get(halfwayPosNext)) == null) {
+	if (searchTree.get(halfwayPosNext) == null) {
 	    // position not in the tree
 	    // so get it from the index and put it in the tree
 	    itemN = getItem(halfwayN);
-	    searchTree.put(halfwayPosNext, itemN);
+	    searchTree.put(halfwayPosNext, halfwayPosNext);
 	    //System.err.print("GET " + halfwayN + "\t");
 	} else {
+	    itemN = getItem(halfwayN);
 	    //System.err.print("TREE " + halfwayN + "\t");
 	}
 
