@@ -12,8 +12,7 @@ import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexHeader;
 import com.timeindexing.index.HeaderOption;
 import com.timeindexing.index.DataType;
-import com.timeindexing.index.Description;
-import com.timeindexing.time.Timestamp;
+import com.timeindexing.index.Description;import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Clock;
 import com.timeindexing.event.*;
@@ -29,6 +28,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.Iterator;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileLock;
 import java.nio.channels.FileChannel;
 import java.net.URI;
 
@@ -42,6 +42,10 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
     IndexFileInteractor interactor = null;
     // The index that this does header I/O for
     StoredIndex myIndex = null;
+    // The FileLock used when locking the index
+    FileLock lock = null;
+    // are we creating an Index
+    boolean creating = false;
 
     /**
      * Create a IndexHeaderIO.
@@ -50,7 +54,6 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	interactor = indexInteractor;
 	myIndex = interactor.getIndex();
 	headerBuf = ByteBuffer.allocate(2048);
-	openMode = "rw";
     }
 
 
@@ -58,13 +61,40 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
      * Open an index header.
      */
     public boolean open(String filename) throws IOException {
-	boolean opened = super.open(filename);
+	try {
+	    fileName = FileUtils.resolveFileName(filename, ".tih");
+	    File file = new File(fileName);
 
-	if (opened) {
-	    read();
+	    String openMode = null;
+
+	    // determine if the files should be opened 
+	    // read-only or read-write
+	    if (! creating) {  // we are NOT creating, just opening
+		if (file.canWrite()) {   // we have write permission
+		    openMode = "rw";
+		    setReadOnly(false);
+		} else {                 // we don;t have write permission
+		    openMode = "r";
+		    setReadOnly(true);
+		}
+	    } else {   // we ARE creating
+		openMode = "rw";
+		setReadOnly(false);
+	    }
+
+
+	    headerFile = new RandomAccessFile(file, openMode);
+
+	    channel = headerFile.getChannel();
+
+	    if (! creating) {
+		read();
+	    }
+
 	    return true;
-	} else {
-	    return false;
+
+	} catch (FileNotFoundException fnfe) {
+	    throw new IOException("Could not open header file: " + fileName);
 	}
     }
 	
@@ -80,16 +110,37 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
      * Create an index header.
      */
     public boolean create(String filename, Properties options) throws IOException {
+	// going into creating mode
+	creating = true;
+
+	// set up things that must be set
 	setItemSize(INDEX_ITEM_SIZE);
 	setIndexType(myIndex.getIndexType());
 
-	boolean opened =  super.open(filename);
+	// open the channel
+	boolean opened =  open(filename);
+
+	// Check to see if the Index is already locked.
+	// This stops two processes trying to create the same
+	// index and the same time
+	FileLock newLock = getWriteLock();
+
+	if (newLock == null) {
+	    // no lock was returned, so it's already locked
+	    throw new IOException("Index in " + fileName + " is WRITE LOCKED");
+	} else {
+	    // a lock was returned, which we keep a hnadle on.
+	    lock = newLock;
+	}
+
 
 	// sync the app level header with my copy of the header
 	syncHeader(myIndex.getHeader());
 
+	// finishing the creation task
+	creating = false;
+
 	if (opened) {
-	    //write();
 	    return true;
 	} else {
 	    return false;
@@ -129,7 +180,96 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	    return 0L;
 	}
     }
-	    
+	
+    /**
+     * Get a write-lock on this index.
+     */
+    public FileLock getWriteLock() {
+	// if lock is null
+	// try and get a write lock on the header file
+	// this stops multiple apps from writing to the same
+	// index, and corrupting the data
+	if (lock == null) {
+	    try {
+		FileLock newLock = channel.tryLock();
+		lock = newLock;
+	    } catch (IOException ioe) {
+		// couldn;t get a lock in a severe way
+		return null;
+	    }
+
+	    if (lock == null) {
+		// no lock was returned, so it's already locked
+		//System.err.println(fileName + " already has a lock");
+		return null;
+	    } else {
+		// got given a lock, so now we have it locked
+		//System.err.println(fileName + " got new lock: " + lock);
+		return lock;
+	    }
+	} else {
+	    // lock is not null
+	    // we already have the Index write lock
+	    return lock;
+	}
+    }
+    
+    /**
+     * Release a FileLock.
+     */
+    public boolean releaseWriteLock() {
+	if (lock == null) {
+	    // there is no lock
+	    return false;
+	} else {
+	    // there is a saved lock
+	    try {
+		lock.release();
+		lock = null;
+		return true;
+	    } catch (IOException ioe) {
+		// some bizzare I/O error occured
+		// TODO: detemine what to do
+		return false;
+	    }
+	}
+    }
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	// if lock is null, then we don;t have the
+	// Index locked, but some other app might
+	if (lock == null) {
+	    try {
+		// try and get a lock
+		FileLock newLock = channel.tryLock();
+
+		if (newLock == null) {
+		    // didn't get a lock, so it must be locked by someone else
+		    return true;
+		} else {
+		    // got a lock, so it must NOT be locked by someone else.
+		    // We're only checking the lock
+		    // so we relese it now
+		    newLock.release();
+
+		    return false;
+		}
+	    } catch (IOException ioe) {
+		// some bizzare I/O error occured
+		// TODO: detemine what to do
+		return false;
+	    }
+	} else {
+	    // lock is not null
+	    // we already have a write lock
+	    // therefore it's locked
+	    return true;
+	}
+    }
+
     /**
      * Operation on close
      */
@@ -140,10 +280,17 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 
 	//System.err.println("Sync Header: with " + myIndex.getIndexType() + " " + myIndex.getName());
 
+	// write out header, iff the index has been activated
 	if (myIndex.isActivated()) {
 	    write();
 	}
 
+	// release the lock if it exists
+	if (lock != null) {
+	    releaseWriteLock();
+	}
+
+	// do super class close()
 	return super.close();
     }
 
