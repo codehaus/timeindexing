@@ -4,7 +4,7 @@ package com.timeindexing.index;
 
 /**
  * An IndexActivationException is thrown when an attempt is made
- * to add data to a activation index.
+ * to add data to an Index that is not activated.
  */
 public class IndexActivationException extends TimeIndexException {
     /**
