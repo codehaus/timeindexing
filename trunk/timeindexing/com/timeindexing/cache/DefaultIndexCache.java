@@ -12,7 +12,10 @@ import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndex;
+import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.index.PositionOutOfBoundsException;
+import com.timeindexing.index.DataHolder;
+import com.timeindexing.index.DataAbstraction;
 import com.timeindexing.util.DoubleLinkedList;
 import com.timeindexing.util.MassiveBitSet;
 
@@ -22,10 +25,18 @@ import com.timeindexing.util.MassiveBitSet;
 public class DefaultIndexCache implements IndexCache {
     // the size of the cache
     long cacheSize = 0;
+
     // a doubly linked list of all the IndexItems
     DoubleLinkedList indexItems = null;
+
     // a BitSet which says if an IndexItem is loaded or not
-    MassiveBitSet loadedMap = null;
+    MassiveBitSet loadedMask = null;
+
+    // The current cache policy
+    CachePolicy policy = null;
+
+    // The amount of data held.
+    long volumeHeld = 0;
 
     Timestamp firstIndexTime = Timestamp.ZERO;
     Timestamp lastIndexTime = Timestamp.ZERO;
@@ -39,7 +50,14 @@ public class DefaultIndexCache implements IndexCache {
     public DefaultIndexCache(ManagedIndex index) {
 	myIndex = index;
 	indexItems = new DoubleLinkedList();
-	loadedMap = new MassiveBitSet();
+	loadedMask = new MassiveBitSet();
+    }
+
+    /**
+     * Get the no of items in the cache
+     */
+    public synchronized long size() {
+	return cacheSize;
     }
 
     /**
@@ -62,7 +80,12 @@ public class DefaultIndexCache implements IndexCache {
 	    indexItems = new DoubleLinkedList();
 	}
 
-	loadedMap.set(position);
+	// call the policy
+	if (policy != null) {
+	    policy.notifyAddItemBegin(item, position);
+	}
+
+	loadedMask.set(position);
 
 	// add the IndexItem to the rlevant position
 	// if the doubly linked list is not big enough
@@ -101,6 +124,22 @@ public class DefaultIndexCache implements IndexCache {
 	lastIndexTime = itemIndexTimestamp;
 	lastDataTime = itemDataTimestamp;
 
+	// calculate the held volume
+	DataAbstraction data = ((ManagedIndexItem)item).getDataAbstraction();
+	
+	if (data instanceof DataHolder) {
+	    // it really has the data 
+	    volumeHeld += data.getSize().value();
+
+	    //System.err.println("Volume + = " + volumeHeld);
+	}
+
+
+
+	// call the policy
+	if (policy != null) {
+	    policy.notifyAddItemEnd(item, position);
+	}
 
 	// return the cacheSize
 	return cacheSize;
@@ -108,25 +147,30 @@ public class DefaultIndexCache implements IndexCache {
     }
 
     /**
-     * Get the no of items in the cache
-     */
-    public synchronized long cacheSize() {
-	return cacheSize;
-    }
-
-    /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) {
+    public IndexItem getItem(long pos) {
 	if (indexItems == null) {
 	    return null;
 	} else {
-	    if (n < 0) {
-		throw new PositionOutOfBoundsException("Index value too low: " + n);
-	    } else if (n >= indexItems.size()) {
-		throw new PositionOutOfBoundsException("Index value too high: " + n);
+	    if (pos < 0) {
+		throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	    } else if (pos >= indexItems.size()) {
+		throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	    } else {
-		return (IndexItem)indexItems.get(n);
+		IndexItem item = (IndexItem)indexItems.get(pos);
+
+		// call the policy
+		if (policy != null) {
+		    policy.notifyGetItemBegin(item, pos);
+		}
+
+		// call the policy
+		if (policy != null) {
+		    policy.notifyGetItemEnd(item, pos);
+		}
+
+		return item;
 	    }
 	}
     }
@@ -138,32 +182,13 @@ public class DefaultIndexCache implements IndexCache {
 	return getItem(p.value());
     }
 
-    /**
-     * Hollow the IndexItem at the position.
-     * This does nothing by default as the data will be lost.
-     */
-    public boolean hollowItem(long n) {
-	if (indexItems == null) {
-	    return false;
-	} else {
-	    if (n < 0) {
-		throw new PositionOutOfBoundsException("Index value too low: " + n);
-	    } else if (n >= indexItems.size()) {
-		throw new PositionOutOfBoundsException("Index value too high: " + n);
-	    } else {
-		return false;
-	    }
-	}
-    }
-	
-
 
     /**
      * Contains the IndexItem at the speicifed position.
      * If the cache contains the item, it means it is loaded.
      */
     public boolean containsItem(long pos) {
-	return loadedMap.get(pos);
+	return loadedMask.get(pos);
     }
 
 
@@ -177,10 +202,71 @@ public class DefaultIndexCache implements IndexCache {
 	    
     /**
      * Hollow the IndexItem at the position.
+     * This does nothing by default as the data will be lost.
+     */
+    public boolean hollowItem(long pos) {
+	if (indexItems == null) {
+	    return false;
+	} else {
+	    if (pos < 0) {
+		throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	    } else if (pos >= indexItems.size()) {
+		throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	    } else {
+		return false;
+	    }
+	}
+    }
+	
+
+    /**
+     * Hollow the IndexItem at the position.
      */
     public boolean hollowItem(Position p) {
 	return hollowItem(p.value());
     }
+
+
+    /**
+     * Remove the IndexItem at the speicifed position.
+     * This does nothing by default as the data will be lost.
+     */
+    public boolean removeItem(long pos) {
+	if (indexItems == null) {
+	    return false;
+	} else {
+	    if (pos < 0) {
+		throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	    } else if (pos >= indexItems.size()) {
+		throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	    } else {
+		return false;
+	    }
+	}
+    }
+
+    /**
+     * Remove the IndexItem at the speicifed position.
+     */
+    public boolean removeItem(Position p) {
+	return removeItem(p.value());
+    }
+
+    /**
+     * Clear the whole cache
+     * This does nothing by default as the data will be lost.
+     */
+    public boolean clear() {
+	return false;
+    }
+
+    /**
+     * Get the current data volume held by IndexItems in this cache.
+     */
+    public long getDataVolume() {
+	return volumeHeld;
+    }
+
 
     /**
      * Get the time the first IndexItem was put into the Index.
@@ -211,12 +297,32 @@ public class DefaultIndexCache implements IndexCache {
     }
 
     /**
+     * Set the cache policy.
+     * @return the old cache policy
+     */
+    public CachePolicy setPolicy(CachePolicy pol) {
+	CachePolicy oldPolicy = policy;
+
+	policy = pol;
+	policy.setIndexCache(this);
+
+	return oldPolicy;
+    }
+
+    /**
+     * Get the current cache policy.
+     */
+    public CachePolicy getPolicy() {
+	return policy;
+    }
+
+    /**
      * Create some sparce elements in the cache.
      */
     protected long sparce(long start, long end) {
 	long  current = start;
 
-	System.err.println("Sparce from " + start + " to " + end);
+	//System.err.println("Sparce from " + start + " to " + end);
 
 	while (current <= end) {
 	    indexItems.add(null);

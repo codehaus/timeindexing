@@ -11,6 +11,7 @@ import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.DataReference;
 import com.timeindexing.index.DataReferenceObject;
 import com.timeindexing.index.DataAbstraction;
+import com.timeindexing.index.PositionOutOfBoundsException;
 
 
 import java.util.List;
@@ -31,60 +32,163 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) {
-	IndexItem item = super.getItem(n);
+    public IndexItem getItem(long pos) {
+	ManagedFileIndexItem fileItem = null;
 
-	ManagedFileIndexItem fileItem = (ManagedFileIndexItem)item;
-
-	if (fileItem.hasData()) {
-	    return item;
+	if (indexItems == null) {
+	    return null;
+	} else if (pos < 0) {
+	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	} else if (pos >= indexItems.size()) {
+	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	} else {
+	    fileItem = (ManagedFileIndexItem)indexItems.get(pos);
 
-	    //System.err.println("FileIndexCache: resolve data for " + item.getPosition());
-	    // get the DataAbstraction, which must be a DataReference, and
-	    // which holds the offset and the size
-	    DataReference dataRef = (DataReference)fileItem.getDataAbstraction();
-
-	    // read the data
-	    DataHolderObject dataObj = ((StoredIndex)myIndex).readData(dataRef);
-
-	    // if we got the data 
-	    if (dataObj != null) {
-		// then set the data
-		fileItem.setData(dataObj);
+	    // call the policy
+	    if (policy != null) {
+		policy.notifyGetItemBegin(fileItem, pos);
 	    }
 
-	    return item;
+	    if (fileItem.hasData()) {
+		// call the policy
+		if (policy != null) {
+		    policy.notifyGetItemEnd(fileItem, pos);
+		}
+
+		return fileItem;
+
+	    } else {
+		//System.err.println("FileIndexCache: resolve data for " + item.getPosition());
+
+
+		// get the DataAbstraction, which must be a DataReference, and
+		// which holds the offset and the size
+		DataReference dataRef = (DataReference)fileItem.getDataAbstraction();
+
+		// read the data
+		DataHolderObject dataObj = ((StoredIndex)myIndex).readData(dataRef);
+
+		// if we got the data 
+		if (dataObj != null) {
+		    // then set the data
+		    fileItem.setData(dataObj);
+
+		    // calculate the held volume
+		    volumeHeld += dataObj.getSize().value();
+
+		    //System.err.println("Volume + = " + volumeHeld);
+
+
+		}
+
+		// call the policy
+		if (policy != null) {
+		    policy.notifyGetItemEnd(fileItem, pos);
+		}
+
+		return fileItem;
+	    }
 	}
     }
+
     /**
      * Hollow the IndexItem at the position.
      * This sets the data to be a data reference.
      */
-    public boolean hollowItem(long position) {
-	super.hollowItem(position);
-
+    public boolean hollowItem(long pos) {
 	ManagedFileIndexItem fileItem = null;
 
 	if (indexItems == null) {
 	    return false;
+	} else if (pos < 0) {
+	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	} else if (pos >= indexItems.size()) {
+	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	} else {
-	    fileItem =  (ManagedFileIndexItem)indexItems.get(position);
+	    fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
 
 	    if (fileItem.hasData()) {
+		//System.err.println("HollowItem " + fileItem.getPosition() + " hollowing");
+
+		// get the data object for this index item
 		DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
+
 		// hollow it
 		DataReference dataRef = new DataReferenceObject(fileItem.getDataOffset(), fileItem.getDataSize());
 
 		// then set the data
 		fileItem.setData(dataRef);
 
+		// calculate the held volume
+		volumeHeld -= dataObj.getSize().value();
+
+		//System.err.println("Volume - = " + volumeHeld);
+
 		return true;
 	    } else {
+		//System.err.println("HollowItem " + fileItem.getPosition() + " nothing");
 		// it's already a reference
 		// do notihng
 		return false;
 	    }
 	}
     }
+
+    /**
+     * Remove the IndexItem at the speicifed position.
+     */
+    public boolean removeItem(long pos) {
+	if (indexItems == null || loadedMask == null) {
+	    return false;
+	} else if (pos < 0) {
+	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
+	} else if (pos >= indexItems.size()) {
+	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	} else {
+	    //System.err.println("RemoveItem " + pos + " removing");
+
+	    ManagedFileIndexItem fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
+
+	    // update the data volume held 
+	    if (fileItem.hasData()) {
+		// get the data object for this index item
+		DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
+
+		// calculate the held volume
+		volumeHeld -= dataObj.getSize().value();
+
+		//System.err.println("Volume - = " + volumeHeld);
+	    } 
+
+	    // clear the reference to the IndexItem at position pos
+	    indexItems.set(pos, null);
+	
+	    // clear the bit in the loaded map
+	    loadedMask.clear(pos);
+
+	    return true;
+	}
+    }
+
+
+    /**
+     * Clear the whole cache
+     */
+    public boolean clear() {
+	long itemCount = loadedMask.size();
+	long current = 0;
+
+	while (current < itemCount) {
+	    if (loadedMask.get(current) == true) {
+		// the is an IndexItem loaded at position current
+		// so clear it
+		removeItem(current);
+	    }
+	}
+
+	volumeHeld = 0;
+
+	return true;
+    }
+
 }
