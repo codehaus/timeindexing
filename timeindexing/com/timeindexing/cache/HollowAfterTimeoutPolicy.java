@@ -27,6 +27,8 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 	monitorList = new LinkedList();
 	// 0.5 second
 	timeout = new ElapsedMillisecondTimestamp(500);
+
+	//System.err.println("HollowAfterTimeoutPolicy:  timeout = " + timeout + " ms");
     }
 
     /**
@@ -36,6 +38,29 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 	monitorList = new LinkedList();
 	timeout = elapsed;
     }
+
+    
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemBegin(IndexItem item,long pos) {
+	//System.err.print("notifyAddItemBegin: ");
+	notifyGetItemBegin(item, pos);
+	return null;
+    }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemEnd(IndexItem item, long pos) {
+	//System.err.print("notifyAddItemEnd: ");
+	notifyGetItemEnd(item, pos);
+	return null;
+    }    
 
     /**
      * Called at the beginning of cache.getItem()
@@ -68,7 +93,7 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 		// and add it to the end
 		monitorList.remove(first);
 		monitorList.add(first);
-		//System.err.println("ReQueuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+		System.err.println("ReQueuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 	    }
 	    */
 		
@@ -83,10 +108,10 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
 	// if this item is not in the monitorList, then add it
-	if (! monitorList.contains(item)) {
+	//if (! monitorList.contains(item)) {
 	    monitorList.add(item);
 	    //System.err.println("Queuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
-	}
+	    //}
 
 	return null;
     }
