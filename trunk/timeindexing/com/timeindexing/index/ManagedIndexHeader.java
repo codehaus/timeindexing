@@ -7,6 +7,7 @@ import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
 import java.util.Set;
 import java.net.URI;
+import java.nio.channels.FileLock;
 
 /**
  * A managed extended index header.
@@ -118,6 +119,11 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
      * This is one of the few attributes of an index that can be set directly.
      */
     public ManagedIndexHeader setDescription(Description description);
+
+    /**
+     * Set the read only status.
+     */
+    public ManagedIndexHeader setReadOnly(boolean readonly);
 
     /**
      * State that the index is not in time order any more.

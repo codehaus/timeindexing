@@ -25,6 +25,8 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     // this is a map of other Indexes that have been opened by
     // refererences associated with this Index
     Map trackedIndexMap = null;
+    // Should this start readonly
+    Boolean readOnly = Boolean.FALSE;
 
     /**
      * Set the name of the index.
@@ -192,6 +194,14 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      */
     public ManagedIndexHeader setDescription(Description d) {
 	header.setDescription(d);
+	return this;
+    }
+
+    /**
+     * Set the read only status.
+     */
+    public ManagedIndexHeader setReadOnly(boolean readonly) {
+	header.setReadOnly(readonly);
 	return this;
     }
 
@@ -369,7 +379,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
 	long refCount = TimeIndexDirectory.removeHandle(this);
 
 	if (refCount == 0) {
-	    System.err.println("About to really close " + getURI());
+	    //System.err.println("About to really close " + getURI());
 	    boolean closeValue = reallyClose();
 
 	    return closeValue;
