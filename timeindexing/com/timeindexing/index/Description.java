@@ -24,6 +24,13 @@ public class Description {
 	;
     }
 
+    /**
+     * A text description.
+     */
+    public Description(String desc) {
+	theData = ByteBuffer.wrap(desc.getBytes());
+	dataType = DataType.STRING_DT;
+    }
         
     /**
      * Construct a description from a byte[] and a data type.
