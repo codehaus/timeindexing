@@ -8,6 +8,9 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Properties;
+import java.util.Enumeration;
+
 /**
  * A cascading map is a map that holds its own map data,
  * and also references a submap which also holds map data.
@@ -31,6 +34,23 @@ public class CascadingMap extends HashMap implements Map {
      * A constructor.
      */
     public CascadingMap() {
+    }
+
+   /**
+     * Construct a CascadingMap using a Properties object.
+     * These mappings will have String objects. 
+     */
+    public CascadingMap(Properties properties) {
+	Enumeration names = properties.propertyNames();
+
+	while (names.hasMoreElements()) {
+	    String aName = (String)names.nextElement();
+	    String aValue = properties.getProperty(aName);
+
+	    // got the name and value
+	    // now add it to the map
+	    put(aName, aValue);
+	}
     }
 
     /**
@@ -103,5 +123,27 @@ public class CascadingMap extends HashMap implements Map {
      */
     public CascadingMap getSubmap() {
 	return submap;
+    }
+
+    /**
+     * Is there a submap from this CascadingMap.
+     */
+    public boolean hasSubmap() {
+	if (submap == null) {
+	    return false;
+	} else {
+	    return true;
+	}
+    }
+
+    /**
+     * How deep is the CascadingMap.
+     */
+    public int depth() {
+	if (submap == null) {
+	    return 1;
+	} else {
+	    return 1 + submap.depth();
+	}
     }
 }

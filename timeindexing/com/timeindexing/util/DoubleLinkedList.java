@@ -2,7 +2,7 @@
 
 package com.timeindexing.util;
 
-import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
