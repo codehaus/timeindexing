@@ -61,7 +61,7 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
     /**
      * Set the index to be terminated.
      */
-    public ManagedIndexHeader terminate();
+    public ManagedIndexHeader setTerminated(boolean terminated);
 
     /**
      * Set the size of the index items.
