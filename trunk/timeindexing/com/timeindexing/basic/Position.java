@@ -24,7 +24,7 @@ public interface Position extends Absolute, Cloneable {
 	    }
 	    
 	    public Object clone() throws  CloneNotSupportedException {
-		return super.clone();
+		return this;
 	    }
 	};
 
@@ -37,11 +37,11 @@ public interface Position extends Absolute, Cloneable {
 	    }
 
 	    public String toString() {
-		return "TOO_LOW";
+		return "TOO_LOW" + super.toString();
 	    }
 	    
 	    public Object clone() throws  CloneNotSupportedException {
-		return super.clone();
+		return this;
 	    }
 	};
 
@@ -54,11 +54,11 @@ public interface Position extends Absolute, Cloneable {
 	    }
 
 	    public String toString() {
-		return "TOO_HIGH";
+		return "TOO_HIGH" + super.toString();
 	    }
 	    
 	    public Object clone() throws  CloneNotSupportedException {
-		return super.clone();
+		return this;
 	    }
 	};
 }
