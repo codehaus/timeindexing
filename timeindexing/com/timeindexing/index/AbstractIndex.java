@@ -450,7 +450,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * @return null if no position is found
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
-	System.err.println("AbstractIndex: locate: " + "TS = " + t);
+	//System.err.println("AbstractIndex: locate: " + "TS = " + t);
 
 	if (! contains(t, selector)) { // timestamp t is not in this index
 	    // now try and determine if it is too low or too high
@@ -577,7 +577,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	}
     }
 
-
+    /**
+     * Determine if one Position is lessthan another Position.
+     */
     private Comparator itemComparator = new Comparator() {
 	    public int compare(Object o1, Object o2) {
 		Position p1 = (Position)o1;
@@ -629,7 +631,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * to an Index that has been terminated.
      */
     public Index terminate() {
-	header.terminate();
+	header.setTerminated(true);
 	return this;
     }
 
@@ -650,19 +652,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public boolean isClosed() {
 	return closed;
     }
-
-   /**
-     * Close this index.
-     */
-    public synchronized boolean close() {
-	closed = true;
-	activated = false;
-
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
-
-	return true;
-    }
-
 
     /**
      * Get the event listener.
