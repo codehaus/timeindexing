@@ -78,14 +78,14 @@ public abstract  class AbstractCachePolicy implements CachePolicy {
      * Show the monitorList.
      */
     protected void show() {
-	System.err.print(monitorList.size() + ": ");
+	//System.err.print(monitorList.size() + ": ");
 
 	Iterator iterator = monitorList.iterator();
 
 	while (iterator.hasNext()) {
 	    ManagedIndexItem item = (ManagedIndexItem)iterator.next();
 
-	    System.err.print(item.getPosition() + " / " + item.getLastAccessTime() + ", ");
+	    //System.err.print(item.getPosition() + " / " + item.getLastAccessTime() + ", ");
 	}
     }
 }

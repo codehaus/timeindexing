@@ -50,12 +50,12 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 
 	    Timestamp firstTimeout = TimeCalculator.elapsedSince(first.getLastAccessTime());
-	    System.err.println("firstTimeout = " + firstTimeout);
+	    //System.err.println("firstTimeout = " + firstTimeout);
 
 
 	    if (TimeCalculator.greaterThan(firstTimeout, timeout)) {
 		// the first element has a big enough timeout
-		System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Timeout = " + firstTimeout);
+		//System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Timeout = " + firstTimeout);
 		monitorList.remove(first);
 	    
 		cache.hollowItem(first.getPosition());
@@ -68,7 +68,7 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 		// and add it to the end
 		monitorList.remove(first);
 		monitorList.add(first);
-		System.err.println("ReQueuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+		//System.err.println("ReQueuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 	    }
 	    */
 		
@@ -85,7 +85,7 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 	// if this item is not in the monitorList, then add it
 	if (! monitorList.contains(item)) {
 	    monitorList.add(item);
-	    System.err.println("Queuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+	    //System.err.println("Queuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
 	}
 
 	return null;

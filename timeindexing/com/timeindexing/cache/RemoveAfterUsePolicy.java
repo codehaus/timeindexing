@@ -41,14 +41,14 @@ public class RemoveAfterUsePolicy extends AbstractCachePolicy implements CachePo
 	// if the item is in the monitorList remove it.
 	if (monitorList.contains(item)) {
 	    monitorList.remove(item);
-	    System.err.println("DeQueue " + item.getPosition() + ".Remove list size = " + monitorList.size());
+	    //System.err.println("DeQueue " + item.getPosition() + ".Remove list size = " + monitorList.size());
 	}
 
 	// if there's something to delete
 	// remove one item
 	if (monitorList.size() >= queueWindow) {
 	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
-	    System.err.print("Removeing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Remove list size = " + monitorList.size());
+	    //System.err.print("Removeing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Remove list size = " + monitorList.size());
 	    monitorList.remove(first);
 	    
 	    cache.removeItem(first.getPosition());
@@ -63,7 +63,7 @@ public class RemoveAfterUsePolicy extends AbstractCachePolicy implements CachePo
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
 	monitorList.add(item);
-	System.err.println("Queuing " + item.getPosition() + ".Remove list size = " + monitorList.size());
+	//System.err.println("Queuing " + item.getPosition() + ".Remove list size = " + monitorList.size());
 
 	return null;
     }
