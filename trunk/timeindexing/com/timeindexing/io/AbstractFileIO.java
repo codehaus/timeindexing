@@ -10,9 +10,11 @@ import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
 import com.timeindexing.index.FileIndexItem;
 import com.timeindexing.index.DataAbstraction;
+import com.timeindexing.index.DataHolder;
 import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.DataReference;
 import com.timeindexing.index.DataReferenceObject;
+import com.timeindexing.index.IndexReferenceDataHolder;
 import com.timeindexing.index.DataTypeDirectory;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.IndexOpenException;
@@ -22,6 +24,7 @@ import com.timeindexing.basic.ID;
 import com.timeindexing.basic.SID;
 import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Position;
+import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Timestamp;
@@ -62,6 +65,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
     // TimestampDecoder
     TimestampDecoder timestampDecoder = new TimestampDecoder();
+
+    // The size of buffers for References
+    final static int REFERENCE_BUFFER_SIZE = 16;
 
     int versionMajor = 0;
     int versionMinor = 0;
@@ -190,6 +196,23 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * It assumes the index file is alreayd open for writing.
      */
     public long writeItem(ManagedIndexItem itemM) throws IOException {
+	if (itemM.isReference()) {
+	    // write out a reference
+	    return writeReference(itemM);
+	} else {
+	    // write out normal data
+	    return writeNormal(itemM);
+	}
+    }
+
+
+
+    /**
+     * Write the contents of the item with normal data
+     * It assumes the index file is alreayd open for writing.
+     */
+    public long writeNormal(ManagedIndexItem itemM) throws IOException {
+
 	// cast the item to the correct class
 	ManagedFileIndexItem item = (ManagedFileIndexItem)itemM;
 
@@ -243,6 +266,70 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	}
     }
 
+    /**
+     * Write the contents of the item with a reference.
+     * It assumes the index file is alreayd open for writing.
+     */
+    public long writeReference(ManagedIndexItem itemM) throws IOException {
+
+	// cast the item to the correct class
+	ManagedFileIndexItem item = (ManagedFileIndexItem)itemM;
+
+	long count = 0;
+
+	long actualSize = REFERENCE_BUFFER_SIZE;
+
+	if (actualSize >= Integer.MAX_VALUE) {
+	    // buffers can only be so big
+	    // check we can allocate one big enough
+		throw new Error("InlineIndexIO: writeItem() has not YET implemented reading of data > " + Integer.MAX_VALUE + ". Actual size is " + actualSize);
+	} else {
+
+	    // where are we in the file
+	    long currentIndexPosition = alignForIndexItem();
+
+	    //System.err.println("P(W) = " + currentIndexPosition);
+
+	    // tell the IndexItem where its index is
+	    item.setIndexOffset(new Offset(currentIndexPosition));
+
+	    // set the data position
+	    long currentDataPosition = alignForData();
+
+	    // tell the IndexItem where its data is
+	    item.setDataOffset(new Offset(currentDataPosition));
+
+	    // clear the index buf
+	    indexBufWrite.clear();
+
+	    // fill the buffer
+	    indexBufWrite.putLong(item.getIndexTimestamp().value());
+	    indexBufWrite.putLong(item.getDataTimestamp().value());
+	    indexBufWrite.putLong(currentDataPosition);
+	    indexBufWrite.putLong(REFERENCE_BUFFER_SIZE);
+	    indexBufWrite.putInt(DataType.REFERENCE);
+	    indexBufWrite.putLong(item.getItemID().value());
+	    indexBufWrite.putLong(item.getAnnotations().value()); // TODO: fix annoation code
+
+	    // make it ready for writing
+	    indexBufWrite.flip();
+
+	    // write the index item
+	    count +=  processIndexItem(indexBufWrite);
+	
+	    // write the data
+	    IndexReferenceDataHolder reference = (IndexReferenceDataHolder)itemM.getDataAbstraction();
+	    ByteBuffer referenceBuffer = ByteBuffer.allocate(REFERENCE_BUFFER_SIZE);
+	    referenceBuffer.putLong(reference.getIndexID().value());
+	    referenceBuffer.putLong(reference.getIndexItemPosition().value());
+	    referenceBuffer.flip();
+
+	    count += processData(referenceBuffer);
+
+	    // return how many bytes were written
+	    return count;
+	}
+    }
 
     /**
      * Align the index for an append of an IndexItem.
@@ -418,6 +505,36 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	id = indexBufRead.getLong();
 	annotationID = indexBufRead.getLong();
 
+	if (type == DataType.REFERENCE) {
+	    data = readReferenceData(offset, size);
+	    indexItem = new FileIndexItem(dataTS, indexTS, data, new Size(0),  DataType.REFERENCE_DT, new SID(id), new SID(annotationID));
+	    ((IndexReferenceDataHolder)data).setIndexItem(indexItem);
+
+	} else {
+	    data = readNormalData(offset, size, withData);
+	    indexItem = new FileIndexItem(dataTS, indexTS, data, DataTypeDirectory.find(type), new SID(id), new SID(annotationID));
+
+	}
+
+	// tell the IndexItem where its index is
+	indexItem.setIndexOffset(new Offset(currentIndexPosition));
+
+	indexItem.setDataOffset(new Offset(offset));
+
+	indexItem.setIndex(getIndex());
+
+
+	//System.err.println("Item size = (52 + " + size + ")");
+			   
+	return indexItem;
+    }
+
+    /**
+     * Read some data, from a specified offset for a number of bytes.
+     */
+    protected DataAbstraction readNormalData(long offset, long size, boolean withData) throws IOException{
+	DataAbstraction data = null;
+
 	if (withData) {	// go and get the data now, if it's needed
 	    // TODO: add code that checks how big the data
 	    // actually is.
@@ -434,17 +551,27 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    data = new DataReferenceObject(new Offset(offset), new Size(size));
 	}
 
-	indexItem = new FileIndexItem(dataTS, indexTS, data, DataTypeDirectory.find(type), new SID(id), new SID(annotationID));
+	return data;
+    }
 
-	// tell the IndexItem where its index is
-	indexItem.setIndexOffset(new Offset(currentIndexPosition));
+    /**
+     * Read a reference, from a specified offset for a number of bytes.
+     */
+    protected IndexReferenceDataHolder readReferenceData(long offset, long size) throws IOException{
+	IndexReferenceDataHolder data = null;
 
-	indexItem.setDataOffset(new Offset(offset));
+	ByteBuffer buffer = readData(offset, size);
+
+	// the ID of the other Index
+	long indexID = buffer.getLong();
+	// the position of the IndexItem in the other Index
+	long itemPosition =  buffer.getLong();
 
 
-	//System.err.println("Item size = (52 + " + size + ")");
-			   
-	return indexItem;
+	//System.err.println("Read reference " + indexID + " @ " + itemPosition);
+	data = new IndexReferenceDataHolder(new SID(indexID), new AbsolutePosition(itemPosition));
+
+	return data;	
     }
 
     /**
