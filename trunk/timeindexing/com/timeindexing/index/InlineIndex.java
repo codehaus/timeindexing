@@ -82,6 +82,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    IndexProperties indexProperties = new IndexProperties();
 
 	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("readonly", readOnly);
 
 	    // open the index 
 	    indexInteractor.open(indexProperties);
@@ -146,12 +147,12 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    indexProperties.put("indexid", indexID);
 	    indexProperties.put("indexpath", headerPathName);
 
+	    // create the relevant objects
 	    indexInteractor.create(indexProperties);
-	
 
 	    // activate the index
 	    activate();
-
+	
 	    // pass an event to the listeners
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
 
@@ -164,6 +165,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 	    return true;
 	} catch (IOException ioe) {
+	    throw new IndexCreateException(ioe);
+	} catch (TimeIndexException ioe) {
 	    throw new IndexCreateException(ioe);
 	}
 	    
@@ -194,6 +197,17 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    }
 	} else {
 	    loadStyle = LoadStyle.HOLLOW;
+	}
+
+
+	if (indexProperties.containsKey("readonly")) {
+	    String readonly = indexProperties.getProperty("readonly").toLowerCase();
+
+	    if (readonly.equals("true")) {
+		readOnly = Boolean.TRUE;
+	    } else {
+		readOnly = Boolean.FALSE;
+	    }
 	}
     }
 
