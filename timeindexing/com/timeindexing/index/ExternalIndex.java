@@ -86,7 +86,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	headerInteractor = new IndexHeaderIO(this);
 	indexInteractor = new ExternalIndexIO(this);
 
-	indexType = IndexType.EXTERNAL;
+	header.setIndexType(IndexType.EXTERNAL_DT);
     }
 
     /**
@@ -151,7 +151,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	// set the ID, the startTime, and the index type
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setIndexType(indexType);
+	//header.setIndexType(indexType);
 	header.setStartTime(Clock.time.asMicros());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
@@ -180,6 +180,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 	    // pass an event to the listeners
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+
+	    // now we're open
+	    closed = false;
 
 	    return true;
 	} catch (IOException ioe) {

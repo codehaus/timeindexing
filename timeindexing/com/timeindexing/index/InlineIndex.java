@@ -84,7 +84,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	headerInteractor = new IndexHeaderIO(this);
 	indexInteractor = new InlineIndexIO(this);
 
-	indexType = IndexType.INLINE;
+	header.setIndexType(IndexType.INLINE_DT);
     }
 
     /**
@@ -142,7 +142,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	// set the ID, the startTime, and the index type
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setIndexType(indexType);
+	// already done in constructor
+	// header.setIndexType(indexType);
 
 	header.setStartTime(Clock.time.asMicros());
 	header.setFirstOffset(new Offset(0));
@@ -170,6 +171,9 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 	    // pass an event to the listeners
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+
+	    // now we're open
+	    closed = false;
 
 	    return true;
 	} catch (IOException ioe) {

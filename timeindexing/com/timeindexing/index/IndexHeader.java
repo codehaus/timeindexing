@@ -76,9 +76,9 @@ public interface IndexHeader {
 
     /**
      * Get the  style of the index.
-     * Either inline or external or shadow.
+     * Either inline or external or shadow or incore.
      */
-    public int getIndexType();
+    public IndexType getIndexType();
 
     /**
      * Get the data type of the index.

@@ -87,7 +87,7 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
      * Get the data style.
      * Either inline or external or shadow.
      */
-    public ManagedIndexHeader setIndexType(int type);
+    public ManagedIndexHeader setIndexType(IndexType type);
 
     /**
      * Set the data type of the index.

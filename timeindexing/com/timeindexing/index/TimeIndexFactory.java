@@ -34,9 +34,9 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * IndexType.JAVASERIAL.
      * @param indexProperties properties of the index needed at creat time, such as  its name.
      */
-    public IndexView create(int kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
+    public IndexView create(IndexType kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
 
-	switch (kind) {
+	switch (kind.value()) {
 	case IndexType.INLINE: {
 	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
 
@@ -189,13 +189,13 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 
 	String indexName = decoder.getName();
 	ID indexID = decoder.getID();
-	int kind = decoder.getIndexType();
+	IndexType kind = decoder.getIndexType();
 
 	//Properties indexProperties = new Properties();
 	indexProperties.setProperty("name", indexName);
 	indexProperties.setProperty("indexpath", indexPath);
 
-	switch (kind) {
+	switch (kind.value()) {
 	case IndexType.INLINE: {
 	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
 
