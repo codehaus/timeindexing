@@ -614,10 +614,12 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 	if (loadStyle == LoadStyle.ALL) {
 	    indexAppendPosition = loadAll(true);
+	    setAppendPosition();
 	    return indexAppendPosition;
 
 	} else if (loadStyle == LoadStyle.HOLLOW) {
 	    indexAppendPosition = loadAll(false);
+	    setAppendPosition();
 	    return indexAppendPosition;
 
 	} else if (loadStyle == LoadStyle.NONE) {
@@ -627,7 +629,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
             if (lastOffset.value() == 0) {
 		 // the index has zero items
 		// so there is nothing to read
-		indexAppendPosition = indexChannelPosition;
+		gotoFirstPosition();
+                setAppendPosition();
 	    } else {
 		// get last item
 		ManagedFileIndexItem item = (ManagedFileIndexItem)readItem(lastOffset.value(), false);
@@ -665,6 +668,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
         if (lastOffset.value() == 0) {
 	    // the index has zero items
 	    // so there is nothing to read
+	    gotoFirstPosition();
 	} else {
 	    for (count=0; count < itemCount; count++) {
 		// read an item
@@ -701,6 +705,16 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      */
     public boolean gotoFirstPosition() throws IOException {
 	return seekToIndex(indexFirstPosition);
+    }
+
+    /**
+     * Set the append position from the indexChannelPosition.
+     */
+    public boolean setAppendPosition() throws IOException {
+	System.err.println("Index append position = " + indexChannelPosition);
+	indexAppendPosition = indexChannelPosition;
+
+	return true;
     }
 
     /**
