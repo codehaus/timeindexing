@@ -34,7 +34,6 @@ public class ReaderResultItem implements DataItem {
      * Get the size of the item
      */
     public long getSize() {
-	//System.err.println("ReaderResultItem: size = " + getBytes().limit());
 	return getBytes().limit();
     }
 
