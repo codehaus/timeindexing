@@ -37,7 +37,9 @@ import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-
+/**
+ * Has code for indexes that are file-based.
+ */
 public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFileInteractor {
     // The header for this index
     IndexHeaderIO headerInteractor = null;
@@ -258,8 +260,16 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    // write the index item
 	    count +=  processIndexItem(indexBufWrite);
 	
-	    // write the data
-	    count += processData(item.getData());
+	    // make the data ready for writing
+            ByteBuffer dataBuf = item.getData();
+
+	    if (dataBuf.position() == dataBuf.limit()) {
+		dataBuf.flip();
+	    }
+	    
+
+            // write the data
+            count += processData(dataBuf);
 
 	    // return how many bytes were written
 	    return count;
@@ -562,14 +572,16 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 	ByteBuffer buffer = readData(offset, size);
 
-	// the ID of the other Index
-	long indexID = buffer.getLong();
+	// the id of the other Index
+	long indexIDValue = buffer.getLong();
+
+	// the id as an ID object
+	ID indexID = new SID(indexIDValue);
 	// the position of the IndexItem in the other Index
 	long itemPosition =  buffer.getLong();
 
-
 	//System.err.println("Read reference " + indexID + " @ " + itemPosition);
-	data = new IndexReferenceDataHolder(new SID(indexID), new AbsolutePosition(itemPosition));
+	data = new IndexReferenceDataHolder(indexID , new AbsolutePosition(itemPosition));
 
 	return data;	
     }
