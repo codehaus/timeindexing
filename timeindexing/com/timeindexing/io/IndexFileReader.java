@@ -26,6 +26,11 @@ public interface IndexFileReader {
     public long readHeader(byte headerType) throws IOException, IndexOpenException;
 
     /**
+     * Read all the meta data.
+     */
+    public long readMetaData() throws IOException, IndexOpenException;
+
+    /**
      * Get the item
      * @param position the position of the index item to get
      * @param withData read the data for this IndexItem if withData is true,
