@@ -14,6 +14,7 @@ import com.timeindexing.basic.Interval;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.basic.Position;
 import com.timeindexing.data.DataItem;
+import com.timeindexing.cache.IndexCache;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
@@ -282,13 +283,25 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	}
 
 
+	// cast to a ManagedIndexItem so we can setup the item properly
+	ManagedIndexItem itemM = (ManagedIndexItem)item;
+	long indexSize = header.getLength();
+	AbsolutePosition itemPosition = new AbsolutePosition(indexSize);
+
+
 	// add the item to the index item cache
-	// the new size of the index is returned
-	long cacheSize = indexCache.addItem(item);
-	long newSize = header.getLength()+1;
+	// the new size of the cache is returned
+	long cacheSize = indexCache.addItem(item, itemPosition);
+
+	// now set the item's position and
+	// bind it to the index
+	itemM.setPosition(itemPosition);
+	itemM.setIndex(this);
 
 	// get the time this item was set
 	Timestamp last = item.getIndexTimestamp();
+
+	long newSize = indexSize+1;
 
 	// tell the header how big the index is now
 	header.setLength(newSize);
@@ -303,12 +316,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	header.setEndTime(last);
 	// and the last data time
 	header.setLastDataTime(item.getDataTimestamp());
-
-	// now set the item's position and
-	// bind it to the index
-	ManagedIndexItem itemM = (ManagedIndexItem)item;
-	itemM.setPosition(new AbsolutePosition(newSize - 1));
-	itemM.setIndex(this);
 
 	// tell all the listeners that an item has been added
 	eventMulticaster.fireAddEvent(new IndexAddEvent(indexName, header.getID(), item, this));
