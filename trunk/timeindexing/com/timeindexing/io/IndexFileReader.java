@@ -36,14 +36,6 @@ public interface IndexFileReader {
      * @param withData read the data for this IndexItem if withData is true,
      * the data needs to be read at a later time, otherwise
      */
-    public ManagedIndexItem getItem(Position position, boolean withData) throws IOException;
-
-    /**
-     * Get the item
-     * @param position the position of the index item to get
-     * @param withData read the data for this IndexItem if withData is true,
-     * the data needs to be read at a later time, otherwise
-     */
     public ManagedIndexItem getItem(long position, boolean withData) throws IOException;
 
     /**
