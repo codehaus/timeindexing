@@ -62,8 +62,8 @@ public class DefaultOutputPlugin implements OutputPlugin {
      * Do some output.
      * @return the number of byte written
      */
-    public long write(IndexItem item) throws IOException {
-	return plugin.write(item);
+    public long write(IndexItem item, IndexProperties properties) throws IOException {
+	return plugin.write(item, properties);
     }
     
 
