@@ -4,6 +4,7 @@ package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimestampDecoder;
+import com.timeindexing.time.Clock;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
 import com.timeindexing.basic.SID;
@@ -73,6 +74,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The timestamp of the current IndexItem.
      */
     public Timestamp getIndexTimestamp() {
+	setLastAccessTime();
 	return indexTS;
     }
 
@@ -80,6 +82,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The timestamp in the data of the current IndexItem.
      */
     public Timestamp getDataTimestamp() {
+	setLastAccessTime();
 	return dataTS;
     }
 
@@ -87,6 +90,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * A ByteBuffer of the Data being indexed.
      */
     public ByteBuffer getData() {
+	setLastAccessTime();
 	return ((DataHolder)data).getBytes();
     }
 
@@ -94,6 +98,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The size of the data item being referenced.
      */
     public Size getDataSize() {
+	setLastAccessTime();
 	return size;
     }
 
@@ -102,6 +107,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The DataAbstraction of the Data being indexed.
      */
     public DataAbstraction getDataAbstraction() {
+	setLastAccessTime();
 	return data;
     }
 
@@ -109,6 +115,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The type of the data item being referenced.
      */
     public DataType getDataType() {
+	setLastAccessTime();
 	return type;
     }
 
@@ -116,6 +123,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The item ID.
      */
     public ID getItemID() {
+	setLastAccessTime();
 	return id;
     }
 
@@ -123,6 +131,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * The ID of annotations associated with this IndexItem.
      */
     public ID getAnnotations() {
+	setLastAccessTime();
 	return annotationID;
     }
 
@@ -131,6 +140,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * Get the index position this IndexItem is in.
      */
     public AbsolutePosition getPosition() {
+	//setLastAccessTime();
 	return position;
     }
 
@@ -146,6 +156,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * Get the index this IndexItem is in.
      */
     public Index getIndex() {
+	setLastAccessTime();
 	return myIndex;
     }
 
@@ -168,9 +179,23 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     /**
      * Set the last access time of the item.
      */
-    public ManagedIndexItem setLastAccessTime(Timestamp accessTime) {
-	lastAccessTime = accessTime;
+    public ManagedIndexItem setLastAccessTime() {
+	lastAccessTime = Clock.time.asMicros();
+	//System.err.println("Set last access time for IndexItem: " + position + " to " + getLastAccessTime());
 	return this;
+    }
+
+    public boolean equals(Object obj) {
+	//setLastAccessTime();
+	
+	return  super.equals(obj);
+
+    }
+
+
+    public int hashCode() {
+	//setLastAccessTime();
+	return (int)id.value(); // super.hashCode();  //myIndex.hashCode() + position.hashCode();
     }
 
     /** 
