@@ -230,7 +230,7 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 
 	style = POSITION_TO_RELATIVETIMESTAMP;
 	resolved = false;
-	System.err.println("EndPointInterval: constructed POSITION_TO_RELATIVETIMESTAMP");
+	//System.err.println("EndPointInterval: constructed POSITION_TO_RELATIVETIMESTAMP");
     }
 
     /**
@@ -366,7 +366,7 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 	    }
 
 	    case POSITION_TO_RELATIVETIMESTAMP: {
-		System.err.println("POSITION_TO_RELATIVETIMESTAMP: start = " + start);
+		//System.err.println("POSITION_TO_RELATIVETIMESTAMP: start = " + start);
 		IndexItem item = null;
 		Timestamp startTS = null;
 
@@ -380,19 +380,19 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 
 		if (selector == IndexTimestampSelector.DATA) {
 		    startTS = item.getDataTimestamp();
-		    System.err.println("POSITION_TO_RELATIVETIMESTAMP: data TS = " + startTS);
+		    //System.err.println("POSITION_TO_RELATIVETIMESTAMP: data TS = " + startTS);
 		} else {
 		    startTS = item.getIndexTimestamp();
-		    System.err.println("POSITION_TO_RELATIVETIMESTAMP: index TS = " + startTS);
+		    //System.err.println("POSITION_TO_RELATIVETIMESTAMP: index TS = " + startTS);
 		}
 
 		// calcualte the end timestamp
 		Timestamp endTS = TimeCalculator.addTimestamp(startTS, elapsed);
-		System.err.println("POSITION_TO_RELATIVETIMESTAMP: end TS = " + endTS);
+		//System.err.println("POSITION_TO_RELATIVETIMESTAMP: end TS = " + endTS);
 		
 		TimestampMapping posEnd = index.locate(endTS, selector, Lifetime.CONTINUOUS);
 
-		System.err.println("POSITION_TO_RELATIVETIMESTAMP: end = " + posEnd);
+		//System.err.println("POSITION_TO_RELATIVETIMESTAMP: end = " + posEnd);
 
 		if (posEnd == null) {
 		    return null;
