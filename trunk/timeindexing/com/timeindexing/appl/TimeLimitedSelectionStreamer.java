@@ -3,10 +3,10 @@
 package com.timeindexing.appl;
 
 import com.timeindexing.index.Index;
-import com.timeindexing.index.IndexItem
-;
+import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.TimeIndex;
 import com.timeindexing.index.IndexView;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.index.IndexProperties;
@@ -30,7 +30,7 @@ public class TimeLimitedSelectionStreamer extends SelectionStreamer  {
     /**
      * Process the TimeIndex
      */
-    public long processTimeIndex(IndexView selection) throws IOException {
+    public long processTimeIndex(IndexView selection) throws IOException, TimeIndexException {
 	// output the selection
 	long writeCount = 0;
 	long length = selection.getLength();
