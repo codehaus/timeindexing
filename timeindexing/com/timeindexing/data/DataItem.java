@@ -24,5 +24,5 @@ public interface DataItem {
     /**
      * Get the DataType of the DataItem.
      */
-    public int getDataType();
+    public DataType getDataType();
 }

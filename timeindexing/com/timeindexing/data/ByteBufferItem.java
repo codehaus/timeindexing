@@ -41,7 +41,7 @@ public class ByteBufferItem implements DataItem {
     /**
      * Get the DataType of the DataItem.
      */
-    public int getDataType() {
-	return DataType.ANY;
+    public DataType getDataType() {
+	return DataType.ANY_DT;
     }
 }
