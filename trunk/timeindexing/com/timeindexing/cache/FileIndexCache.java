@@ -67,7 +67,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		return fileItem;
 
 	    } else {
-		//System.err.println("FileIndexCache: resolve data for " + item.getPosition());
+		//System.err.println("FileIndexCache: resolve data for " + fileItem.getPosition());
 
 
 		// get the DataAbstraction, which must be a DataReference, and
