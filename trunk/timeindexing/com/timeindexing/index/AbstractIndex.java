@@ -253,10 +253,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      */
     public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
-	// can't add anything if the index is closed
-	if (isClosed()) {
-	    throw new IndexClosedException("Index closed " + this);
+
+	// can't add anything if the index is terminated
+	// check this first as this can never change.
+	if (isTerminated()) {
+	    throw new IndexTerminatedException("Index terminated " + this);
 	}
+
+	// now check the values that can possibly change
 
 	// can't add anything if the index is terminated
 	if (isTerminated()) {
