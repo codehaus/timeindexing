@@ -15,7 +15,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
     /**
      * Create a FileIndexCache object.
      */
-    public FileIndexCache(ManagedStoredIndex index) {
+    public FileIndexCache(StoredIndex index) {
 	super((ManagedIndex)index);
     }
 
@@ -35,7 +35,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	    DataReference dataRef = (DataReference)fileItem.getDataAbstraction();
 
 	    // read the data
-	    DataHolderObject dataObj = ((ManagedStoredIndex)myIndex).readData(dataRef);
+	    DataHolderObject dataObj = ((StoredIndex)myIndex).readData(dataRef);
 
 	    // if we got the data 
 	    if (dataObj != null) {
