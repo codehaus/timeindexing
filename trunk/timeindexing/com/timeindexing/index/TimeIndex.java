@@ -29,14 +29,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * The actual implementation of an index.
      */
-    Index indexImpl = null;
-
-    /*
-     * An Interval for the selection.
-     * This is a reference to the Interval that was used
-     * to make a selection.
-     */
-    Interval selectionInterval = null;
+    Index indexModel = null;
 
     /*
      * The start position. By default this is the zeroth elemnt
@@ -47,11 +40,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * The end position. By default this is last element.
      */
     Position end = null;
-
-    /**
-     * The length of a selection
-     */
-    long selectionLength = 0;
 
     /*
      * The current navigation position in the index view.
@@ -69,6 +57,23 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     boolean isSelection = false;
 
     /*
+     * An Interval for the selection.
+     * This is a reference to the Interval that was used
+     * to make a selection.
+     */
+    Interval selectionInterval = null;
+
+    /**
+     * The length of a selection
+     */
+    long selectionLength = 0;
+
+    /**
+     * The IndexView that this view is a selection of.
+     */
+    IndexView selectionIndexView = null;
+
+    /*
      * Is this terminated.
      * This variable is only used when a selection is taken.
      */
@@ -78,10 +83,19 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Construct a Time Index using the nominated Index object.
      */
     protected TimeIndex(Index impl) {
-	indexImpl = impl;
+	indexModel = impl;
+
+	// set up the start position of this view 
 	start = new AbsolutePosition(0);
 
-	//end = new AbsolutePosition(indexImpl.getLength()-1);
+	// set up the end position of this view 
+	if (indexModel.getLength() == 0) {
+	    end = new AbsolutePosition(0);
+	} else {
+	    end = new AbsolutePosition(indexModel.getLength()-1);
+	}
+
+	// set up the current navigation position of this view 
 	position = new AbsoluteAdjustablePosition(0);
     }
 
@@ -89,21 +103,21 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * The name of the index.
      */
     public String getName() {
-	return indexImpl.getName();
+	return indexModel.getName();
     }
 
     /**
      * Get an ID of an index.
      */
     public ID getID() {
-	return indexImpl.getID();
+	return indexModel.getID();
     }
 
     /**
      * Get the type of an index.
      */
-    public int getIndexType() {
-	return indexImpl.getIndexType();
+    public IndexType getIndexType() {
+	return indexModel.getIndexType();
     }
 
    /**
@@ -112,7 +126,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * other have mixed type data.
      */
     public DataType getIndexDataType() {
-	return indexImpl.getIndexDataType();
+	return indexModel.getIndexDataType();
     }
 
      /**
@@ -121,7 +135,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
       * was added to the index.
       */
     public Timestamp getStartTime() {
-	return indexImpl.getStartTime();
+	return indexModel.getStartTime();
     }
 
      /**
@@ -130,7 +144,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
       * was added to the index.
       */
     public Timestamp getEndTime() {
-	return indexImpl.getEndTime();
+	return indexModel.getEndTime();
     }
 
     /**
@@ -144,9 +158,11 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return first.getIndexTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (PositionOutOfBoundsException poobe) {
+		return Timestamp.ZERO;
 	    }
 	} else {
-	    return indexImpl.getFirstTime();
+	    return indexModel.getFirstTime();
 	}
     }
 
@@ -161,9 +177,11 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return last.getIndexTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (PositionOutOfBoundsException poobe) {
+		return Timestamp.ZERO;
 	    }
 	} else {
-	    return indexImpl.getLastTime();
+	    return indexModel.getLastTime();
 	}
     }
 
@@ -179,9 +197,11 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return first.getDataTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (PositionOutOfBoundsException poobe) {
+		return Timestamp.ZERO;
 	    }
 	} else {
-	    return indexImpl.getFirstDataTime();
+	    return indexModel.getFirstDataTime();
 	}
     }
 
@@ -196,9 +216,11 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return last.getDataTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (PositionOutOfBoundsException poobe) {
+		return Timestamp.ZERO;
 	    }
 	} else {
-	    return indexImpl.getLastDataTime();
+	    return indexModel.getLastDataTime();
 	}
     }
 
@@ -206,7 +228,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get the size of the index items.
      */
     public int getItemSize() {
-	return indexImpl.getItemSize();
+	return indexModel.getItemSize();
     }
 
 
@@ -214,7 +236,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Does the index have fixed size data.
      */
     public boolean isFixedSizeData() {
-	return indexImpl.isFixedSizeData();
+	return indexModel.isFixedSizeData();
     }
 
 
@@ -222,7 +244,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get the size of the data items, if there is fixed size data.
      */
     public long getDataSize() {
-	return indexImpl.getDataSize();
+	return indexModel.getDataSize();
     }
 
 
@@ -230,14 +252,14 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get the type name of the things in the data stream.
      */
     public String getDataType(ID typeID) {
-	return indexImpl.getDataType(typeID);
+	return indexModel.getDataType(typeID);
     }
 
     /**
      * Does this index have a typed name.
      */
     public boolean hasDataType(String typeName) {
-	return indexImpl.hasDataType(typeName);
+	return indexModel.hasDataType(typeName);
     }
 
 
@@ -246,7 +268,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * @return true, if a new type was added; false, if the index had this ID/typeName pair already
      */
     public boolean addDataType(ID typeID, String typeName) {
-	return indexImpl.addDataType(typeID, typeName);
+	return indexModel.addDataType(typeID, typeName);
     }
 
 
@@ -254,7 +276,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Does this index have annotations.
      */
     public boolean hasAnnotations() {
-	return indexImpl.hasAnnotations();
+	return indexModel.hasAnnotations();
     }
 
     /**
@@ -262,7 +284,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Either inline or external.
      */
     public int getAnnotationStyle() {
-	return indexImpl.getAnnotationStyle();
+	return indexModel.getAnnotationStyle();
     }
 
 
@@ -270,14 +292,14 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get the index URI of a nominated index.
      */
     public String getIndexURI(ID indexID) {
-	return indexImpl.getIndexURI(indexID);
+	return indexModel.getIndexURI(indexID);
     }
 
     /**
      * Does this index have the URI of some other index
      */
     public boolean hasIndexURI(String URIName) {
-	return indexImpl.hasIndexURI(URIName);
+	return indexModel.hasIndexURI(URIName);
     }
 
     /**
@@ -285,7 +307,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
      */
     public boolean addIndexURI(ID indexID, String URIName) {
-	return indexImpl.addIndexURI(indexID, URIName);
+	return indexModel.addIndexURI(indexID, URIName);
     }
 
     /**
@@ -295,7 +317,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
-	    return indexImpl.addItem(item);
+	    return indexModel.addItem(item);
 	}
     }
 
@@ -306,7 +328,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
-	    return indexImpl.addItem(item, datatime);
+	    return indexModel.addItem(item, datatime);
 	}
     }
 
@@ -317,7 +339,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	if (isSelection) {
 	    return selectionLength;
 	} else {
-	    return indexImpl.getLength();
+	    return indexModel.getLength();
 	}
     }
 
@@ -326,9 +348,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public IndexItem getItem(long n) throws GetItemException {
 	if (isSelection) {
-	    return indexImpl.getItem(n+start.value());
+	    return indexModel.getItem(n+start.value());
 	} else {
-	    return indexImpl.getItem(n);
+	    return indexModel.getItem(n);
 	}
     }
 
@@ -337,9 +359,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public IndexItem getItem(Position p) throws GetItemException {
 	if (isSelection) {
-	    return indexImpl.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
+	    return indexModel.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
 	} else {
-	    return indexImpl.getItem(p);
+	    return indexModel.getItem(p);
 	}
     }
 
@@ -356,9 +378,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public boolean hollowItem(long position) {
 	if (isSelection) {
-	    return indexImpl.hollowItem(position+ start.value());
+	    return indexModel.hollowItem(position+ start.value());
 	} else {
-	    return indexImpl.hollowItem(position);
+	    return indexModel.hollowItem(position);
 	}
     }
 
@@ -367,9 +389,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public boolean hollowItem(Position p) {
 	if (isSelection) {
-	    return indexImpl.hollowItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
+	    return indexModel.hollowItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
 	} else {
-	    return indexImpl.hollowItem(p);
+	    return indexModel.hollowItem(p);
 	}
     }
 	
@@ -378,7 +400,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get the  last time an IndexItem was accessed from the index.
      */
     public Timestamp getLastAccessTime() {
-	return indexImpl.getLastAccessTime();
+	return indexModel.getLastAccessTime();
     }
 
     /**
@@ -386,7 +408,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * @return null if there is no index path
      */
     public String getIndexPathName() {
-	return indexImpl.getIndexPathName();
+	return indexModel.getIndexPathName();
     }
 
     /**
@@ -395,7 +417,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * @return null if there is no data path
      */
     public String getDataPathName() {
-	return indexImpl.getDataPathName();
+	return indexModel.getDataPathName();
     }
 
     /**
@@ -403,7 +425,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * @return null if there is no description
      */
     public Description getDescription() {
-	return indexImpl.getDescription();
+	return indexModel.getDescription();
     }
 
     /**
@@ -411,7 +433,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * This is one of the few attributes of an index that can be set directly.
      */
     public IndexHeader setDescription(Description description) {
-	indexImpl.setDescription(description);
+	indexModel.setDescription(description);
 	return this;
     }
 
@@ -439,6 +461,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		last = getItem(getLength()-1);
 	    } catch (GetItemException gie) {
 		return false;
+	    } catch (PositionOutOfBoundsException poobe) {
+		return false;
 	    }
 
 
@@ -457,7 +481,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return false;
 	    }
 	} else {
-	    return indexImpl.contains(t, sel);
+	    return indexModel.contains(t, sel);
 	}
     }
 
@@ -472,7 +496,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 	if (isSelection) {
 	    if (contains(t, sel)) {
-		return indexImpl.locate(t, sel, lifetime);
+		return indexModel.locate(t, sel, lifetime);
 	    } else {
 		// now try and determine if it is too low or too high
 		IndexItem first = null;
@@ -485,6 +509,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		    first = getItem(0);
 		    last = getItem(getLength()-1);
 		} catch (GetItemException gie) {
+		    return null;
+		} catch (PositionOutOfBoundsException poobe) {
 		    return null;
 		}
 
@@ -506,7 +532,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		}		
 	    }
 	} else {
-	    return indexImpl.locate(t, sel, lifetime);
+	    return indexModel.locate(t, sel, lifetime);
 	}
     }
 
@@ -530,51 +556,92 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	    if (resolvedInterval == null) { // it was not possible to resolved the Interval
 		return null;
 	    } else {
-		// interval start() and end() return a TimestampMapping
-		Position startV = ((TimestampMapping)resolvedInterval.start()).position();
-		Position endV = ((TimestampMapping)resolvedInterval.end()).position();
+
+		Position intervalStart = ((Position)resolvedInterval.start()).position();
+		Position intervalEnd = ((Position)resolvedInterval.end()).position();
 
 
-		System.err.println("TimeIndex: select() pre: startV = " + startV + " endV = " + endV);
+		System.err.println("TimeIndex: select() pre: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
 
 		if (overlap == Overlap.STRICT) {
 		    // if the Interval must have strict over lap with 
 		    // the index then complain if the start or the end
 		    // position is out of bounds
 
-		    if (startV == Position.TOO_LOW) {
+		    if (intervalStart == Position.TOO_LOW) {
 			throw new PositionOutOfBoundsException("Can't select before the start of an Index");
 		    }
 
-		    if (endV == Position.TOO_HIGH) {
+		    if (intervalEnd == Position.TOO_HIGH) {
 			throw new PositionOutOfBoundsException("Can't select beyond the end of an Index");
 		    }
-		} else {
+
+		} else {            // overlap == Overlap.FREE
 		    // if the Interval can overlap freely with 
 		    // the index then do some tweaking if the start or the end
 		    // position is out of bounds
 
-		    if (startV == Position.TOO_LOW && endV == Position.TOO_LOW) { // both TOO_LOW
+		    if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_LOW) { // both TOO_LOW
 			selectionLength = 0;
-		    } else if (startV == Position.TOO_HIGH && endV == Position.TOO_HIGH) { // both TOO_HIGH
+
+		    } else if (intervalStart == Position.TOO_HIGH && intervalEnd == Position.TOO_HIGH) { // both TOO_HIGH
 			selectionLength = 0;
-		    } else if (startV == Position.TOO_LOW && endV == Position.TOO_HIGH) { // start too low, end too high
-			startV = new AbsolutePosition(0);
-			endV = new AbsolutePosition(getLength()-1);
-			selectionLength = endV.value() - startV.value() + 1;
-		    } else if (startV == Position.TOO_LOW) { // startV TOO_LOW
-			startV = new AbsolutePosition(0);
-			selectionLength = endV.value() - startV.value() + 1;
-		    } else if (endV == Position.TOO_HIGH) {  // endV TOO_HIGH
-			endV = new AbsolutePosition(getLength()-1);
-			selectionLength = endV.value() - startV.value() + 1;
+
+		    } else if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH) { // start too low, end too high
+			System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
+			intervalStart = getStartPosition(); // new AbsolutePosition(0);
+			intervalEnd = getEndPosition();     // new AbsolutePosition(getLength()-1);
+			selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+		    } else if (intervalStart == Position.TOO_LOW) { // intervalStart TOO_LOW
+			intervalStart = getStartPosition();  // new AbsolutePosition(0);
+
+			// check the end position also
+			if (intervalEnd.value() >= getLength()) {
+			    // if it's too high reset it
+			    intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+			} else {
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			}
+
+		    } else if (intervalEnd == Position.TOO_HIGH) {  // intervalEnd TOO_HIGH
+			intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+
+			// check the start position also
+			if (intervalStart.value() >= getLength()) {
+			    // if it's too high reset it
+			    intervalStart = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    selectionLength = 0;
+
+			} else {
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+			}
+
 		    } else {
-			selectionLength = endV.value() - startV.value() + 1;
+			// check the start and end position
+			if (intervalStart.value() >= getLength()) {
+			    // intervalEnd.value() MUST BE > getLength() due to the nature of Intervals
+			    // both too high so reset them
+			    intervalStart = getEndPosition(); // new AbsolutePosition(getLength()-1);
+			    intervalEnd = getEndPosition(); //new AbsolutePosition(getLength()-1);
+			    selectionLength = 0;
+
+			} else if (intervalEnd.value() >= getLength()) {
+			    // if end is too high reset it
+			    intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			} else {
+			    // both OK
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			}
 		    }
 
 		}
 
-		System.err.println("TimeIndex: select() post: startV = " + startV + " endV = " + endV);
+		System.err.println("TimeIndex: select() post: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
 		try {
 		    TimeIndex selection = (TimeIndex)this.clone();
 
@@ -582,21 +649,22 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		    selection.selectionInterval = interval;
 		    selection.selectionLength = selectionLength;
 		    selection.isSelection = true;
+		    selection.selectionIndexView = this;
 		    selection.isTerminated = true;
 		    selection.position = new AbsoluteAdjustablePosition(0);
 		    selection.mark = null;
 
 		    // setup the start and end values
-		    if (startV == Position.TOO_LOW || startV == Position.TOO_HIGH) {
-			selection.start = startV;
+		    if (intervalStart == Position.TOO_LOW || intervalStart == Position.TOO_HIGH) {
+			selection.start = intervalStart;
 		    } else {
-			selection.start = new AbsolutePosition(start.value() +  startV.value());
+			selection.start = new AbsolutePosition(start.value() +  intervalStart.value());
 		    }
 
-		    if (endV == Position.TOO_LOW || endV == Position.TOO_HIGH) {
-			selection.end = endV;
+		    if (intervalEnd == Position.TOO_LOW || intervalEnd == Position.TOO_HIGH) {
+			selection.end = intervalEnd;
 		    } else {
-			selection.end = new AbsolutePosition(start.value() + endV.value());
+			selection.end = new AbsolutePosition(start.value() + intervalEnd.value());
 		    }
 
 		    return selection;
@@ -611,6 +679,22 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
+     * Return the Interval used to get a selection.
+     * @return null if the view is not a selection.
+     */
+    public Interval getSelectionInterval() {
+	return selectionInterval;
+    }
+
+    /**
+     * Return the IndexView used to get a selection.
+     * @return null if the view is not a selection.
+     */
+    public IndexView getSelectionIndexView() {
+	return selectionIndexView;
+    }
+
+    /**
      * Is this a selection.
      */
     public boolean isSelection() {
@@ -621,7 +705,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Is the Index activated.
      */
     public boolean isActivated() {
-	return indexImpl.isActivated();
+	return indexModel.isActivated();
     }
 
     /**
@@ -630,14 +714,14 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * that is not active.
      */
     public Index activate() {
-	return indexImpl.activate();
+	return indexModel.activate();
     }
 
     /**
      * Is the Index terminated.
      */
     public boolean isTerminated() {
-	return indexImpl.isTerminated();
+	return indexModel.isTerminated();
     }
 
     /**
@@ -646,7 +730,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * to an Index that has been terminated.
      */
     public Index terminate() {
-	return indexImpl.terminate();
+	return indexModel.terminate();
     }
 
 
@@ -654,21 +738,21 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Is the index still in time order.
      */
     public boolean isInTimeOrder() {
-	return indexImpl.isInTimeOrder();
+	return indexModel.isInTimeOrder();
     }
 
     /**
      * Flush this index.
      */
     public boolean flush() {
-	return indexImpl.flush();
+	return indexModel.flush();
     }
 
     /**
      * Is the Index closed.
      */
     public boolean isClosed() {
-	return indexImpl.isClosed();
+	return indexModel.isClosed();
     }
 
     /**
@@ -677,7 +761,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * and this sets the end time too.
      */
     public boolean close() {
-	return indexImpl.close();
+	return indexModel.close();
     }
 
     /**
@@ -699,7 +783,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
-     * Sets the current navigation position into the IndexView.
+     * Sets the current navigation position into the IndexView
+     * specified as a Position.
      */
     public IndexView position(Position p) {
 	if (0 <= p.value() && p.value() <= (getLength()-1)) {
@@ -712,9 +797,42 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Sets the current navigation position into the IndexView.
+     * specified as a long.
      */
     public IndexView position(long n) {
 	return position(new AbsoluteAdjustablePosition(n));
+    }
+
+
+    /**
+     * Sets the current navigation position into the IndexView
+     * specified as a Timestamp.
+     */
+    public IndexView position(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
+	TimestampMapping tsMapping = locate(t, selector, lifetime);
+
+	Position pos = tsMapping.position();
+
+	if (position == Position.TOO_LOW || position == Position.TOO_HIGH) {
+	    throw new PositionOutOfBoundsException("TimeIndex: position(): Can;t set the position outside if the IndexView");
+	} else {
+	    position = pos;
+	    return this;
+	}
+    }
+
+    /**
+     * Get the start position, in the index, of this IndexView.
+     */
+    public Position getStartPosition() {
+	return start;
+    }
+
+    /**
+     * Get the end position, in the index, of this IndexView.
+     */
+    public Position getEndPosition() {
+	return end;
     }
 
     /**
