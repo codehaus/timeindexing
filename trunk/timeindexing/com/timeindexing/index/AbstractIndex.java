@@ -654,7 +654,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
    /**
      * Close this index.
      */
-    public boolean close() {
+    public synchronized boolean close() {
 	closed = true;
 	activated = false;
 
