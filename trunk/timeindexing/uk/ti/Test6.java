@@ -82,18 +82,20 @@ public class Test6 {
     }
 
     public static void printIndex(Index index) throws TimeIndexException {
-	System.out.print("Name: " + index.getName() + "\n");
+	System.out.print("Name: " + index.getName());
+	System.out.print("  URI: " + index.getURI());
+	System.out.println();
+
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print(" End: " + index.getEndTime() + " ");
-
-	System.out.print("Length: " + index.getLength() + " items, ");
+	System.out.print(" Length: " + index.getLength() + " items, ");
 	System.out.println();
 
 	System.out.print("First: " + index.getFirstTime() + " ");
 	System.out.print("Last: " + index.getLastTime() + " ");
-
 	System.out.print("ID:" + index.getID());
 	System.out.println();
+
 	System.out.println();
 
 	long total = index.getLength();
