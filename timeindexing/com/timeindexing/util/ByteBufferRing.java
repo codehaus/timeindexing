@@ -125,7 +125,7 @@ public class ByteBufferRing {
 
 	ringSize += growSize;
 
-	System.err.println("ByteBufferRing grown to " + size());
+	//System.err.println("ByteBufferRing grown to " + size());
 	return size();
 	
     }
