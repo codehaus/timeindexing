@@ -1,6 +1,6 @@
 JARGS=
 
-all: io time index cache event basic data util plugin appl
+all: io time index cache event basic data util plugin appl tomcat
 
 io:
 	jikes $(JARGS) com/timeindexing/io/*.java
@@ -32,11 +32,15 @@ plugin:
 appl:
 	jikes $(JARGS) com/timeindexing/appl/*.java
 
+tomcat:
+	jikes $(JARGS) com/timeindexing/tomcat/*.java
+
+
 lib: all
-	jar -cf timeindex-`date '+%Y%m%d'`.jar `find com/timeindexing/ -type f -name '*.class'`
+	jar -cf timeindex-`date '+%Y%m%d'`.jar `find com/timeindexing/ -type f -name '*.class'` com/timeindexing/tomcat/*.xml
 
 doc:
-	javadoc -d ti-doc/  `find com/timeindexing/ -type d | sed -e 's%/$%%' -e 's%/%.%g' -e '/.CVS$/d' -e '/com.timeindexing$/d' `
+	javadoc -d ti-doc/  `find com/timeindexing/ -type d | sed -e 's%/$$%%' -e 's%/%.%g' -e '/.CVS$$/d' -e '/com.timeindexing$$/d' `
 
 
 
