@@ -367,20 +367,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /**
      * Get the item at index position Position.
      */
-    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
-	// calculate the position to load from
-	long start = indexFirstPosition;
-	long determined = start + (position * INDEX_ITEM_SIZE);
-
-
-	ManagedIndexItem item = readItem(determined, doLoadData);	
-
-	// post the read item into the index
-	// this is the Index callback
-	getIndex().retrieveItem(item, position);
-
-	return item;
-    }
+    public abstract ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException ;
 
     /**
      * Read the contents of the item
@@ -684,8 +671,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	} else {
 	    for (count=0; count < itemCount; count++) {
 		// read an item
-		//item =  readItem(position, doLoadData);
-		item = getItem(count, doLoadData);
+		item =  readItem(position, doLoadData);
+		//item = getItem(count, doLoadData);
 
 		// set the position for next time
 		position = indexChannelPosition;
