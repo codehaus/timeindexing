@@ -59,7 +59,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @return an empty buffer, if this IndexItem doesn't have the data to hand
      */
     public ByteBuffer getData() {
-	setLastAccessTime(Clock.time.asMicros());
+	setLastAccessTime();
 
 	if (data instanceof DataHolder) { // its a data holding object
 	    return ((DataHolder)data).getBytes();
@@ -72,6 +72,8 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Does this IndexItem actually hold the data.
      */
     public boolean hasData() {
+	setLastAccessTime();
+
 	if (data instanceof DataHolder) { // its a data holding object
 	    return true;
 	} else {		// its NOT a data holding object
@@ -83,6 +85,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Get the DataAbstraction held by the IndexItem.
      */
     public DataAbstraction getDataAbstraction() {
+	setLastAccessTime();
 	return data;
     }
 
@@ -90,6 +93,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Set the data to be a new DataAbstraction.
      */
     public ManagedFileIndexItem setData(DataAbstraction data) {
+	setLastAccessTime();
 	this.data = data;
 	return this;
     }
@@ -98,6 +102,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Get the file offset for the index for this index item.
      */
     public Offset getIndexOffset() {
+	setLastAccessTime();
 	return indexOffset;
     }
 
@@ -113,6 +118,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Get the file offset for the data for this index item.
      */
     public Offset getDataOffset() {
+	setLastAccessTime();
 	return dataOffset;
     }
 
