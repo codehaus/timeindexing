@@ -39,7 +39,7 @@ lib: all
 	jar -cf timeindex-`date '+%Y%m%d'`.jar `find com/timeindexing/ -type f -name '*.class'`
 
 doc:
-	javadoc -d ti-doc/  `find com/timeindexing/ -type d | sed -e 's%/$%%' -e 's%/%.%g'`
+	javadoc -d ti-doc/  `find com/timeindexing/ -type d | sed -e 's%/$%%' -e 's%/%.%g' -e '/.CVS$/d' -e '/com.timeindexing$/d' `
 
 
 
