@@ -35,13 +35,13 @@ public interface OutputPlugin {
      * Called as the first thing of doOutput().
      * Useful for doing any processing before output starts.
      */
-    public Object begin();
+    public Object begin() throws IOException;
 
     /**
      * Called as the last thing of doOutput(), just before it returns.
      * Useful for doing any processing after output has finished.
      */
-    public Object end();
+    public Object end() throws IOException;
 
     /**
      * Set a writer plugin, to read input from the InputStream.
