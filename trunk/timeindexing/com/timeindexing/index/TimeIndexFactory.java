@@ -70,10 +70,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 			    // the index is already opened and registered 
 			    // so return a new TimeIndex object
 
-			    // tell the directory there is another handle
-			    TimeIndexDirectory.addHandle(anIndex);
-
-			    return new TimeIndex(anIndex);
+			    return anIndex.asView();
 			} 
 		    } catch (Exception ioe) {
 			// it doesnt exist, so we will carry on and create it
@@ -94,10 +91,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 		// the index is already opened and registered 
 		// so return a new TimeIndex object
 
-		// tell the directory there is another handle
-		TimeIndexDirectory.addHandle(anIndex);
-
-		return new TimeIndex(anIndex);
+		return anIndex.asView();
 	    } 
 	} 
 
@@ -216,10 +210,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 		// the index is already opened and registered 
 		// so return a new TimeIndex object
 
-		// tell the directory there is another handle
-		TimeIndexDirectory.addHandle(anIndex);
-
-		return new TimeIndex(anIndex);
+		return anIndex.asView();
 	    } else {
 		throw new IndexOpenException("Can't open non-existant IncoreIndex. Specified name is " + indexName);
 	    }
@@ -239,11 +230,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 		// the index is already opened and registered 
 		// so return a new TimeIndex object
 
-		// tell the directory there is another handle
-		TimeIndexDirectory.addHandle(anIndex);
-
-		return new TimeIndex(anIndex);
-
+		return anIndex.asView();
 	    } else {
 		// actually open the index
 		//Properties indexProperties = new Properties();
@@ -317,6 +304,23 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	return open(indexProperties);
     }
 
+
+    /**
+     * Try and find an Index, given its ID.
+     */
+    public IndexView find(ID indexID) {
+	ManagedIndex anIndex = null;
+
+	if ((anIndex = TimeIndexDirectory.find(indexID)) != null) {
+	    // the index is already opened and registered 
+	    // so return a new TimeIndex object
+
+	    return anIndex.asView();
+	} else {
+	    return null;
+	}
+
+    }
 
     /**
      * Close an index
