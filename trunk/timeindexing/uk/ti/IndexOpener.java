@@ -92,33 +92,33 @@ public class IndexOpener {
 
 	switch (kind.value()) {
 	case IndexType.INLINE: {
-	    ManagedIndex newIndex = new InlineIndex(indexProperties); 
+	    ManagedIndex newIndex = new InlineIndex(); 
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    return newIndex;
 	}
 
 	case IndexType.EXTERNAL: {
-	    ManagedIndex newIndex = new ExternalIndex(indexProperties); 
+	    ManagedIndex newIndex = new ExternalIndex(); 
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    return newIndex;
 	}
 
 	case IndexType.SHADOW: {
-	    ManagedIndex newIndex = new ShadowIndex(indexProperties); 
+	    ManagedIndex newIndex = new ShadowIndex(); 
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    return newIndex;
 	}
 
 	case IndexType.INCORE: {
-	    ManagedIndex newIndex = new IncoreIndex(indexProperties);
+	    ManagedIndex newIndex = new IncoreIndex();
 
-	    newIndex.open();
+	    newIndex.open(indexProperties);
 
 	    return newIndex;
 	}

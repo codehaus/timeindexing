@@ -103,19 +103,19 @@ public class MP3Index {
     public IndexView allocate(Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException,  IndexCreateException {
 	TimeIndexFactory factory = new TimeIndexFactory();
 
-	int indexType = 0;
+	IndexType indexType = null;
 
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE;
+	    indexType = IndexType.INLINE_DT;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL;
+	    indexType = IndexType.EXTERNAL_DT;
 	} else if (type.equals("shadow")) {
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW;
+		indexType = IndexType.SHADOW_DT;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");

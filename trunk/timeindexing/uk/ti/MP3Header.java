@@ -114,12 +114,12 @@ public class MP3Header  {
 	buf.append("\n");
 
 	buf.append("    First: " + index.getFirstTime());
-	buf.append("\t   " + NanosecondElapsedFormat.format(index.getFirstDataTime()));
+	buf.append("\t   " + new NanosecondElapsedFormat().format(index.getFirstDataTime()));
 	buf.append("\n");
 
 	buf.append("    Last:  " + index.getLastTime());
 
-	buf.append("\t   " +  NanosecondElapsedFormat.format(index.getLastDataTime()));
+	buf.append("\t   " +  new NanosecondElapsedFormat().format(index.getLastDataTime()));
 	buf.append("\n");
 
 	buf.append("End: " + index.getEndTime());
