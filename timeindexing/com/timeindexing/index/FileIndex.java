@@ -40,15 +40,18 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Flush this index.
      */
     public boolean flush() {
-	// if the index is activated
+	// if the index is activated and has changed
 	// then flush out any changes
-	if (this.isActivated()) {
+	if (this.isActivated() && isChanged()) {
 	    lastFlushTime = Clock.time.asMicros();
 	    //lastFlushPosition = indexCache.length();
 
 	    try {
 		
 		indexInteractor.flush();
+
+		// mark as NOT being changed
+		changed = false;
 
 		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
 
@@ -76,6 +79,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    // now tell the file interactor to close
 	    indexInteractor.close();
 	    
+
+	    // mark as NOT being changed
+	    changed = false;
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
 
@@ -127,6 +133,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
 	long newSize = writeItem(item);
 
+	// mark as being changed
+	changed = true;
+
 	return newSize;
     }
 
@@ -165,6 +174,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	dataHolder.setIndexItem(item);
 
 	long newSize = writeItem(item);
+
+	// mark as being changed
+	changed = true;
 
 	return newSize;
     }

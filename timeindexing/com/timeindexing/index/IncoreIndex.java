@@ -180,6 +180,9 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), new SID(0));
 
+	// mark as being changed
+	changed = true;
+
 	return addItem(item);
     }
 
@@ -216,6 +219,9 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	dataHolder.setIndexItem(item);
 
+	// mark as being changed
+	changed = true;
+
 	return addItem((IndexItem)item);
     }
 
@@ -233,6 +239,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	closed = true;
 	activated = false;
+	changed = false;
 
 	return true;
     }
