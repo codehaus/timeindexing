@@ -6,6 +6,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
 import java.util.Set;
+import java.net.URI;
 
 /**
  * An extendedindex header.
@@ -52,18 +53,18 @@ public interface ExtendedIndexHeader extends IndexHeader {
     /**
      * Get the index URI of a nominated index.
      */
-    public String getIndexURI(ID indexID);
+    public URI getIndexURI(ID indexID);
 
     /**
      * Does this index have the URI of some other index
      */
-    public boolean hasIndexURI(String URIName);
+    public boolean hasIndexURI(URI URIName);
 
     /**
      * Add a new indexID/indexURI
      * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
      */
-    public boolean addIndexURI(ID indexID, String URIName);
+    public boolean addIndexURI(ID indexID, URI URIName);
 
     /**
      * Get the Offset of the fisrt item.

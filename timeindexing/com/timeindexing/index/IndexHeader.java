@@ -4,6 +4,7 @@ package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.ID;
+import java.net.URI;
 
 /**
  * An index header.
@@ -19,6 +20,11 @@ public interface IndexHeader {
      * Get an ID of an index.
      */
     public ID getID();
+
+    /**
+     * Get the Index specification in the form of a URI.
+     */
+    public URI getURI();
 
      /**
       * Get the start time of the index.

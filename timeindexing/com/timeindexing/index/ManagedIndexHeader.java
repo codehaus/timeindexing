@@ -6,6 +6,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
 import java.util.Set;
+import java.net.URI;
 
 /**
  * A managed extended index header.
@@ -22,6 +23,11 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
      * Set the ID of the index.
      */
     public ManagedIndexHeader setID(ID id);
+
+    /**
+     * Set the URI of the index.
+     */
+    public ManagedIndexHeader setURI(URI uri);
 
     /**
      * Set the start time
@@ -117,6 +123,22 @@ public interface ManagedIndexHeader extends  ExtendedIndexHeader {
      * State that the index is not in time order any more.
      */
     public ManagedIndexHeader notInTimeOrder();
+
+    /**
+     * Get the index URI of a nominated index.
+     */
+    public URI getIndexURI(ID indexID);
+
+    /**
+     * Does this index have the URI of some other index
+     */
+    public boolean hasIndexURI(URI URIName);
+
+    /**
+     * Add a new indexID/indexURI
+     * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
+     */
+    public boolean addIndexURI(ID indexID, URI URIName);
 
     /**
      * Get an option from the header.
