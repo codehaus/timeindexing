@@ -10,6 +10,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.data.DataItem;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -160,7 +161,15 @@ public interface Index extends IndexHeader {
     public boolean isChanged();
 
     /**
+     * Get an iterator over the IndexItems in the Index.
+     */
+    public Iterator iterator();
+
+    /**
      * Get a view onto the Index.
      */
     public IndexView asView();
 }
+
+
+
