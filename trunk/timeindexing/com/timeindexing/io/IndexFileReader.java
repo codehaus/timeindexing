@@ -78,6 +78,16 @@ public interface IndexFileReader {
     public boolean gotoFirstPosition() throws IOException;
 
     /**
+     * Goto the append position
+     */
+    public boolean gotoAppendPosition() throws IOException;
+
+    /**
+     * Set the append position
+     */
+    public boolean setAppendPosition() throws IOException;
+
+    /**
      * Close the  index.
      */
     public long close() throws IOException;
