@@ -55,14 +55,6 @@ public class TimeParser {
 
 	ParsePosition pos = new ParsePosition(0);
 
-
-	// get current timezone
-	TimeZone timeZone = TimeZone.getDefault();
-	// set timezone to be GMT whilst parsing
-	//TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-
-	//System.err.println("TZ = " + TimeZone.getDefault());
-
 	SimpleDateFormat fullestFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z");
 	SimpleDateFormat fullFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm Z");
 	SimpleDateFormat ymdFormat = new SimpleDateFormat("yyyy/MM/dd Z");
@@ -181,10 +173,6 @@ public class TimeParser {
 
 	}
 	
-	// reset time zone
-	TimeZone.setDefault(timeZone);
-	//System.err.println("Parsed subseconds = " + subSeconds);
-
 	Timestamp timestamp =  null;
 
 	// create a timestamp with the relvant granulariy
@@ -230,7 +218,7 @@ public class TimeParser {
 
 
 
-	System.err.println("Parsed TS = " + timestamp);
+	    //System.err.println("Parsed TS = " + timestamp);
 
 	return timestamp;
     }
