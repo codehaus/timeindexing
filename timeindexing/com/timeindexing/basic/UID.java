@@ -18,7 +18,7 @@ public class UID extends AID implements ID, Serializable {
 	// allow 42 bits for time sunce 01/01/1970
 	// this is enough for 50903 days  =~ 139 years
 	// so give 22 bits for other data
-	return  System.currentTimeMillis() + ((long)forWhom.superHash() << 42) ;
+	return   + (((long)forWhom.superHash() << 42) >>> 42) | (System.currentTimeMillis() <<22);
     }
 
     /**
