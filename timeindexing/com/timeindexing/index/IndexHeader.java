@@ -71,7 +71,50 @@ public interface IndexHeader {
     public long getLength();
 
     /**
+     * Get the  style of the index.
+     * Either inline or external or shadow.
+     */
+    public int getIndexType();
+
+    /**
+     * Get the data type of the index.
+     * Some indexes have the same type throughout,
+     * other have mixed type data.
+     */
+    public DataType getIndexDataType();
+
+    /**
+     * Get the path of the index.
+     * @return null if there is no index path
+     */
+    public String getIndexPathName();
+
+    /**
+     * Get the path of the data if the index data style
+     * is external or shadow.
+     * @return null if there is no data path
+     */
+    public String getDataPathName();
+
+    /**
+     * Get the description for an index.
+     * @return null if there is no description
+     */
+    public Description getDescription();
+
+    /**
+     * Set the description.
+     * This is one of the few attributes of an index that can be set directly.
+     */
+    public IndexHeader setDescription(Description description);
+
+    /**
      * Is the Index terminated.
      */
     public boolean isTerminated();
+
+    /**
+     * Is the index still in time order.
+     */
+    public boolean isInTimeOrder();
 }

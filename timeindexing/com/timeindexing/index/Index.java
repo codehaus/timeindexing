@@ -42,12 +42,6 @@ public interface Index extends IndexHeader {
      */
     public boolean addDataType(ID typeID, String typeName);
 
-    /**
-     * Get the data style.
-     * Either inline or external.
-     */
-    public int getDataStyle();
-
 
     /**
      * Does this index have annotations.
@@ -79,12 +73,12 @@ public interface Index extends IndexHeader {
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item);
+    public long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException, IndexItemException ;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp dataTime);
+    public long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexActivationException, IndexItemException;
 
     /**
      * Get an Index Item from the Index.
@@ -126,6 +120,13 @@ public interface Index extends IndexHeader {
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime);
 
+
+    /**
+     * Get the  last time an IndexItem was accessed from the index.
+     */
+    public Timestamp getLastAccessTime();
+
+
     /**
      * Is the Index activated.
      */
@@ -144,11 +145,6 @@ public interface Index extends IndexHeader {
      * to an Index that has been terminated.
      */
     public Index terminate();
-
-    /**
-     * Get the  last time an IndexItem was accessed from the index.
-     */
-    public Timestamp getLastAccessTime();
 
     /**
      * Flush the index.

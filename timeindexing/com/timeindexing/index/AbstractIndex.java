@@ -21,12 +21,9 @@ import java.util.Properties;
  * An abstract implementation of an Index object.
  * It represents the index header, the index stream and the data stream.
  */
-public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeader {
+public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeader,  IndexEventGenerator {
     // The Index name
     String indexName = null;
-
-    // The Index type.
-    int indexType = -1;
 
     // Is the Index activated.
     // Items can only be added when the Index is activated.
@@ -47,6 +44,12 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     // an event multicaster
     IndexEventMulticaster eventMulticaster = new IndexEventMulticaster();
 
+    // Local variables for temporary use
+    // index type
+    int indexType = -1;
+    // data type
+    DataType dataType = DataType.NOTSET_DT;
+
     protected AbstractIndex() {
 	;
     }
@@ -64,12 +67,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public ID getID() {
 	return header.getID();
     }
-    /**
-     * Get the type of the index.
-     */
-    public int getIndexType() {
-	return indexType;
-    }
+
 
     /**
      * Get the start time of the index.
@@ -163,11 +161,27 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
-     * Get the data style.
+     * Get the index type.
      * Either inline or external.
      */
-    public int getDataStyle() {
-	return header.getDataStyle();
+    public int getIndexType() {
+	return header.getIndexType();
+    }
+
+    /**
+     * Get the index data type.
+     * Some indexes have the same type throughout,
+     * other have mixed type data.
+     */
+    public DataType getIndexDataType() {
+	return header.getIndexDataType();
+    }
+
+    /**
+     * Is the index still in time order.
+     */
+    public boolean isInTimeOrder() {
+	return header.isInTimeOrder();
     }
 
     /**
@@ -217,29 +231,33 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Add a Data Item to the Index.
      */
-    public abstract long addItem(DataItem item);
+    public abstract long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException, IndexItemException;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public abstract long addItem(DataItem item, Timestamp dataTime);
+    public abstract long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexActivationException, IndexItemException;
 
     /**
      * Add an Index Item to the Index.
      * @param item the IndexItem to add
      * @return the no of items in the index.
+     * @throws IndexTerminatedException if the index has been terminated
+     * and an attempt is made to add an Item
+     * @throws IndexActivationException if the index has NOT been activated
+     * and an attempt is made to add an Item
      */
-    public synchronized long addItem(IndexItem item) {
+    public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexActivationException {
 	// TODO: check isActivated() and isTerminated()
 	// before doing this
 
 	// can't add anything if the index is terminated
 	if (isTerminated()) {
-	    throw new Error("Index terminated " + this);
+	    throw new IndexTerminatedException("Index terminated " + this);
 	}
 
 	if (!isActivated()) {
-	    throw new Error("Index NOT activated " + this);
+	    throw new IndexActivationException("Index NOT activated " + this);
 	}
 
 
@@ -309,6 +327,43 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public Timestamp getLastAccessTime() {
 	return lastAccessTime;
     }
+
+
+   /**
+     * Get the indexPath of the index.
+     */
+    public String getIndexPathName() {
+	return header.getIndexPathName();
+    }
+
+
+    /**
+     * Get the path of the data if the index data style
+     * is external or shadow.
+     * @return null if there is no data path
+     */
+    public String getDataPathName() {
+	return header.getDataPathName();
+    }
+
+    /**
+     * Get the description for an index.
+     * @return null if there is no description
+     */
+    public Description getDescription() {
+	return header.getDescription();
+    }
+
+    /**
+     * Set the description.
+     * This is one of the few attributes of an index that can be set directly.
+     */
+    public IndexHeader setDescription(Description description) {
+	header.setDescription(description);
+	return this;
+    }
+
+
 
    /**
      * Does a timestamp fall within the bounds of the Index.
@@ -385,9 +440,51 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get the event listener.
      */
-    public IndexEventMulticaster getEventMulticaster() {
+    public IndexEventMulticaster eventMulticaster() {
 	return eventMulticaster;
     }
 
-    
+    /**
+     * Add a IndexPrimaryEventListener.
+     */
+    public void addPrimaryEventListener(IndexPrimaryEventListener l) {
+	eventMulticaster.addPrimaryEventListener(l);
+    }
+
+    /**
+     * Remove a IndexPrimaryEventListener.
+     */
+     public void removePrimaryEventListener(IndexPrimaryEventListener l) {
+	 eventMulticaster.removePrimaryEventListener(l);
+     }
+
+    /**
+     * Add a IndexAddEventListener.
+     */
+    public void addAddEventListener(IndexAddEventListener l) {
+	eventMulticaster.addAddEventListener(l);
+    }
+
+    /**
+     * Remove a IndexAddEventListener.
+     */
+    public void removeAddEventListener(IndexAddEventListener l) {
+	eventMulticaster.removeAddEventListener(l);
+    }
+
+    /**
+     * Add a IndexAccessEventListener.
+     */
+    public void addAccessEventListener(IndexAccessEventListener l) {
+	eventMulticaster.addAccessEventListener(l);
+    }
+
+    /**
+     * Remove a IndexAccessEventListener.
+     */
+    public void removeAccessEventListener(IndexAccessEventListener l) {
+	eventMulticaster.removeAccessEventListener(l);
+    }
+
+
 }

@@ -77,7 +77,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	position = new AbsoluteAdjustablePosition(0);
     }
 
-        /**
+    /**
      * The name of the index.
      */
     public String getName() {
@@ -89,6 +89,22 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public ID getID() {
 	return indexImpl.getID();
+    }
+
+    /**
+     * Get the type of an index.
+     */
+    public int getIndexType() {
+	return indexImpl.getIndexType();
+    }
+
+   /**
+     * Get the index data type.
+     * Some indexes have the same type throughout,
+     * other have mixed type data.
+     */
+    public DataType getIndexDataType() {
+	return indexImpl.getIndexDataType();
     }
 
      /**
@@ -205,14 +221,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	return indexImpl.addDataType(typeID, typeName);
     }
 
-    /**
-     * Get the data style.
-     * Either inline or external.
-     */
-    public int getDataStyle() {
-	return indexImpl.getDataStyle();
-    }
-
 
     /**
      * Does this index have annotations.
@@ -255,7 +263,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item) {
+    public long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException , IndexItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -266,7 +274,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index with a specific Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp datatime) {
+    public long addItem(DataItem item, Timestamp datatime) throws IndexTerminatedException, IndexActivationException, IndexItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -337,6 +345,51 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	}
     }
 	
+
+    /**
+     * Get the  last time an IndexItem was accessed from the index.
+     */
+    public Timestamp getLastAccessTime() {
+	return indexImpl.getLastAccessTime();
+    }
+
+    /**
+     * Get the path of the index file.
+     * @return null if there is no index path
+     */
+    public String getIndexPathName() {
+	return indexImpl.getIndexPathName();
+    }
+
+    /**
+     * Get the path of the data if the index data style
+     * is external or shadow.
+     * @return null if there is no data path
+     */
+    public String getDataPathName() {
+	return indexImpl.getDataPathName();
+    }
+
+    /**
+     * Get the description for an index.
+     * @return null if there is no description
+     */
+    public Description getDescription() {
+	return indexImpl.getDescription();
+    }
+
+    /**
+     * Set the description.
+     * This is one of the few attributes of an index that can be set directly.
+     */
+    public IndexHeader setDescription(Description description) {
+	indexImpl.setDescription(description);
+	return this;
+    }
+
+
+
+
     /**
      * Does a timestamp fall within the bounds of the Index.
      * The bounds are the first time data is put in and the last
@@ -373,6 +426,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * with the speicifed data Timestamp.
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
+	Timestamp firstTS =  null;
+	Timestamp lastTS = null;
+
 	if (isSelection) {
 	    if (contains(t, sel)) {
 		return indexImpl.locate(t, sel, lifetime);
@@ -380,8 +436,6 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		// now try and determine if it is too low or too high
 		IndexItem first = getItem(0);
 		IndexItem last = getItem(getLength()-1);
-		Timestamp firstTS =  null;
-		Timestamp lastTS = null;
 
 		if (sel == IndexTimestampSelector.DATA) {
 		    firstTS = first.getDataTimestamp();
@@ -396,7 +450,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		} else if (TimeCalculator.greaterThan(t, lastTS)) {
 		    return new TimestampMapping(t, Position.TOO_HIGH);
 		} else {
-		    throw new Error("TimeIndex: locate failed to determine timestamp");
+		    throw new RuntimeException("TimeIndex: locate failed to process timestamp " + t + ". First time = " + firstTS + ". Last time = " + lastTS + ".");
 		}		
 	    }
 	} else {
@@ -466,7 +520,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		    return selection;
 		} catch ( CloneNotSupportedException cnse) {
 		    // the clone failed
-		    throw new Error("TimeIndex: clone() failed");
+		    throw new RuntimeException("TimeIndex::select().  Failed to clone " + this);
 		}
 	    }
 	} else {
@@ -513,13 +567,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	return indexImpl.terminate();
     }
 
-    /**
-     * Get the  last time an IndexItem was accessed from the index.
-     */
-    public Timestamp getLastAccessTime() {
-	return indexImpl.getLastAccessTime();
-    }
 
+    /**
+     * Is the index still in time order.
+     */
+    public boolean isInTimeOrder() {
+	return indexImpl.isInTimeOrder();
+    }
 
     /**
      * Flush this index.

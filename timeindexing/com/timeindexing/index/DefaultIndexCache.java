@@ -182,7 +182,7 @@ public class DefaultIndexCache implements IndexCache {
 		} else if (TimeCalculator.greaterThan(t, this.getLastDataTime())) {
 		    return new TimestampMapping(t, Position.TOO_HIGH);
 		} else {
-		    throw new Error("DefaultIndexCache: locate failed to determine timestamp");
+		    throw new RuntimeException("DefaultIndexCache: locate failed to process timestamp " + t + ". First Data time = " + this.getFirstDataTime() + ". Last Data time = " + this.getLastDataTime() + ".");
 		}
 	    } else {
 		if (TimeCalculator.lessThan(t, this.getFirstIndexTime())) {
@@ -190,7 +190,7 @@ public class DefaultIndexCache implements IndexCache {
 		} else if (TimeCalculator.greaterThan(t, this.getLastIndexTime())) {
 		    return new TimestampMapping(t, Position.TOO_HIGH);
 		} else {
-		    throw new Error("DefaultIndexCache: locate failed to determine timestamp");
+		    throw new RuntimeException("DefaultIndexCache: locate failed toprocess  timestamp " + t + ". First Index time = " + this.getFirstIndexTime() + ". Last Index time = " + this.getLastIndexTime() + ".");
 		}
 	    }
 	} else {
