@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * This does I/O for an Index with external data.
@@ -96,11 +98,22 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// create the header
 	headerInteractor.create(originalIndexSpecifier);
 	
+	// determine the URI
+	try {
+	    URI uri = new URI("index", "", FileUtils.removeExtension(originalIndexSpecifier), null);
+
+	    headerInteractor.setURI(uri);
+	    // tell the index
+	    getIndex().setURI(uri);
+	} catch (URISyntaxException use) {
+	    System.err.println("ExternalIndexIO: setting URI failed using " + originalIndexSpecifier + " => " + FileUtils.removeExtension(originalIndexSpecifier));
+	}
+
 	try {
 	    open();
 
-	    myIndex.setOption(HeaderOption.INDEXPATH_HO, indexFileName);
-	    myIndex.setOption(HeaderOption.DATAPATH_HO, dataFileName);
+	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
+	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
 	    //myIndex.getHeader().setIndexPathName(indexFileName);
 	    //myIndex.getHeader().setDataPathName(dataFileName);
@@ -138,6 +151,14 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	indexFileName = headerInteractor.getIndexPathName();
 	dataFileName = headerInteractor.getDataPathName();
 
+
+	// determine the URI
+	try {
+	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(headerInteractor.getIndexPathName()), null));
+	} catch (URISyntaxException use) {
+	    ;
+	}
+
 	open();
 
 	long indexHeaderPosition = readHeader(FileType.EXTERNAL_INDEX);
@@ -156,7 +177,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    // must be looking in the right place.
 
 	    // sync the read header with the index object
-	    myIndex.syncHeader(headerInteractor);
+	    getIndex().syncHeader(headerInteractor);
 
 	    return indexHeaderPosition;
 	} else {
