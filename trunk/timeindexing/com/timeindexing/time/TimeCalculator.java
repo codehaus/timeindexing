@@ -9,7 +9,9 @@ import java.util.List;
 
 /*
  * TODO:  scale times to best granualarity before doing operation.
- * The nconvert time back to required scale.
+ * Then convert time back to required scale.
+ * TODO: ensure addTimestamp() and subtractTimestamp()
+ * do right thing with AbsoluteTimestamp.  Is a cast needed?
  */
 
 /**
@@ -27,6 +29,7 @@ public class TimeCalculator {
 
     /**
      * Add one timestamp to another.
+     * Returns a value in the Scale with the greatest resolution. 
      */
     public static Timestamp addTimestamp(Timestamp t0, Timestamp t1) {
 	if (t0 instanceof RelativeTimestamp && t1 instanceof RelativeTimestamp) {
@@ -139,6 +142,7 @@ public class TimeCalculator {
 
     /**
      * Substract one  timestamp from another.
+     * Returns a value in the Scale with the greatest resolution. 
      */
     public static Timestamp subtractTimestamp(Timestamp t0, Timestamp t1) {
 	if (t0 instanceof RelativeTimestamp && t1 instanceof AbsoluteTimestamp) {
@@ -313,250 +317,146 @@ public class TimeCalculator {
      */
 
     /**
-     * Convert MillisecondTimestamp to SecondTimestamp.
-     * Loses some data.
+     * Convert a Timestamp to SecondScale Timestamp.
+     * May lose some data.
+     */
+    public static  SecondScale toSeconds(Timestamp ts) {
+	if (ts instanceof AbsoluteTimestamp) {
+	    return toSeconds((AbsoluteTimestamp)ts);
+	} else if (ts instanceof RelativeTimestamp) {
+	    return toSeconds((RelativeTimestamp)ts);
+	}  else {
+	    throw new Error("Unhandled type for argument to toSeconds(). It is: " +
+				ts.getClass().getName());
+	}
+    }
+
+    /**
+     * Convert AbsoluteTimestamp to SecondTimestamp.
+     * May lose some data.
+     */
+    public static  SecondTimestamp toSeconds(AbsoluteTimestamp ts) {
+	return new SecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
+    }
+
+
+    /**
+     * Convert RelativeTimestamp to ElapsedSecondTimestamp.
+     * May lose some data.
     */
-    public static  SecondTimestamp toSeconds(MillisecondTimestamp mTS) {
-	return new SecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
+    public static  ElapsedSecondTimestamp toSeconds(RelativeTimestamp ts) {
+	return new ElapsedSecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
     /**
-     * Convert MicrosecondTimestamp to SecondTimestamp.
-     * Loses some data.
+     * Convert a Timestamp to MillisecondScale Timestamp.
+     * May lose some data.
      */
-    public static SecondTimestamp toSeconds(MicrosecondTimestamp uTS) {
-	return new SecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
+    public static  MillisecondScale toMillis(Timestamp ts) {
+	if (ts instanceof AbsoluteTimestamp) {
+	    return toMillis((AbsoluteTimestamp)ts);
+	} else if (ts instanceof RelativeTimestamp) {
+	    return toMillis((RelativeTimestamp)ts);
+	}  else {
+	    throw new Error("Unhandled type for argument to toMillis(). It is: " +
+				ts.getClass().getName());
+	}
     }
 
+
     /**
-     * Convert NanosecondTimestamp to MicrosecondTimestamp.
-     * Loses some data.
+     * Convert AbsoluteTimestamp to MillisecondScale.
+     * May lose some data.
      */
-    public static SecondTimestamp toSeconds(NanosecondTimestamp nTS) {
-	return new SecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
+    public static  MillisecondTimestamp toMillis(AbsoluteTimestamp ts) {
+	return new MillisecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
-    /**
-     * Convert SecondTimestamp to MicrosecondTimestamp.
-     * A NO OP.
-     */
-    public static SecondTimestamp toSeconds(SecondTimestamp sTS) {
-	return sTS;
-    }
 
     /**
-     * Convert MillisecondTimestamp to MillisecondTimestamp.
-     * A NO OP.
-     */
-    public static  MillisecondTimestamp toMillis(MillisecondTimestamp mTS) {
-	return mTS;
-    }
-
-    /**
-     * Convert MicrosecondTimestamp to MillisecondTimestamp.
-     * Loses some data.
-     */
-    public static MillisecondTimestamp toMillis(MicrosecondTimestamp uTS) {
-	return new MillisecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert NanosecondTimestamp to MillisecondTimestamp.
-     * Loses some data.
-     */
-    public static MillisecondTimestamp toMillis(NanosecondTimestamp nTS) {
-	return new MillisecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert SecondTimestamp to MillisecondTimestamp.
-     */
-    public static MillisecondTimestamp toMillis(SecondTimestamp sTS) {
-	return new MillisecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert MillisecondTimestamp to MicrosecondTimestamp.
+     * Convert RelativeTimestamp to ElapsedMillisecondTimestamp.
+     * May lose some data.
     */
-    public static  MicrosecondTimestamp toMicros(MillisecondTimestamp mTS) {
-	return new MicrosecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
+    public static  ElapsedMillisecondTimestamp toMillis(RelativeTimestamp ts) {
+	return new ElapsedMillisecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
+
     /**
-     * Convert MicrosecondTimestamp to MicrosecondTimestamp.
-     * A NO OP.
+     * Convert a Timestamp to MicrosecondScale Timestamp.
+     * May lose some data.
      */
-    public static MicrosecondTimestamp toMicros(MicrosecondTimestamp uTS) {
-	return uTS;
+    public static  MicrosecondScale toMicros(Timestamp ts) {
+	if (ts instanceof AbsoluteTimestamp) {
+	    return toMicros((AbsoluteTimestamp)ts);
+	} else if (ts instanceof RelativeTimestamp) {
+	    return toMicros((RelativeTimestamp)ts);
+	}  else {
+	    throw new Error("Unhandled type for argument to toMicros(). It is: " +
+				ts.getClass().getName());
+	}
     }
 
+
     /**
-     * Convert NanosecondTimestamp to MicrosecondTimestamp.
-     * Loses some data.
+     * Convert AbsoluteTimestamp to MicrosecondScale.
+     * May lose some data.
      */
-    public static MicrosecondTimestamp toMicros(NanosecondTimestamp nTS) {
-	return new MicrosecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert SecondTimestamp to MicrosecondTimestamp.
-     */
-    public static MicrosecondTimestamp toMicros(SecondTimestamp sTS) {
-	return new MicrosecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert MilliecondTimestamp to NanosecondTimestamp.
-     */
-    public static  NanosecondTimestamp toNanos(MillisecondTimestamp mTS) {
-	return new NanosecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert MicrosecondTimestamp to NanosecondTimestamp.
-     */
-    public static NanosecondTimestamp toNanos(MicrosecondTimestamp uTS) {
-	return new NanosecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert NanosecondTimestamp to NanosecondTimestamp.
-     * A NO OP.
-     */
-    public static NanosecondTimestamp toNanos(NanosecondTimestamp nTS) {
-	return nTS;
-    }
-
-    /**
-     * Convert SecondTimestamp to NanosecondTimestamp.
-     */
-    public static NanosecondTimestamp toNanos(SecondTimestamp sTS) {
-	return new NanosecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
+    public static  MicrosecondTimestamp toMicros(AbsoluteTimestamp ts) {
+	return new MicrosecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
 
     /**
-     * Convert ElapsedMillisecondTimestamp to ElapsedSecondTimestamp.
-     * Loses some data.
+     * Convert RelativeTimestamp to ElapsedMicrosecondTimestamp.
+     * May lose some data.
     */
-    public static  ElapsedSecondTimestamp toSeconds(ElapsedMillisecondTimestamp mTS) {
-	return new ElapsedSecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
+    public static  ElapsedMicrosecondTimestamp toMicros(RelativeTimestamp ts) {
+	return new ElapsedMicrosecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
+
     /**
-     * Convert ElapsedMicrosecondTimestamp to ElapsedSecondTimestamp.
-     * Loses some data.
+     * Convert a Timestamp to NanosecondScale Timestamp.
+     * May lose some data.
      */
-    public static ElapsedSecondTimestamp toSeconds(ElapsedMicrosecondTimestamp uTS) {
-	return new ElapsedSecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
+    public static  NanosecondScale toNanos(Timestamp ts) {
+	if (ts instanceof AbsoluteTimestamp) {
+	    return toNanos((AbsoluteTimestamp)ts);
+	} else if (ts instanceof RelativeTimestamp) {
+	    return toNanos((RelativeTimestamp)ts);
+	}  else {
+	    throw new Error("Unhandled type for argument to toNanos(). It is: " +
+				ts.getClass().getName());
+	}
     }
 
+
     /**
-     * Convert ElapsedNanosecondTimestamp to ElapsedMicrosecondTimestamp.
-     * Loses some data.
+     * Convert AbsoluteTimestamp to NanosecondScale.
+     * May lose some data.
      */
-    public static ElapsedSecondTimestamp toSeconds(ElapsedNanosecondTimestamp nTS) {
-	return new ElapsedSecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
+    public static  NanosecondTimestamp toNanos(AbsoluteTimestamp ts) {
+	return new NanosecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
-    /**
-     * Convert ElapsedSecondTimestamp to ElapsedMicrosecondTimestamp.
-     * A NO OP.
-     */
-    public static ElapsedSecondTimestamp toSeconds(ElapsedSecondTimestamp sTS) {
-	return sTS;
-    }
 
     /**
-     * Convert ElapsedMillisecondTimestamp to ElapsedMillisecondTimestamp.
-     * A NO OP.
-     */
-    public static  ElapsedMillisecondTimestamp toMillis(ElapsedMillisecondTimestamp mTS) {
-	return mTS;
-    }
-
-    /**
-     * Convert ElapsedMicrosecondTimestamp to ElapsedMillisecondTimestamp.
-     * Loses some data.
-     */
-    public static ElapsedMillisecondTimestamp toMillis(ElapsedMicrosecondTimestamp uTS) {
-	return new ElapsedMillisecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedNanosecondTimestamp to ElapsedMillisecondTimestamp.
-     * Loses some data.
-     */
-    public static ElapsedMillisecondTimestamp toMillis(ElapsedNanosecondTimestamp nTS) {
-	return new ElapsedMillisecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedSecondTimestamp to ElapsedMillisecondTimestamp.
-     */
-    public static ElapsedMillisecondTimestamp toMillis(ElapsedSecondTimestamp sTS) {
-	return new ElapsedMillisecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedMillisecondTimestamp to ElapsedMicrosecondTimestamp.
+     * Convert RelativeTimestamp to ElapsedNanosecondTimestamp.
+     * May lose some data.
     */
-    public static  ElapsedMicrosecondTimestamp toMicros(ElapsedMillisecondTimestamp mTS) {
-	return new ElapsedMicrosecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
+    public static  ElapsedNanosecondTimestamp toNanos(RelativeTimestamp ts) {
+	return new ElapsedNanosecondTimestamp(ts.getSeconds(), ts.getNanoSeconds());
     }
 
     /**
-     * Convert ElapsedMicrosecondTimestamp to ElapsedMicrosecondTimestamp.
-     * A NO OP.
+     * Convert a Timestamp to a java.util.Date.
      */
-    public static ElapsedMicrosecondTimestamp toMicros(ElapsedMicrosecondTimestamp uTS) {
-	return uTS;
-    }
+    public static Date toDate(Timestamp ts) {
+	long milliseconds = (ts.getSeconds() * 1000) + (ts.getNanoSeconds() / 1000000);
 
-    /**
-     * Convert ElapsedNanosecondTimestamp to ElapsedMicrosecondTimestamp.
-     * Loses some data.
-     */
-    public static ElapsedMicrosecondTimestamp toMicros(ElapsedNanosecondTimestamp nTS) {
-	return new ElapsedMicrosecondTimestamp(nTS.getSeconds(), nTS.getNanoSeconds());
+	return new Date(milliseconds);
     }
-
-    /**
-     * Convert ElapsedSecondTimestamp to ElapsedMicrosecondTimestamp.
-     */
-    public static ElapsedMicrosecondTimestamp toMicros(ElapsedSecondTimestamp sTS) {
-	return new ElapsedMicrosecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedMilliecondTimestamp to ElapsedNanosecondTimestamp.
-     */
-    public static  ElapsedNanosecondTimestamp toNanos(ElapsedMillisecondTimestamp mTS) {
-	return new ElapsedNanosecondTimestamp(mTS.getSeconds(), mTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedMicrosecondTimestamp to ElapsedNanosecondTimestamp.
-     */
-    public static ElapsedNanosecondTimestamp toNanos(ElapsedMicrosecondTimestamp uTS) {
-	return new ElapsedNanosecondTimestamp(uTS.getSeconds(), uTS.getNanoSeconds());
-    }
-
-    /**
-     * Convert ElapsedNanosecondTimestamp to ElapsedNanosecondTimestamp.
-     * A NO OP.
-     */
-    public static ElapsedNanosecondTimestamp toNanos(ElapsedNanosecondTimestamp nTS) {
-	return nTS;
-    }
-
-    /**
-     * Convert ElapsedSecondTimestamp to ElapsedNanosecondTimestamp.
-     */
-    public static ElapsedNanosecondTimestamp toNanos(ElapsedSecondTimestamp sTS) {
-	return new ElapsedNanosecondTimestamp(sTS.getSeconds(), sTS.getNanoSeconds());
-    }
-
 
 
     /*
