@@ -96,23 +96,6 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
     }
 
     /**
-     * Get the index type.
-     */
-    public int getIndexType() {
-	return indexType;
-    }
-
-
-
-    /**
-     * Return the index item size in bytes.
-     * This may vary once special indexes are implemented.
-     */
-    public int getItemSize() {
-	return itemSize;
-    }
-
-    /**
      * Open an index header  to read it.
      */
     public boolean open(String filename) throws IOException {
@@ -223,7 +206,29 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 		readBuf.get();
 
 		// get the index type
-		indexType = (int)readBuf.get();
+		int indexTypeValue = (int)readBuf.get();
+
+		switch (indexTypeValue) {
+		    case IndexType.INLINE: {
+			indexType = IndexType.INLINE_DT;
+			break;
+		    }
+		    case IndexType.EXTERNAL: {
+			indexType = IndexType.EXTERNAL_DT;
+			break;
+		    }
+		    case IndexType.SHADOW: {
+			indexType = IndexType.SHADOW_DT;
+			break;
+		    }
+		    case IndexType.INCORE: {
+			throw new IOException("Header read failure. Got unexpected IndexType: INCORE");
+		    }
+		    default: {
+			throw new IOException("Header read failure. Got unexpected IndexType: " + indexTypeValue);
+		    }
+		}
+
 
 		long aTime = 0;
 
@@ -268,7 +273,6 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 		// last offset
 		lastOffset = new Offset(readBuf.getLong());
 
-		// last offset
 		// terminated
 		byte terminatedByte = readBuf.get();
 		if (terminatedByte > 0) {
