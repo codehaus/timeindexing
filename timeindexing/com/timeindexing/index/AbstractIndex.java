@@ -40,6 +40,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     // An index that is finalized can NEVER be activated.
     boolean activated = false;
 
+    // Has the index changed in any way
+    boolean changed = false;
+
     // Values from the header are kep here.
     // They can be mapped out to a file if necessary.
     ManagedIndexHeader header = null;
@@ -223,28 +226,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
-     * Get the index URI of a nominated index.
-     */
-    public URI getIndexURI(ID indexID) {
-	return header.getIndexURI(indexID);
-    }
-
-    /**
-     * Does this index have the URI of some other index
-     */
-    public boolean hasIndexURI(URI URIName) {
-	return header.hasIndexURI(URIName);
-    }
-
-    /**
-     * Add a new indexID/indexURI
-     * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
-     */
-    public boolean addIndexURI(ID indexID, URI URIName) {
-	return header.addIndexURI(indexID, URIName);
-    }
-
-    /**
      * Get the no of items in the index.
      */
     public synchronized long getLength() {
@@ -325,6 +306,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	header.setEndTime(last);
 	// and the last data time
 	header.setLastDataTime(item.getDataTimestamp());
+
+	// mark as being changed
+	changed = true;
 
 	// tell all the listeners that an item has been added
 	eventMulticaster.fireAddEvent(new IndexAddEvent(indexName, header.getID(), item, this));
@@ -653,23 +637,19 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
-     * Flush this index.
-     */
-    public boolean flush() {
-
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
-
-	return true;
-    }
-
-
-    /**
      * Is the Index closed.
      */
     public boolean isClosed() {
 	return closed;
     }
 
+    /**
+     * Has the index changed in any way.
+     */
+    public boolean isChanged() {
+	return changed;
+    }
+    
     /**
      * Get the event listener.
      */
