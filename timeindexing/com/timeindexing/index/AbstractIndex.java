@@ -21,6 +21,7 @@ import java.util.Properties;
 //import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.Comparator;
+import java.net.URI;
 
 /**
  * An abstract implementation of an Index object.
@@ -83,6 +84,13 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	return header.getID();
     }
 
+
+   /**
+     * Get the Index specification in the form of a URI.
+     */
+    public URI getURI() {
+	return header.getURI();
+    }
 
     /**
      * Get the start time of the index.
@@ -217,14 +225,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get the index URI of a nominated index.
      */
-    public String getIndexURI(ID indexID) {
+    public URI getIndexURI(ID indexID) {
 	return header.getIndexURI(indexID);
     }
 
     /**
      * Does this index have the URI of some other index
      */
-    public boolean hasIndexURI(String URIName) {
+    public boolean hasIndexURI(URI URIName) {
 	return header.hasIndexURI(URIName);
     }
 
@@ -232,7 +240,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Add a new indexID/indexURI
      * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
      */
-    public boolean addIndexURI(ID indexID, String URIName) {
+    public boolean addIndexURI(ID indexID, URI URIName) {
 	return header.addIndexURI(indexID, URIName);
     }
 
@@ -252,6 +260,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
     public abstract long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
 
     /**
      * Add an Index Item to the Index.
@@ -349,7 +358,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} else {
 	    setLastAccessTime();
 
-	    IndexItem item = indexCache.getItem(p);
+	    IndexItem item = getItem(p.value());
 
 	    // tell all the listeners that an item has been accessed
 	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
