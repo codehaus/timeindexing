@@ -11,6 +11,7 @@ import com.timeindexing.basic.Offset;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.net.URI;
 
 /**
  * The default index header implementation.
@@ -21,6 +22,9 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     // these are currently synced in syncHeader()
     String indexName = null;
     ID indexID = null;
+    // The index URI
+    URI indexURI = null;
+
     Timestamp startTime = Timestamp.ZERO;
     Timestamp endTime = Timestamp.ZERO;
     Timestamp firstTime = Timestamp.ZERO;
@@ -31,6 +35,9 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     boolean terminated = false;
     Offset firstOffset = null;
     Offset lastOffset = null;
+
+    // a map from Index ID to Index URI
+    //Map referencedIndexMap = null;
 
     // These should be options in the IndexProperties
 
@@ -50,7 +57,6 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     IndexType indexType = IndexType.INCORE_DT;
     boolean hasAnnotations = false;
     int annotationStyle = AnnotationStyle.NONE;
-    Map externalIndexMap = null;
 
     // low level info
     int versionMajor = 0;
@@ -105,6 +111,20 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	return this;
     }
 
+   /**
+     * Get the Index specification in the form of a URI.
+     */
+    public URI getURI() {
+	return indexURI;
+    }
+
+    /**
+     * Set the URI of the index.
+     */
+    public ManagedIndexHeader setURI(URI uri) {
+	indexURI = uri;
+	return this;
+    }
 
     /**
      * Get the start time of the index.
@@ -474,22 +494,26 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     /**
      * Get the index URI of a nominated index.
      */
-    public String getIndexURI(ID indexID) {
-	if (externalIndexMap == null) {
+    public URI getIndexURI(ID indexID) {
+	Map referencedIndexMap = (Map)getOption(HeaderOption.REFERENCEMAPPING_HO);
+
+	if (referencedIndexMap == null) {
 	    return null;
 	} else {
-	    return (String)externalIndexMap.get(indexID);
+	    return (URI)referencedIndexMap.get(indexID);
 	}
     }
 
     /**
      * Does this index have the URI of some other index
      */
-    public boolean hasIndexURI(String URIName) {
-	if (externalIndexMap ==  null) {
+    public boolean hasIndexURI(URI URIName) {
+	Map referencedIndexMap = (Map)getOption(HeaderOption.REFERENCEMAPPING_HO);
+
+	if (referencedIndexMap ==  null) {
 	    return false;
 	} else {
-	    return dataTypeMap.containsValue(URIName);
+	    return referencedIndexMap.containsValue(URIName);
 	}
     }
 
@@ -497,12 +521,21 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * Add a new indexID/indexURI
      * @return true, if a new index URI was added; false, if the index had this ID/URI pair already
      */
-    public boolean addIndexURI(ID indexID, String URIName) {
-	if (externalIndexMap == null) {
-	    externalIndexMap = new HashMap();
+    public boolean addIndexURI(ID indexID, URI URIName) {
+	Map referencedIndexMap = (Map)getOption(HeaderOption.REFERENCEMAPPING_HO);
+
+	if (referencedIndexMap == null) {
+	    referencedIndexMap = new HashMap();
+	    setOption(HeaderOption.REFERENCEMAPPING_HO, referencedIndexMap);
 	}
 
-	externalIndexMap.put(indexID, URIName);
+	if (referencedIndexMap.containsValue(URIName)) {
+	    System.err.println("Skipping " + indexID + " => " + URIName);
+	} else {
+	    referencedIndexMap.put(indexID, URIName);
+	    System.err.println("Adding " + indexID + " => " + URIName);
+	}
+
 	return true;
     }
 
@@ -544,6 +577,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     public boolean syncHeader(ManagedIndexHeader indexHeader) {
 	setName(indexHeader.getName());
 	setID(indexHeader.getID());
+	setURI(indexHeader.getURI());
 	setStartTime(indexHeader.getStartTime());
 	setEndTime(indexHeader.getEndTime());
 	setFirstTime(indexHeader.getFirstTime());
