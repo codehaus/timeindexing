@@ -24,6 +24,7 @@ import java.io.IOException;
 
 /**
  * A class to index MP3 data.
+ * All data times in the index are elapsed times.
  */
 public class MP3Indexer {
     Index index = null;
