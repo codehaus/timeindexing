@@ -141,7 +141,7 @@ public interface Index extends IndexHeader {
      * Intened to sync all associated streams and files,
      * and this sets the end time too.
      */
-    public boolean flush();
+    public boolean flush() throws IndexFlushException;
 
     /**
      * Is the Index closed.
@@ -153,7 +153,7 @@ public interface Index extends IndexHeader {
      * Intened to close all associated streams and files,
      * and this sets the end time too.
      */
-    public boolean close();
+    public boolean close() throws IndexCloseException;
 
     /**
      * Has the index changed in any way.
