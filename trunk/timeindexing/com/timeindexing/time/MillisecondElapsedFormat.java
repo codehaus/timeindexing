@@ -27,7 +27,7 @@ public class MillisecondElapsedFormat extends AbstractElapsedFormat {
      * Format a time using seconds, given seconds and nanoseconds.
      */
     public String secondsFormat(long seconds, int nanoseconds) {
-	return seconds + "." + millisformat.format(nanoseconds/1000);
+	return seconds + "." + millisformat.format(nanoseconds/1000000);
     }
 
 
