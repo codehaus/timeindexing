@@ -86,7 +86,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	try {
 	    URI uri = new URI("index", "", FileUtils.removeExtension(originalIndexSpecifier), null);
 
-	    System.err.println("InlineIndexIO: settign URI to " + uri);
+	    //System.err.println("InlineIndexIO: settign URI to " + uri);
 	    headerInteractor.setURI(uri);
 	    // tell the index
 	    getIndex().setURI(uri);
@@ -128,9 +128,20 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
 
+
 	// determine the URI
+	// if the index path name is relative we need to make it an absolute path name
+	File indexSpecFile = new File(headerFileName);
+	String uriPath = null;
+
+	if (indexSpecFile.isAbsolute()) {
+	    uriPath = headerFileName;
+	} else {
+	    uriPath = indexSpecFile.getAbsolutePath();
+	}
+
 	try {
-	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(headerInteractor.getIndexPathName()), null));
+	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(uriPath), null));
 	} catch (URISyntaxException use) {
 	    ;
 	}
@@ -209,7 +220,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	IndexItem item = null;
 
-	//System.err.println("InlineIndexIO: getItem " + position);
+	System.err.println("InlineIndexIO: getItem " + position);
 
 	gotoFirstPosition();
 
