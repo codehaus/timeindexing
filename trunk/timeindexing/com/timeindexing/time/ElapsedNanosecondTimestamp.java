@@ -3,10 +3,6 @@
 package com.timeindexing.time;
 
 import java.util.Date;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.io.Serializable;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -16,16 +12,6 @@ import java.io.ObjectInputStream;
  * A timestamp that only has significant data down to nanosecond level.
  */
 public class ElapsedNanosecondTimestamp implements RelativeTimestamp, NanosecondScale, Serializable {
-    /*
-     * A format for nanoseconds.  6 obligatory digits.
-     */
-    private static NumberFormat nanosformat = new DecimalFormat("000000000");
-
-    /*
-     * A format for whole seconds
-     */
-    private static DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
     /*
      * The value of the timestamp
      */
@@ -73,14 +59,15 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
      * and a number of  nanoseconds.
      */
     public ElapsedNanosecondTimestamp(long seconds, int nanoseconds) {
-	if (seconds >= 0) {
-	    value = seconds * 1000000000;
-	    value += nanoseconds;
-	    value |= Timestamp.ELAPSED_NANOSECOND;
+	long ts = 0;
+
+	ts = seconds * 1000000000;
+	ts += nanoseconds;
+
+	if (ts >= 0) {
+	    value = ts | Timestamp.ELAPSED_NANOSECOND;
 	} else {
-	    value = Math.abs(seconds) * 1000000000;
-	    value += nanoseconds;
-	    value |= Timestamp.ELAPSED_NANOSECOND;
+	    value = Math.abs(ts) | Timestamp.ELAPSED_NANOSECOND;
 	    isNegative = true;
 	}
     }
@@ -107,7 +94,11 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return ((int)(valueT % 1000000000)) * (int)1;
+	    if (valueT / 1000000000 == 0) {  // zero seconds
+		return  (int)(isNegative? (-valueT % 1000000000): (valueT % 1000000000));
+	    } else {
+		return ((int)(valueT % 1000000000)) * (int)1;
+	    }
 	}
     }
 
@@ -115,12 +106,7 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
      * Get the toString() version of a NanosecondTimestamp.
      */
     public String toString() {
-	long valueT = value ^ Timestamp.ELAPSED_NANOSECOND;
-
-	long seconds = valueT / 1000000000;
-	long nanosOnly = (valueT % 1000000000);
-
-	return ("(" + (isNegative ? -seconds : seconds) + "." + nanosformat.format(nanosOnly) + ")");
+	return ("(" +  new NanosecondElapsedFormat().format(this) + ")");
     }
 
     /**
@@ -129,6 +115,13 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
      */
     public long value() {
 	return value;
+    }
+
+    /**
+     * Is the Timestamp negative.
+     */
+    public boolean isNegative() {
+	return isNegative;
     }
 
     /** 

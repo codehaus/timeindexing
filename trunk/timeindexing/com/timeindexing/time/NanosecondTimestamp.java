@@ -43,6 +43,7 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * and a number of nanoseconds.
      */
     public NanosecondTimestamp(long seconds, int nanoseconds) {
+	// TODO: what if no of seconds amounts to more than 31 bits
 	value = seconds * 1000000000;
 	value += nanoseconds;
 	value |= Timestamp.NANOSECOND;
@@ -89,10 +90,7 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * This formats the first day specially.
      */
     public String toString() {
-        long timevalue =  value ^ Timestamp.NANOSECOND;
-	long milliseconds = timevalue / 1000000;
-
-	return ("[" + NanosecondDateFormat.format(this) + "]");
+	return ("[" + new NanosecondDateFormat().format(this) + "]");
     }
 
     /**

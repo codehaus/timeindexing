@@ -3,10 +3,6 @@
 package com.timeindexing.time;
 
 import java.util.Date;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.io.Serializable;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -19,16 +15,6 @@ import java.io.ObjectInputStream;
  * A value of zero is 0.000, not Jan 1st 1970.
  */
 public class ElapsedMillisecondTimestamp implements RelativeTimestamp, MillisecondScale,  Serializable {
-    /*
-     * A format for milliseconds.  3 obligatory digits.
-     */
-    private static NumberFormat millisformat = new DecimalFormat("000");
-
-    /*
-     * A format for whole seconds
-     */
-    private static DateFormat format = new SimpleDateFormat("sss");
-
     /*
      * The value of the timestamp
      */
@@ -74,14 +60,16 @@ public class ElapsedMillisecondTimestamp implements RelativeTimestamp, Milliseco
      * and a number of nanoseconds.
      */
     public  ElapsedMillisecondTimestamp(long seconds, int nanoseconds) {
-	if (seconds >= 0) {
-	    value = seconds * 1000;
-	    value += nanoseconds / 1000000;
-	    value |= Timestamp.ELAPSED_MILLISECOND;
+	long ts = 0;
+
+	ts = seconds * 1000;
+	ts += nanoseconds / 1000000;
+
+
+	if (ts >= 0) {
+	    value = ts | Timestamp.ELAPSED_MILLISECOND;	
 	} else {
-	    value = Math.abs(seconds) * 1000;
-	    value += nanoseconds / 1000000;
-	    value |= Timestamp.ELAPSED_MILLISECOND;
+	    value = Math.abs(ts) | Timestamp.ELAPSED_MILLISECOND;
 	    isNegative = true;
 	}
     }
@@ -108,7 +96,11 @@ public class ElapsedMillisecondTimestamp implements RelativeTimestamp, Milliseco
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return ((int)(valueT % 1000)) * (int)1000000;
+	    if (valueT / 1000 == 0) {  // zero seconds
+		return  ((int)(isNegative? (-valueT % 1000): (valueT % 1000)))  * (int)1000000;
+	    } else {
+		return ((int)(valueT % 1000)) * (int)1000000;
+	    }
 	}
     }
 
@@ -116,13 +108,7 @@ public class ElapsedMillisecondTimestamp implements RelativeTimestamp, Milliseco
      * Get the toString() version of a ElapsedTimestamp.
      */
     public String toString() {
-	long valueT = value ^ Timestamp.ELAPSED_MILLISECOND;
-
-	long seconds = valueT / 1000;
-	long millisOnly = (valueT % 1000);
-
-	
-	return ("(" + (isNegative ? -seconds : seconds) + "." + millisformat.format(millisOnly) + ")");
+	return ("(" + (isNegative ? "-" : "") + new MillisecondElapsedFormat().format(this) + ")");
     }
 
     /**

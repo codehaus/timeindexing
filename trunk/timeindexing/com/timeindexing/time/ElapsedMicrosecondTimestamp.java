@@ -3,10 +3,6 @@
 package com.timeindexing.time;
 
 import java.util.Date;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.io.Serializable;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -16,16 +12,6 @@ import java.io.ObjectInputStream;
  * A timestamp that only has significant data down to microsecond level.
  */
 public class ElapsedMicrosecondTimestamp implements RelativeTimestamp, MicrosecondScale, Serializable {
-    /*
-     * A format for microseconds.  6 obligatory digits.
-     */
-    private static NumberFormat microsformat = new DecimalFormat("000000");
-
-    /*
-     * A format for whole seconds
-     */
-    private static DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
     /*
      * The value of the timestamp
      */
@@ -73,14 +59,15 @@ public class ElapsedMicrosecondTimestamp implements RelativeTimestamp, Microseco
      * and a number of nanoseconds.
      */
     public ElapsedMicrosecondTimestamp(long seconds, int nanoseconds) {
-	if (seconds >= 0) {
-	    value = seconds * 1000000;
-	    value += nanoseconds / 1000;
-	    value |= Timestamp.ELAPSED_MICROSECOND;
+	long ts = 0;
+
+	ts = seconds * 1000000;
+	ts += nanoseconds / 1000;
+
+	if (ts >= 0) {
+	    value = ts | Timestamp.ELAPSED_MICROSECOND;
 	} else {
-	    value = Math.abs(seconds) * 1000000;
-	    value += nanoseconds / 1000;
-	    value |= Timestamp.ELAPSED_MICROSECOND;
+	    value = Math.abs(ts) | Timestamp.ELAPSED_MICROSECOND;
 	    isNegative = true;
 	}
     }
@@ -107,7 +94,11 @@ public class ElapsedMicrosecondTimestamp implements RelativeTimestamp, Microseco
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return ((int)(valueT % 1000000)) * (int)1000;
+	    if (valueT / 1000000 == 0) {  // zero seconds
+		return  ((int)(isNegative? (-valueT % 1000000): (valueT % 1000000)))  * (int)1000;
+	    } else {
+		return ((int)(valueT % 1000000)) * (int)1000;
+	    }
 	}
     }
 
@@ -115,12 +106,7 @@ public class ElapsedMicrosecondTimestamp implements RelativeTimestamp, Microseco
      * Get the toString() version of a MicrosecondTimestamp.
      */
     public String toString() {
-	long valueT = value ^ Timestamp.ELAPSED_MICROSECOND;
-
-	long seconds = valueT / 1000000;
-	long microsOnly = (valueT % 1000000);
-
-	return ("(" + (isNegative ? -seconds : seconds) + "." + microsformat.format(microsOnly) + ")");
+	return ("(" + (isNegative ? "-" : "") + new MicrosecondElapsedFormat().format(this) + ")");
     }
 
     /**
