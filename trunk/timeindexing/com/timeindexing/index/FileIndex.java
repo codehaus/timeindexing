@@ -18,6 +18,7 @@ import com.timeindexing.event.*;
 
 import java.util.Properties;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileLock;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -337,6 +338,38 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      */
     public Offset getLastOffset() {
 	return header.getLastOffset();
+    }
+
+    /**
+     * Make the Index activated.
+     */
+    public Index activate() throws IndexReadOnlyException, IndexWriteLockedException {
+	// can't activate an index that is read-only
+	if (isReadOnly()) {
+	    throw new IndexReadOnlyException("Can't activate index. It is READ ONLY");
+	}
+
+	// things are looking good
+	// so do the activation process
+
+	// get a lock
+	FileLock lock = indexInteractor.getWriteLock();
+
+	if (lock == null) { 
+	    // didn't get a lock, so it must be locked by someone else
+	    throw new IndexWriteLockedException("FileIndex: Can't activate index " + getURI() + ". It is WRITE LOCKED");
+	} else {
+	    // we got the lock
+	    activated = true;
+	    return this;
+	}
+    }
+
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	return indexInteractor.isWriteLocked();
     }
 
     /**
