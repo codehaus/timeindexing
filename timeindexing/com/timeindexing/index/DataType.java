@@ -17,7 +17,14 @@ package com.timeindexing.index;
  * An enumeration of well known data types.
  */
 public interface DataType {
+    /**
+     * The value for this instance of the enumeration.
+     */
     public int value();
+
+    /**
+     * The mime-type of this DataType.
+     */
     public String mimeType();
 
     /**
@@ -31,6 +38,11 @@ public interface DataType {
 
 	    public int value() {
 		return NOTSET;
+	    }
+
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -46,6 +58,10 @@ public interface DataType {
 	    public int value() {
 		return ANY;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -59,6 +75,10 @@ public interface DataType {
 
 	    public int value() {
 		return UNKNOWN;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -75,6 +95,10 @@ public interface DataType {
 	    public int value() {
 		return ARBITRARY;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -88,6 +112,10 @@ public interface DataType {
 
 	    public int value() {
 		return MIXED;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -104,6 +132,10 @@ public interface DataType {
 	    public int value() {
 		return INTEGER;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -117,6 +149,10 @@ public interface DataType {
 
 	    public int value() {
 		return FLOAT;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -133,6 +169,10 @@ public interface DataType {
 	    public int value() {
 		return DOUBLE;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -148,6 +188,10 @@ public interface DataType {
 	    public int value() {
 		return LONG;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -162,6 +206,10 @@ public interface DataType {
 
 	    public int value() {
 		return SHORT;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -193,6 +241,10 @@ public interface DataType {
 	    public int value() {
 		return BYTE;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -207,6 +259,10 @@ public interface DataType {
 
 	    public int value() {
 		return CHAR;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -223,6 +279,10 @@ public interface DataType {
 	    public int value() {
 		return STRING;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -238,6 +298,10 @@ public interface DataType {
 	    public int value() {
 		return VOID;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -252,6 +316,10 @@ public interface DataType {
 	    public int value() {
 		return TEXT;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -265,6 +333,10 @@ public interface DataType {
 
 	    public int value() {
 		return HTML;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -281,6 +353,10 @@ public interface DataType {
 	    public int value() {
 		return XML;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -296,6 +372,10 @@ public interface DataType {
 	    public int value() {
 		return MP3;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -309,6 +389,10 @@ public interface DataType {
 
 	    public int value() {
 		return M3U;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -325,6 +409,10 @@ public interface DataType {
 	    public int value() {
 		return WAV;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -339,6 +427,10 @@ public interface DataType {
 	    public int value() {
 		return MPEG;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -352,6 +444,10 @@ public interface DataType {
 
 	    public int value() {
 		return QUICKTIME;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -368,6 +464,10 @@ public interface DataType {
 	    public int value() {
 		return JPEG;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -381,6 +481,10 @@ public interface DataType {
 
 	    public int value() {
 		return GIF;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -396,6 +500,10 @@ public interface DataType {
 	    public int value() {
 		return PNG;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -410,6 +518,10 @@ public interface DataType {
 	    public int value() {
 		return TIFF;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
     /**
@@ -423,6 +535,10 @@ public interface DataType {
 
 	    public int value() {
 		return BMP;
+	    }
+
+	    public String toString() {
+		return mimeType();
 	    }
 	};
 
@@ -439,8 +555,29 @@ public interface DataType {
 	    public int value() {
 		return REFERENCE;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
+    /**
+     * The data is a List of Index References.
+     */
+    public final static int REFERENCE_LIST = 1001;
+    public final static DataType REFERENCE_LIST_DT = new DataType() {
+	    public String mimeType() {
+		return "type/reference-list";
+	    }
+
+	    public int value() {
+		return REFERENCE_LIST;
+	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
+	};
 }
 
 
