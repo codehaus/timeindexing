@@ -608,14 +608,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	return activated;
     }
 
-    /**
-     * Make the Index activated.
-     */
-    public Index activate() {
-	activated = true;
-	return this;
-    }
-
 
     /**
      * Is the Index terminated.
@@ -648,6 +640,13 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	return changed;
     }
     
+    /**
+     * Is the Index only available for read-only operations.
+     */
+    public boolean isReadOnly() {
+	return header.isReadOnly();
+    }
+
     /**
      * Get an iterator over the IndexItems in the Index.
      */
