@@ -1,6 +1,6 @@
 JARGS=
 
-all: io time index cache event basic data util plugin log appl
+all: io time index cache event basic data util plugin appl
 
 io:
 	jikes $(JARGS) com/timeindexing/io/*.java
@@ -28,9 +28,6 @@ util:
 
 plugin:
 	jikes $(JARGS) com/timeindexing/plugin/*.java
-
-log:
-	jikes $(JARGS) com/timeindexing/log/*.java
 
 appl:
 	jikes $(JARGS) com/timeindexing/appl/*.java
