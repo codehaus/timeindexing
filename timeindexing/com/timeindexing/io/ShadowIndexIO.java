@@ -14,6 +14,8 @@ import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * This does I/O for a shadow Index with external data.
@@ -47,11 +49,23 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	// create the header
 	headerInteractor.create(originalIndexSpecifier);
 	
+
+	// determine the URI
+	try {
+	    URI uri = new URI("index", "", FileUtils.removeExtension(originalIndexSpecifier), null);
+
+	    headerInteractor.setURI(uri);
+	    // tell the index
+	    getIndex().setURI(uri);
+	} catch (URISyntaxException use) {
+	    System.err.println("ShadowIndexIO: setting URI failed using " + originalIndexSpecifier + " => " + FileUtils.removeExtension(originalIndexSpecifier));
+	}
+
 	try {
 	    open();
 
-	    myIndex.setOption(HeaderOption.INDEXPATH_HO, indexFileName);
-	    myIndex.setOption(HeaderOption.DATAPATH_HO, dataFileName);
+	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
+	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
 	    long position = writeHeader(FileType.SHADOW_INDEX);
 	    indexAppendPosition = position;
@@ -82,6 +96,13 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	indexFileName = headerInteractor.getIndexPathName();
 	dataFileName = headerInteractor.getDataPathName();
 
+	// determine the URI
+	try {
+	    headerInteractor.setURI(new URI("index", "", FileUtils.removeExtension(headerInteractor.getIndexPathName()), null));
+	} catch (URISyntaxException use) {
+	    ;
+	}
+
 	open();
 
 	long position = readHeader(FileType.SHADOW_INDEX);
@@ -94,7 +115,7 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	    // must be looking in the right place.
 
 	    // sync the read header with the index object
-	    myIndex.syncHeader(headerInteractor);
+	    getIndex().syncHeader(headerInteractor);
 
 	    return position;
 	} else {
