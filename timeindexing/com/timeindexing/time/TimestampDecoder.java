@@ -59,9 +59,28 @@ public class TimestampDecoder {
 		} else if (valueT == Timestamp.ELAPSED_SECOND) {
 		    return new ElapsedSecondTimestamp(value);
 
-		} else if (valueT == Timestamp.YEAR_SEASON) {
-		    // TODO: define the year season Timestamp object
-		    throw new TimestampDecoderException("YearSeasonTimestamp not defined yet!!");
+		} else if (valueT == Timestamp.SPARE_3E) {
+		    // TODO: define the SPARE_3E Timestamp object
+		    throw new TimestampDecoderException("Timestamp SPARE_3E not defined yet!!");
+
+		} else if (valueT == Timestamp.EXTENDED_3) {
+
+		    valueT = value & Timestamp.TOP_8_MASK;
+
+		    if (valueT == Timestamp.ELAPSED_UNITS) {
+			return new MPEGPresentationTimestamp(value);
+
+		    } else if (valueT == Timestamp.SPARE_FD) {
+			// TODO: define the SPARE_FD Timestamp object
+			throw new TimestampDecoderException("Timestamp SPARE_FD not defined yet!!");
+
+		    } else if (valueT == Timestamp.SPARE_FE) {
+			// TODO: define the SPARE_FE Timestamp object
+			throw new TimestampDecoderException("Timestamp SPARE_FE not defined yet!!");
+
+		    } else {
+			throw new TimestampDecoderException("TimestampDecoderException: No known time with top 8 bits: " + ((valueT & Timestamp.TOP_8_MASK) >>> 58));
+		    }
 
 		} else {
 		    throw new TimestampDecoderException("TimestampDecoderException: No known time with top 6 bits: " + ((valueT & Timestamp.TOP_6_MASK) >>> 58));

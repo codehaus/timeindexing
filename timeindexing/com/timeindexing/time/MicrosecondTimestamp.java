@@ -3,10 +3,6 @@
 package com.timeindexing.time;
 
 import java.util.Date;
-import java.text.NumberFormat;
-import java.text.DecimalFormat;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.io.Serializable;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -20,16 +16,6 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * The mask used for before/after epoch
      */
     public final static long BEFORE_EPOCH = (long)0x01 << 61;
-
-    /*
-     * A format for microseconds.  6 obligatory digits.
-     */
-    private static NumberFormat microsformat = new DecimalFormat("000000");
-
-    /*
-     * A format for whole seconds
-     */
-    private static DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     /*
      * The value of the timestamp
@@ -102,11 +88,7 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * Get the toString() version of a MicrosecondTimestamp.
      */
     public String toString() {
-        long timevalue =  value ^ Timestamp.MICROSECOND;
-	long milliseconds = timevalue / 1000;
-	long microsOnly = timevalue % 1000000;
-
-	return ("[" + MicrosecondDateFormat.format(this) + "]");
+	return ("[" + new MicrosecondDateFormat().format(this) + "]");
     }
 
     /**
