@@ -28,9 +28,9 @@ public class ShadowIndex extends ExternalIndex  implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	headerInteractor = new IndexHeaderIO(this);
+	setIndexType(IndexType.SHADOW_DT);
+
 	indexInteractor = new ShadowIndexIO(this);
 
-	header.setIndexType(IndexType.SHADOW_DT);
     }
 }
