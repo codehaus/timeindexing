@@ -11,14 +11,6 @@ import com.timeindexing.time.Lifetime;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.index.IndexTimestampSelector;
 
-    /*
-     * TODO:
-     * Add
-     * public Position goto(Timestamp t);
-     * public Position goto(Position p);
-     * public Position goto(long p);
-     */
-
 /**
  * An index view has the moethods needed
  * for view on an Index.
@@ -31,6 +23,18 @@ public interface IndexView extends Index {
     public IndexView select(Interval interval, IndexTimestampSelector sel, Overlap overlap, Lifetime lifetime);
 
     /**
+     * Return the Interval used to get a selection.
+     * @return null if the view is not a selection.
+     */
+    public Interval getSelectionInterval();
+
+    /**
+     * Return the IndexView used to get a selection.
+     * @return null if the view is not a selection.
+     */
+    public IndexView getSelectionIndexView();
+
+    /**
      * Is the IndexView a selection.
      */
     public boolean isSelection();
@@ -41,14 +45,32 @@ public interface IndexView extends Index {
     public Position position();
 
     /**
-     * Sets the current navigation position into the IndexView.
+     * Sets the current navigation position into the IndexView
+     * specified as a Position.
      */
     public IndexView position(Position p);
 
     /**
      * Sets the current navigation position into the IndexView.
+     * specified as a long.
      */
     public IndexView position(long n);
+
+    /**
+     * Sets the current navigation position into the IndexView.
+     * specified as a Timestamp.
+     */
+    public IndexView position(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime);
+
+    /**
+     * Get the start position, in the index, of this IndexView.
+     */
+    public Position getStartPosition();
+
+    /**
+     * Get the end position, in the index, of this IndexView.
+     */
+    public Position getEndPosition();
 
     /**
      * Sets the mark into the IndexView, using the current navigation position
