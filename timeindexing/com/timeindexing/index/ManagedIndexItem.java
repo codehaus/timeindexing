@@ -24,7 +24,7 @@ public interface ManagedIndexItem extends IndexItem {
     /**
      * Set the last access time of the item.
      */
-    public ManagedIndexItem setLastAccessTime(Timestamp accessTime);
+    public ManagedIndexItem setLastAccessTime();
 
     /**
      * Get the DataAbstraction held by the IndexItem.
