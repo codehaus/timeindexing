@@ -19,6 +19,8 @@ import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.basic.ID;
+
+import java.util.Iterator;
 import java.net.URI;
 
 /**
@@ -760,6 +762,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
+     * Get an iterator over the IndexItems in the Index.
+     */
+    public Iterator iterator() {
+	return new IndexIterator(this);
+    }
+
+    /**
      * Clone me
      */
     public Object clone() throws  CloneNotSupportedException {
@@ -923,6 +932,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     protected void finalize() throws Throwable {
 	close();
+	super.finalize();
     }
 
 }
