@@ -7,6 +7,7 @@ import com.timeindexing.index.TimeIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexProperties;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.plugin.OutputPlugin;
 import com.timeindexing.plugin.DefaultOutputPlugin;
 
@@ -39,7 +40,7 @@ public class OutputStreamer {
      * Do some output, given some IndexProperties.
      * This outputs the data for the whole index.
      */
-    public long doOutput(IndexProperties properties) throws IOException {
+    public long doOutput(IndexProperties properties) throws IOException, TimeIndexException {
 	outputProperties = properties;
 
 	outputPlugin.begin();
@@ -53,7 +54,7 @@ public class OutputStreamer {
     /**
      * Process the TimeIndex
      */
-    public long processTimeIndex(IndexView selection) throws IOException {
+    public long processTimeIndex(IndexView selection) throws IOException, TimeIndexException {
 	// output the selection
 	long writeCount = 0;
 	long length = selection.getLength();

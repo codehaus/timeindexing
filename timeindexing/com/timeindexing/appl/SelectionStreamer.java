@@ -6,6 +6,7 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.TimeIndex;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexProperties;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.appl.SelectionProcessor;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class SelectionStreamer extends OutputStreamer  {
      * The IndexProperties specify a selection to make.
      * Only the selection is output.
      */
-    public long doOutput(IndexProperties properties) throws IOException {
+    public long doOutput(IndexProperties properties) throws IOException, TimeIndexException {
 	outputProperties = properties;
 
 	outputPlugin.begin();
