@@ -26,7 +26,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     Timestamp indexTS = null;
     DataAbstraction data = null;
     Size size = null;
-    int type = DataType.ANY;
+    DataType type = DataType.ANY_DT;
     ID id = null;
     ID annotationID = null;
     transient AbsolutePosition position = null;
@@ -43,7 +43,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @param annotationID an ID for annotations
      */
     public IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataItem dataitem,
-			 int type, ID id, ID annotationID) {
+			 DataType type, ID id, ID annotationID) {
 	this(dataTS, indexTS,  new DataHolderObject(dataitem.getBytes(),  dataitem.getSize()),
 	     type, id, annotationID);
     }
@@ -58,7 +58,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @param annotationID an ID for annotations
      */
     protected IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
-			    int type, ID id, ID annotationID) {
+			    DataType type, ID id, ID annotationID) {
 	this.dataTS = dataTS;
 	this.indexTS = indexTS;
 	this.size = data.getSize();
@@ -108,7 +108,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     /**
      * The type of the data item being referenced.
      */
-    public int getDataType() {
+    public DataType getDataType() {
 	return type;
     }
 
@@ -173,7 +173,6 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	return this;
     }
 
-
     /** 
      * Write out the IncoreIndexItem.
      */
@@ -182,7 +181,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	out.writeLong(indexTS.value());
 	out.writeLong(size.value());
 	out.write(((DataHolder)data).getBytes().array());
-	out.writeInt(type);
+	out.writeInt(type.value());
 	out.writeLong(id.value());
 	if (annotationID == null) {
 	    out.writeLong(0);
@@ -213,7 +212,9 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	ByteBuffer buffer = ByteBuffer.wrap(tmpdata);
 	data = new DataHolderObject(buffer, sizeRead);
 
-	type = in.readInt();
+	int typeValue = in.readInt();
+	type = DataTypeDirectory.find(typeValue);
+
 	id = new SID(in.readLong());
 	
 	long annotationReader = in.readLong();

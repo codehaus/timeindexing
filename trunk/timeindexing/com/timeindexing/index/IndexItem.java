@@ -38,7 +38,7 @@ public interface IndexItem {
     /**
      * The type of the data item being referenced.
      */
-    public int getDataType();
+    public DataType getDataType();
 
     /**
      * The index ID.
@@ -64,5 +64,4 @@ public interface IndexItem {
      * Get the last time this object was accessed.
      */
     public Timestamp getLastAccessTime();
-
 }

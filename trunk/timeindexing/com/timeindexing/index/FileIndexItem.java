@@ -35,7 +35,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @param annotationID an ID for annotations
      */
     public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataItem dataitem,
-			 int type, ID id, ID annotationID) {
+			DataType type, ID id, ID annotationID) {
 	this(dataTS, indexTS,  new DataHolderObject(dataitem.getBytes(),  dataitem.getSize()),
 	     type, id, annotationID);
     }
@@ -49,7 +49,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @param id an index ID
      * @param annotationID a ID for annotations
      */
-    public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, int type,
+    public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, DataType type,
 			 ID id, ID annotationID) {
 	super(dataTS, indexTS,  data, type, id, annotationID);
     }
