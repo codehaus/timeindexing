@@ -406,11 +406,10 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Set the description.
      * This is one of the few attributes of an index that can be set directly.
      */
-    public IndexHeader setDescription(Description description) {
+    public Index updateDescription(Description description) {
 	header.setDescription(description);
 	return this;
     }
-
 
 
      /**
