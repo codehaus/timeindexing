@@ -38,6 +38,13 @@ public class Offset implements Position, Absolute, Cloneable {
     }
 
     /**
+     * Get the position.
+     */
+    public Position position() {
+	return this;
+    }
+
+    /**
      * Clone me
      */
     public Object clone() throws  CloneNotSupportedException {

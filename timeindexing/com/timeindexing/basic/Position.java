@@ -12,6 +12,11 @@ public interface Position extends Absolute, Cloneable {
     public Object clone() throws  CloneNotSupportedException;
 
     /**
+     * Get the position.
+     */
+    public Position position();
+
+    /**
      * Special End Of Index value.
      */
     public final static Position END_OF_INDEX = new Position() {
@@ -23,6 +28,10 @@ public interface Position extends Absolute, Cloneable {
 		return "END_OF_INDEX";
 	    }
 	    
+	    public Position position() {
+		return this;
+	    }
+
 	    public Object clone() throws  CloneNotSupportedException {
 		return this;
 	    }
@@ -37,9 +46,13 @@ public interface Position extends Absolute, Cloneable {
 	    }
 
 	    public String toString() {
-		return "TOO_LOW" + super.toString();
+		return "TOO_LOW";
 	    }
-	    
+	    	    
+	    public Position position() {
+		return this;
+	    }
+
 	    public Object clone() throws  CloneNotSupportedException {
 		return this;
 	    }
@@ -54,9 +67,13 @@ public interface Position extends Absolute, Cloneable {
 	    }
 
 	    public String toString() {
-		return "TOO_HIGH" + super.toString();
+		return "TOO_HIGH";
 	    }
 	    
+	    public Position position() {
+		return this;
+	    }
+
 	    public Object clone() throws  CloneNotSupportedException {
 		return this;
 	    }

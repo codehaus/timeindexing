@@ -38,6 +38,13 @@ public class AbsolutePosition implements Position, Absolute, Cloneable {
     }
 
     /**
+     * Get the position.
+     */
+    public Position position() {
+	return this;
+    }
+
+    /**
      * Get the count.
      */
     public long value() {
