@@ -58,7 +58,7 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
     /**
      * Close this index.
      */
-     public boolean reallyClose();
+     public boolean reallyClose() throws IndexCloseException ;
 
     /**
      * Get the headerfor the index.
