@@ -388,7 +388,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * Set the description.
      * This is one of the few attributes of an index that can be set directly.
      */
-    public IndexHeader setDescription(Description d) {
+    public ManagedIndexHeader setDescription(Description d) {
 	if (d != null) {	// only set an option if there is a value
 	    setOption(HeaderOption.DESCRIPTION_HO, d);
 	}
