@@ -64,7 +64,7 @@ public class TimestampMapping implements Position, Absolute {
      * The toString method shows the Position.
      */
     public String toString() {
-	return position().toString();
+	return "Mapping " + myTimestamp + " => " + position().toString();
     }
 }
 	    
