@@ -3,10 +3,13 @@
 package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.event.IndexEventGenerator;
 import java.util.Properties;
+import java.util.Collection;
+import java.net.URI;
 
 /**
  * An interface for classes that need to manage
@@ -26,6 +29,26 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
      public boolean create(Properties props) throws IndexSpecificationException, IndexCreateException;
 
     /**
+     * Track a Referenced Index.
+     */
+    public int trackReferencedIndex(Index index);
+
+    /**
+     * Is an Index being tracked
+     */
+    public boolean isTrackingIndex(ID indexID);
+
+    /**
+     * Get an Index being tracked
+     */
+    public Index getTrackedIndex(ID indexID) ;
+
+    /**
+     * List all the tracked Indexes.
+     */
+    public Collection listTrackedIndexes();
+
+    /**
      * Close this index.
      */
      public boolean reallyClose();
@@ -34,11 +57,6 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
      * Get the headerfor the index.
      */
     public ManagedIndexHeader getHeader();
-
-    /**
-     * Get the path name of the header of the index.
-     */
-    public String getIndexPathName();
 
     
 }

@@ -64,4 +64,14 @@ public interface IndexItem {
      * Get the last time this object was accessed.
      */
     public Timestamp getLastAccessTime();
+
+    /** 
+     * Is the data held by the IndexItem, actually an IndexReference.
+     */
+    public boolean isReference();
+
+    /**
+     * Follow the reference, if this IndexItem holds an IndexReference.
+     */
+    public IndexItem follow() throws GetItemException;
 }

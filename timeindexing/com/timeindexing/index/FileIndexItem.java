@@ -7,6 +7,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
+import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.data.DataItem;
 
@@ -23,7 +24,6 @@ import java.nio.ByteBuffer;
 public class FileIndexItem extends IncoreIndexItem implements IndexItem, ManagedFileIndexItem, Serializable {
     Offset dataOffset = null; 
     Offset indexOffset = null;
-    final static ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 
     /**
      * Construct a FileIndexItem from
@@ -55,6 +55,21 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     }
 	
     /**
+     * Construct a FileIndexItem from
+     * @param dataTS a data timestamp. The Data timestamp is the same as the Sender timestamp.
+     * @param indexTS an index timestamp. The Index timestamp is the same as the Receiver timestamp.
+     * @param data some data as a DataAbstraction
+     * @param size the size of the DataAbstraction
+     * @param type the type of the data
+     * @param id an index ID
+     * @param annotationID a ID for annotations
+     */
+    public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
+			 Size size, DataType type, ID id, ID annotationID) {
+	super(dataTS, indexTS,  data, size, type, id, annotationID);
+    }
+	
+    /**
      * A ByteBuffer of the Data being indexed.
      * @return an empty buffer, if this IndexItem doesn't have the data to hand
      */
@@ -64,7 +79,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
 	if (data instanceof DataHolder) { // its a data holding object
 	    return ((DataHolder)data).getBytes();
 	} else {
-	    return emptyBuffer;
+	    return EMPTY_BUFFER;
 	}
     }
 
@@ -74,7 +89,9 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     public boolean hasData() {
 	setLastAccessTime();
 
-	if (data instanceof DataHolder) { // its a data holding object
+	if (data instanceof IndexReference) {
+	    return false;
+	} else if (data instanceof DataHolder) { // its a data holding object
 	    return true;
 	} else {		// its NOT a data holding object
 	    return false;

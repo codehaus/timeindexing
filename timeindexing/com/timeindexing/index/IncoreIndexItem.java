@@ -9,6 +9,7 @@ import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
 import com.timeindexing.basic.SID;
 import com.timeindexing.basic.Size;
+import com.timeindexing.basic.Position;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
+import java.net.URI;
+import java.util.Properties;
 
 /**
  * A Full implementation of an IndexItem.
@@ -33,6 +36,9 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     transient AbsolutePosition position = null;
     transient Index myIndex = null;
     transient Timestamp lastAccessTime = null;
+
+
+    final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
     /**
      * Construct a IncoreIndexItem from
@@ -60,10 +66,24 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      */
     protected IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
 			    DataType type, ID id, ID annotationID) {
+	this(dataTS, indexTS,  data, data.getSize(), type, id, annotationID);
+    }
+	
+    /**
+     * Construct a IncoreIndexItem from
+     * @param dataTS a data timestamp. The Data timestamp is the same as the Sender timestamp.
+     * @param indexTS an index timestamp. The Index timestamp is the same as the Receiver timestamp.
+     * @param data some data as a Item
+     * @param type the type of the data
+     * @param id an index ID
+     * @param annotationID an ID for annotations
+     */
+    protected IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
+			    Size dataSize, DataType type, ID id, ID annotationID) {
 	this.dataTS = dataTS;
 	this.indexTS = indexTS;
-	this.size = data.getSize();
 	this.data = data;
+	this.size = dataSize;
         this.type = type;
 	this.id = id;
 	this.annotationID = annotationID;
@@ -101,7 +121,6 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	setLastAccessTime();
 	return size;
     }
-
 
     /**
      * The DataAbstraction of the Data being indexed.
@@ -185,18 +204,120 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	return this;
     }
 
-    public boolean equals(Object obj) {
-	//setLastAccessTime();
-	
-	return  super.equals(obj);
-
+    /** 
+     * Is the data held by the IndexItem, actually an IndexReference.
+     */
+    public boolean isReference() {
+	if (type.equals(DataType.REFERENCE_DT)) {
+	    return true;
+	} else {
+	    return false;
+	}
     }
 
+    /**
+     * Follow this reference.
+     * @return null if the DataAbstraction is not an IndexReference
+     * @throws GetItemException if the reference cannot be followed successfully
+     */
+    public IndexItem follow() throws GetItemException {
+	if (! isReference()) {	// this is not a reference
+	    return null;
+	} else {
+	    ManagedIndex myIndex = (ManagedIndex)getIndex();
+	    IndexReference reference = (IndexReference)data;
 
-    public int hashCode() {
-	//setLastAccessTime();
-	return (int)id.value(); // super.hashCode();  //myIndex.hashCode() + position.hashCode();
+	    Index otherIndex = null;
+	    IndexItem otherItem = null;
+
+	    URI otherIndexURI = reference.getIndexURI();
+	    ID otherIndexID = reference.getIndexID();
+	    Position otherItemPosition = reference.getIndexItemPosition();
+
+	    TimeIndexFactory indexFactory = new TimeIndexFactory();
+
+	    if (otherIndexURI.isOpaque()) {
+		// its a URI for an IncoreIndex.
+
+		if (myIndex.isTrackingIndex(otherIndexID)) {
+		    // we already have that index
+		    otherIndex = myIndex.getTrackedIndex(otherIndexID);
+
+		    // get the index item
+		    otherItem = otherIndex.getItem(otherItemPosition);
+
+		    return otherItem;
+		} else {
+		    // we haven't seen that index before
+		    if ((otherIndex = indexFactory.find(otherIndexID)) != null) {
+			// we found the other index
+			myIndex.trackReferencedIndex(otherIndex);
+
+			// get the index item
+			otherItem = otherIndex.getItem(otherItemPosition);
+
+			return otherItem;
+		    } else {
+			// the Index is non existant
+			throw new GetItemException("Index with URI  " + otherIndexURI +
+					       " does not exist, so item at position " +
+					       otherItemPosition + " cannot be fetched");
+		    }
+		}
+
+	    
+	    } else {
+		// its a URI for a FileIndex.
+
+		if (myIndex.isTrackingIndex(otherIndexID)) {
+		    // we already have that index
+		    otherIndex = myIndex.getTrackedIndex(otherIndexID);
+
+		    // get the index item
+		    otherItem = otherIndex.getItem(otherItemPosition);
+
+		    return otherItem;
+		} else {
+		    // we haven't seen that index before
+		    if ((otherIndex = indexFactory.find(otherIndexID)) != null) {
+			// we found the other index, and it's already open
+			myIndex.trackReferencedIndex(otherIndex);
+
+			// so get the IndexItem
+			otherItem = otherIndex.getItem(otherItemPosition);
+
+			return otherItem;
+		    } else {
+			try {
+			    System.err.println("follow: opening " + otherIndexURI.getPath());
+			    // we need to open the Index to get the IndexItem
+			    Properties properties = new Properties();
+
+			    // set the filename property
+			    properties.setProperty("indexpath", otherIndexURI.getPath());
+
+			    // try opening it
+			    otherIndex = indexFactory.open(properties);
+
+			    // keep track of the opened index
+			    myIndex.trackReferencedIndex(otherIndex);
+
+			    // get the IndexItem
+			    otherItem = otherIndex.getItem(otherItemPosition);
+
+			    return otherItem;
+			} catch (TimeIndexException tie) {
+			    // we cant; open the index
+			    throw new GetItemException("Index with URI  " + otherIndexURI +
+						       " does not exist, so item at position " +
+						       otherItemPosition + " cannot be fetched");
+			}
+		    }	
+		}
+	    }
+	}
     }
+
 
     /** 
      * Write out the IncoreIndexItem.
