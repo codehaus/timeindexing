@@ -4,7 +4,7 @@ package com.timeindexing.io;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.ManagedIndex;
-import com.timeindexing.index.ManagedStoredIndex;
+import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
@@ -35,8 +35,6 @@ import java.nio.channels.FileChannel;
 
 
 public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFileInteractor {
-    // The index this is doing I/O for
-    ManagedStoredIndex myIndex = null;
     // The header for this index
     IndexHeaderIO headerInteractor = null;
 
@@ -126,7 +124,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    // soak up index name padding
 	    indexFile.readByte();
 
-	    //System.err.println("Inline Index Header read size = " + indexFile.getFilePointer());
+	    //System.err.println("Index Header read size = " + indexFile.getFilePointer());
 
 	    indexChannelPosition = indexChannel.position();
 	    indexFirstPosition = indexChannelPosition;
@@ -179,7 +177,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	indexChannelPosition = indexChannel.position();
 
 	
-	//System.err.println("Inline Index Header size = " + count);
+	//System.err.println("Index Header size = " + writeCount);
 
 	return writeCount;
 
@@ -207,7 +205,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    // where are we in the file
 	    long currentIndexPosition = alignForIndexItem();
 
-	    //System.err.println("P(W) = " + currentPosition);
+	    //System.err.println("P(W) = " + currentIndexPosition);
 
 	    // tell the IndexItem where its index is
 	    item.setIndexOffset(new Offset(currentIndexPosition));
@@ -294,15 +292,13 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
         
         while (buffer.hasRemaining()) {
 
-
-
-            /*
+	    /*
             System.err.println("flushBuffer() FB(P) = " + flushBuffer.position() +
                            " FB(C) = " + flushBuffer.capacity() +
                            " B(P) = " + buffer.position() + 
                            " B(L) = " + buffer.limit() +
                            " B(C) = " + buffer.capacity());
-            */
+	    */
 
             // no of bytes available in flushBuffer
             int available = flushBuffer.capacity() - flushBuffer.position();
@@ -612,6 +608,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Load the index
      */
     public long loadIndex(LoadStyle loadStyle) throws IOException {
+	gotoFirstPosition();
 
 	if (loadStyle == LoadStyle.ALL) {
 	    indexAppendPosition = loadAll(true);
@@ -624,25 +621,12 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    return indexAppendPosition;
 
 	} else if (loadStyle == LoadStyle.NONE) {
-	    // where is last item
-	    Offset lastOffset = headerInteractor.getLastOffset();
-
-            if (lastOffset.value() == 0) {
+            if (headerInteractor.getLength() == 0) {
 		 // the index has zero items
 		// so there is nothing to read
-		gotoFirstPosition();
                 setAppendPosition();
 	    } else {
-		// get last item
-                // lastOffset points to just before the last IndexItem
-		ManagedFileIndexItem item = (ManagedFileIndexItem)readItem(lastOffset.value(), false);
-
-		// work out append position
-		// from index data offset + data size
-		long appendPoint = item.getDataOffset().value() + item.getDataSize().value();
-
-		// set append position
-		indexAppendPosition = appendPoint;
+		calculateAppendPosition();
 	    }
 
 	    return indexAppendPosition;
@@ -660,14 +644,14 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	ManagedIndexItem item = null;
 	long position = indexChannelPosition;
 	long itemCount = headerInteractor.getLength();
-	Offset lastOffset = headerInteractor.getLastOffset();
 	long count = 0;
 
 
 	// we have just read the header
 	// so we are going to read all the items
 	
-        if (lastOffset.value() == 0) {
+        if (itemCount == 0) {
+	    //System.err.println("LoadAll: 0 items");
 	    // the index has zero items
 	    // so there is nothing to read
 	    gotoFirstPosition();
@@ -681,7 +665,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 		// post the read item into the index
 		// this is the Index callback
-		myIndex.retrieveItem(item);
+		getIndex().retrieveItem(item);
 	    }
 	}
 
@@ -719,6 +703,11 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 	return true;
     }
+
+    /**
+     * Calculate the append position from the last item of the index.
+     */
+    public abstract long calculateAppendPosition() throws IOException; 
 
     /**
      * Set the index item size.
