@@ -140,16 +140,15 @@ public class TimeIndexDirectory {
     /**
      * Register an Index using its name and its ID.
      */
-    public boolean registerIndex(ManagedIndex index, String name, ID anID) {
+    public long registerIndex(ManagedIndex index, String name, ID anID) {
 	boolean result =  putIndex(name, index) && putIndex(anID, index);
 
 	System.err.println("Registering " + name);
 
 	// set the count to 1
 	countTable.put(anID, new RelativeAdjustableCount(0));
-	incrementCount(index);
 
-	return result;
+	return incrementCount(index);
     }
 
     /**
@@ -177,7 +176,7 @@ public class TimeIndexDirectory {
 	RelativeAdjustableCount count = (RelativeAdjustableCount)countTable.get(anID);
 	count.adjust(1);
 
-	System.err.println("Ref count to index " + index.getID() + " = " + count.value());
+	System.err.println("Ref count to " + index.getURI() + " = " + count.value());
 
 	return count.value();
     }
@@ -192,7 +191,7 @@ public class TimeIndexDirectory {
 	RelativeAdjustableCount count = (RelativeAdjustableCount)countTable.get(anID);
 	count.adjust(-1);
 
-	System.err.println("Ref count to index " + index.getID() + " = " + count.value());
+	System.err.println("Ref count to " + index.getURI() + " = " + count.value());
 
 	return count.value();
     }
@@ -217,7 +216,7 @@ public class TimeIndexDirectory {
     /**
      * Register an Index using its name and its ID.
      */
-    public static boolean register(ManagedIndex index, String name, ID anID) { 
+    public static long register(ManagedIndex index, String name, ID anID) { 
 	return directory.registerIndex(index, name, anID);
     }
 
@@ -232,14 +231,25 @@ public class TimeIndexDirectory {
      * Add an extra handle on an Index.
      */
     public static long addHandle(ManagedIndex index) {
-	return directory.incrementCount(index);
+	if (directory.getIndex(index.getName()) == null) {
+	    // the index has not been registered yet;
+	    return directory.registerIndex(index, index.getURI().toString(), index.getID());
+	} else {
+	    return directory.incrementCount(index);
+	}
     }
 
     /**
      * Remove a handle on an Index.
      */
     public static long removeHandle(ManagedIndex index) {
-	return directory.decrementCount(index);
+	long count = directory.decrementCount(index);
+
+	if (count == 0) {
+	    directory.unregisterIndex(index);
+	}
+
+	return count;
     }
 
 }
