@@ -27,9 +27,11 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-
+import java.net.URI;
 
 /**
  * This opens an Index header file and determines what type of
@@ -321,6 +323,13 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 			 break;
 		     }
 
+		     case HeaderOption.REFERENCEMAPPING: {
+			 value = processReferenceMapping(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.REFERENCEMAPPING_HO;
+
+			 break;
+		     }
+
 		     default: {
 		     }
 		     }
@@ -434,5 +443,34 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	}
 
 	return inOrder;
+    }
+
+    /**
+     * Process the referenced indexes mapping
+     */
+    protected Object processReferenceMapping(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// the no of entries
+	short size = readBuf.getShort();
+
+	Map referenceMap = new HashMap();
+
+	for (int done = 0; done < size; done++) {
+	    // get the ID
+	    long id = readBuf.getLong();
+	    // get the URI name
+	    short nameSize = readBuf.getShort();
+	    byte[] nameRaw = new byte[nameSize-1];
+	    readBuf.get(nameRaw, 0, nameSize-1);
+	    readBuf.get();  // get NUL
+
+	    //System.err.println("IndexDecoder: reference " + id + " => " + new String(nameRaw));
+	    
+	    referenceMap.put(new SID(id), URI.create(new String(nameRaw)));
+
+	}
+
+	return referenceMap;
     }
 }
