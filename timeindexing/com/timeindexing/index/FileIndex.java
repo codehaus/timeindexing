@@ -13,11 +13,14 @@ import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.io.LoadStyle;
 import com.timeindexing.io.IndexFileInteractor;
+import com.timeindexing.io.FileUtils;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * A place holder abstract class for stored Index objects
@@ -53,7 +56,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 		// mark as NOT being changed
 		changed = false;
 
-		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
+		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.FLUSHED, this));
 
 		return true;
 	    } catch (IOException ioe) {
@@ -83,7 +86,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    // mark as NOT being changed
 	    changed = false;
 
-	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
+	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
 
 	    closed = true;
 	    activated = false;
@@ -151,10 +154,41 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Add a Referemnce to an IndexItem in a Index.
      */
     public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	URI indexURI = otherIndex.getURI();
+	ID indexID = otherIndex.getID();
 
-	if (! hasIndexURI(otherIndex.getURI())) {
+	// check if we have a seen this index URI before
+	if (! hasIndexURI(indexURI)) {
 	    // its a new index being referenced
-	    addIndexURI(otherIndex.getID(), otherIndex.getURI());
+	    // so keep tabs on it
+	    addIndexURI(indexID, indexURI);
+	}
+
+        IndexReference reference  = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
+
+	return addReference(reference, dataTS);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     * This version takes the Index URI, the Index ID, the IndexItem's Position,
+     * and the IndexItem's data Timestamp.
+     * It is used internally when doing a TimeIndexFactory.save().
+     */
+    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+
+        IndexReferenceDataHolder dataHolder = null;
+
+	// Convert the IndexReference into an IndexReferenceDataHolder
+	if (reference instanceof IndexReferenceDataHolder) {
+	    // The reference is already one
+	    dataHolder = (IndexReferenceDataHolder)reference;
+	} else {
+	    // we need to convert the reference into an IndexReferenceDataHolder
+	    ID indexID = reference.getIndexID();
+	    Position itemPosition = reference.getIndexItemPosition();
+
+	    dataHolder = new IndexReferenceDataHolder(indexID, itemPosition);
 	}
 
 	// set the ID to be the length
@@ -165,8 +199,6 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// the actual data Timestamp is the record Timestamp
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
-
-        IndexReferenceDataHolder dataHolder = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
 
 	// create a FileIndexItem
 	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE_DT, new SID(id), new SID(0));
@@ -205,7 +237,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	}
 
 	// tell all the listeners that an item has been accessed
-	eventMulticaster.fireAccessEvent(new IndexAccessEvent(indexName, header.getID(), item, this));
+	eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
 
 	return item;
     }
@@ -307,4 +339,12 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	return header.getLastOffset();
     }
 
+    /**
+     * Construct a URI from a pathname.
+     */
+    public URI generateURI(String pathname) throws URISyntaxException {
+	URI uri = new URI("index", "", FileUtils.removeExtension(pathname), null);
+
+	return uri;
+    }
 }
