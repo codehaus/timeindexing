@@ -42,8 +42,8 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
     }
 
     /**
-     * Construct an IndexReferenceDataHolder given
-     * the ID of the Index to refer to and the Position of an IndexItem to refer to.
+     * Construct an IndexReferenceDataHolder given the URI of the Index to refer to,
+     * the ID of the Index to refer to, and the Position of an IndexItem to refer to.
      */
     public IndexReferenceDataHolder(ID indexID, Position itemPosition) {
 	otherIndexID = indexID;
