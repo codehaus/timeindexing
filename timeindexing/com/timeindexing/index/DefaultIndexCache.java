@@ -174,6 +174,8 @@ public class DefaultIndexCache implements IndexCache {
      * @return null if no position is found
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
+	System.err.println("DefaultIndexCache: locate: " + "TS = " + t);
+
 	if (! contains(t, selector)) { // timestamp t is not in this index
 	    // now try and determine if it is too low or too high
 	    if (selector == IndexTimestampSelector.DATA) {
@@ -199,7 +201,6 @@ public class DefaultIndexCache implements IndexCache {
 		searchTree = new TreeMap(itemComparator);
 
 	    }
-
 	    // now search for the timestamp
 	    return binarySearch(t, 0, length()-1, selector, lifetime, 0);
 	}	
@@ -254,7 +255,7 @@ public class DefaultIndexCache implements IndexCache {
 	    itemTSN =itemN.getDataTimestamp();
 	} else {
 	    itemTS = item.getIndexTimestamp();
-	    itemTSN = item.getIndexTimestamp();
+	    itemTSN = itemN.getIndexTimestamp();
 	}
 
 
