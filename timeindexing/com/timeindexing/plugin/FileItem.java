@@ -6,6 +6,7 @@ import com.timeindexing.time.Timestamp;
 
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -60,4 +61,26 @@ public class FileItem implements ReaderPlugin {
     public  boolean isEOF() {
 	return eof;
     }
-}
+
+
+     /**
+     * Get the InputStream for the InputPlugin.
+     */
+    public InputStream getInputStream() {
+	return input;
+    }
+
+    /**
+     * Set the InputStream for the InputPlugin.
+     * This must be a FileInputStream.
+     * @return null if the InputStream is NOT a FileInputStream.
+     */
+    public ReaderPlugin setInputStream(InputStream inStream) {
+	if (inStream instanceof FileInputStream) {
+	    input = (FileInputStream)inStream;
+	    return this;
+	} else {
+	    return null;
+	}
+    }
+  }
