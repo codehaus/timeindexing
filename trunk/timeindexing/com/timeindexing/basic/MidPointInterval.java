@@ -234,7 +234,7 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 		Timestamp endTS = null;
 
 		try {
-		    index.getItem(midPosition);
+		    item = index.getItem(midPosition);
 		} catch (GetItemException gie) {
 		    return null;
 		}
