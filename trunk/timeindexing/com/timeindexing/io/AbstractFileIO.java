@@ -28,7 +28,7 @@ import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Timestamp;
-import com.timeindexing.index.InlineIndex;
+import com.timeindexing.util.ByteBufferRing;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -65,7 +65,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     ByteBuffer headerBuf = null;
     ByteBuffer indexBufWrite = null;
     ByteBuffer indexBufRead = null;
-    ByteBuffer indexFlushBuffer = null;
+    ByteBufferRing indexFlushBuffers = null;
 
     // TimestampDecoder
     TimestampDecoder timestampDecoder = new TimestampDecoder();
@@ -80,6 +80,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     boolean creating = false;
     // Was the Index locked when we tried to activate it
     boolean hasBeenLocked = false;
+
+    // has a timeout happened whilst waiting for some work
+    boolean timeoutHappened = false;
 
     /*
      * The size of a header
@@ -196,6 +199,13 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
     }
 
+
+    /**
+     * Add an item.
+     */
+    public long addItem(ManagedIndexItem itemM) throws IOException {
+	return writeItem(itemM);
+    }
 
     /**
      * Write the contents of the item
@@ -384,10 +394,16 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Write a buffer of data.
      * This flushes out large buffers a slice at a time.
      */
-    protected synchronized long bufferedWrite(ByteBuffer buffer, FileChannel channel, ByteBuffer flushBuffer) throws IOException {
+    protected long bufferedWrite(ByteBuffer buffer, FileChannel channel, ByteBufferRing ring) throws IOException {
         long written = 0;
         int origLimit = buffer.limit();
         ByteBuffer slice = null;
+	ByteBuffer flushBuffer = null;
+
+	//System.err.println("bufferedWrite: ring = " + ring);
+
+	// get the current buffer from the ring
+	flushBuffer = ring.current();
 
         while (buffer.hasRemaining()) {
 
@@ -417,8 +433,15 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
                 flushBuffer.put(slice);
                 
                 // this should have filled the flushBuffer
-                // so flush the buffer
-                written += flushBuffer(channel, flushBuffer);
+		// lock it
+                // and then flush the buffer
+
+		ring.lock();
+
+                written += flushBuffer(channel, flushBuffer, ring);
+
+		// get another buffer to use
+		flushBuffer = ring.current();
 
                 // adjust the pointers into the buffer
                 buffer.position(buffer.limit());
@@ -436,19 +459,32 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     }
 
 
+    static int count = 0;
+
     /**
      * Actually flush the buffer out.
      * Returns how man bytes were written.
      */
-    protected long flushBuffer(FileChannel channel, ByteBuffer flushBuffer)  throws IOException {
+    protected synchronized long flushBuffer(FileChannel channel, ByteBuffer flushBuffer, ByteBufferRing ring)  throws IOException {
 	long written = 0;
 
 	if (flushBuffer.position() > 0) {
 	    flushBuffer.flip();
-	    written = channel.write(flushBuffer);
+
+	    /* WAS
+            written = channel.write(flushBuffer);
 
 	    // clear it
 	    flushBuffer.clear();
+	    */
+
+	    requestWriteWork(channel, flushBuffer, ring);
+	    //System.err.println("Added WriteRequest [" + (count++) + "] " + channel + " for " + flushBuffer);
+
+	    //System.err.println("flushBuffer() writeQueue length = " + writeQueue.size());
+
+	    timeoutHappened = false;
+	    notifyAll();
 
 	}
 
@@ -459,7 +495,15 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Get the item at index position Position.
      */
     public ManagedIndexItem getItem(Position position, boolean doLoadData) throws IOException {
-	return getItem(position.value(), doLoadData);
+	return getItem(position.value(), doLoadData);  // sclayman 7/9/04
+	/*
+	  requestReadWork(position, doLoadData);
+
+	notifyAll();
+
+	ManagedIndexItem item = awaitItem(position);
+	*/
+
     }
 
     /**
@@ -485,7 +529,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * @param withData read the data for this IndexItem if withData is true,
      * the data needs to be read at a later time, otherwise
      */
-    public ManagedIndexItem readItem(long position, boolean withData) throws IOException {
+    public ManagedIndexItem readItem(long startOffset, boolean withData) throws IOException {
 	// tmp var for reading index item values
 	Timestamp indexTS = null;
 	Timestamp dataTS = null;
@@ -497,8 +541,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	long annotationID = 0;
 	ManagedFileIndexItem indexItem = null;
 	
-	// goto a position in the index
-	seekToIndex(position);
+	// goto an offset in the index
+	seekToIndex(startOffset);
 
 	// where are we in the index file
 	long currentIndexPosition = indexChannelPosition;
@@ -645,7 +689,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	ByteBuffer buffer = null;
 	long readCount = 0;
 
-	if (size >= Integer.MAX_VALUE) {
+	if (size < 0) {
+	    throw new Error("InlineIndexIO: readItem() can;t have size < 0");
+	} else if (size >= Integer.MAX_VALUE) {
 	    // buffers can only be so big
 	    // check we can allocate one big enough
 		throw new Error("InlineIndexIO: readItem() has not YET implemented reading of data > " + Integer.MAX_VALUE + ". Actual size is " + size);
@@ -946,4 +992,130 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	return headerInteractor.isWriteLocked();
     }
 
+    /*
+     * The following methods are those associated with the
+     * thread activity of this class.
+     */
+
+    /**
+     * Add some work to the write queue.
+     */
+    public synchronized void requestWriteWork(FileChannel channel, ByteBuffer flushBuffer, ByteBufferRing ring) {
+	writeQueue.add(new WriteRequest(channel, flushBuffer, ring));
+    }
+
+    /**
+     * Add some work to the read queue.
+     */
+    public synchronized void requestReadWork(Position position, boolean doLoadData) {
+	readQueue.add(new ReadRequest(position, doLoadData));
+    }
+
+    /**
+     * Write the contents of the ffirst ByteBuffer in the work queue
+     * to a FileChannel.
+     * It assumes the index file is alreayd open for writing.
+     */
+    public synchronized long writeFromWorkQueue() throws IOException  {
+	long written = 0;
+
+	//System.err.println("writeFromWorkQueue() writeQueue length = " + writeQueue.size());
+
+	// get the buffer from the queue
+	WriteRequest writeRequest = (WriteRequest)writeQueue.getFirst();
+	// remove the buffer from the queue
+	writeQueue.removeFirst();
+
+	// get the write request details
+	FileChannel channel = writeRequest.channel;
+	ByteBuffer buffer = writeRequest.buffer;
+	ByteBufferRing ring = writeRequest.ring;
+
+	// write out the buffer
+	written += channel.write(buffer);
+
+	// clear it
+	buffer.clear();
+
+	// unlock it, and make it ready for use
+	ring.unlock(buffer);
+
+	return written;
+    }
+
+    /**
+     * This drains the write request queue by processing
+     * all the WriteRequests.
+     */
+    public  void drainWriteQueue() throws IOException {
+	//System.err.println(getThread() + ": drainWriteQueue length = " + writeQueue.size());
+
+	while (writeQueue.size() > 0) {
+	    writeFromWorkQueue();
+	}
+    }
+
+    /**
+     * Wait for the timeout to go off.
+     * @return true if the timeout happened, false if it dod not.
+     */
+    public synchronized boolean timeOut(long timeout) {
+	try {
+	    timeoutHappened = true;
+
+	    // Now wait.
+	    // Other methods can set timeoutHappened
+	    // during the wait.
+	    wait(timeout);
+
+	    // if we get to here an timeoutHappened is still true
+	    // the wait ended because the amount of time has expired
+	    // if timeoutHappened is false, then it was set false
+	    // by a sendItem() or a receiveItem().
+	    if (timeoutHappened) {
+		return true;
+	    } else {
+		return false;
+	    }
+	} catch (InterruptedException ie) {
+	    System.err.println("sleep interrupted");
+	    return false;
+	}
+    }
+
+    public synchronized boolean awaitWork() {
+	// wait for some work
+	timeOut(5 * 1000);
+
+	if (timeoutHappened) {
+	    // there was a timeout, i.e. no work
+	    //System.err.println("Sleep finished");
+	    return false;
+	} else {
+	    // we got some work
+	    return true;
+	}
+    }
+
+    /**
+     * The Thread run method.
+     */
+    public synchronized void run() {
+	while (true) {
+
+	    try {
+		if (awaitWork() == true) {
+		    drainWriteQueue();
+		} else {
+		    if (! headerInteractor.isReadOnly()) {
+			// the index is open for read and write
+			// so occassionally flush the header
+			headerInteractor.flush();
+		    }
+		}
+	    } catch (IOException ioe) {
+		System.err.println("Got IOException: " + ioe);
+	    }
+	}
+    }
 }
