@@ -2,6 +2,7 @@
 
 package com.timeindexing.io;
 
+import com.timeindexing.index.InlineIndex;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.ManagedIndex;
@@ -25,7 +26,7 @@ import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Timestamp;
-import com.timeindexing.index.InlineIndex;
+import com.timeindexing.util.ByteBufferRing;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -56,7 +57,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	headerBuf = ByteBuffer.allocate(HEADER_SIZE);
 	indexBufWrite = ByteBuffer.allocate(INDEX_ITEM_SIZE);
 	indexBufRead = ByteBuffer.allocate(INDEX_ITEM_SIZE);
-	indexFlushBuffer = ByteBuffer.allocate(FLUSH_SIZE);
+	indexFlushBuffers = new ByteBufferRing(8, FLUSH_SIZE);
     }
 
     /**
@@ -106,6 +107,9 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	    flush();
 
+	    initThread(originalIndexSpecifier);
+	    startThread();
+	
 	    return position;
 	} catch (IndexOpenException ioe) {
 	    throw new IndexCreateException(ioe.getMessage());
@@ -161,6 +165,9 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	open();
 
 	long position = readMetaData();
+
+	initThread(originalIndexSpecifier);
+	startThread();
 
 	return position;
     }
@@ -317,7 +324,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Write a buffer of index items.
      */
     protected long bufferedIndexWrite(ByteBuffer buffer) throws IOException {
-	return bufferedWrite(buffer, indexChannel, indexFlushBuffer);
+	return bufferedWrite(buffer, indexChannel, indexFlushBuffers);
     }
 
 
@@ -325,7 +332,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Write a buffer of data.
      */
     protected long bufferedDataWrite(ByteBuffer buffer) throws IOException {
-	return bufferedWrite(buffer, indexChannel, indexFlushBuffer);
+	return bufferedWrite(buffer, indexChannel, indexFlushBuffers);
     }
 
 
@@ -428,7 +435,8 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	long written = 0;
 
 	// flush out any reaming data
-	written += flushBuffer(indexChannel, indexFlushBuffer);
+	ByteBuffer indexBuffer = indexFlushBuffers.current();
+	written += flushBuffer(indexChannel, indexBuffer, indexFlushBuffers);
 
 	// flush the header
 	headerInteractor.flush();
@@ -456,6 +464,11 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	// close the header
 	headerInteractor.close();
+
+	// end thread
+	if (stopThread() == null) {
+	    System.err.println("Thread is null?");
+	}
 
 	return size;
     }
