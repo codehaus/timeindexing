@@ -11,6 +11,7 @@ import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.Position;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
+import com.timeindexing.cache.DefaultIndexCache;
 import com.timeindexing.event.*;
 import java.util.Properties;
 
