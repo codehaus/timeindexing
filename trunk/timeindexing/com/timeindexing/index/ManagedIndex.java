@@ -29,6 +29,13 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
      public boolean create(Properties props) throws IndexSpecificationException, IndexCreateException;
 
     /**
+     * Add a Referemnce to an IndexItem in a Index.
+     * This version takes an IndexReference and a Data Timestamp.
+     * It is used internally when doing a TimeIndexFactory.save().
+     */
+    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
      * Track a Referenced Index.
      */
     public int trackReferencedIndex(Index index);
