@@ -85,6 +85,9 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
 
+	    closed = true;
+	    activated = false;
+
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -101,7 +104,7 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexActivationException, IndexItemException {
+    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addItem(dataitem, null);
     }
 
@@ -114,7 +117,7 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexActivationException, IndexItemException {
+    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();
@@ -151,7 +154,7 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
 	    //System.err.print(newSize + "\t" + header.getLastOffset() + "\r");
 
 	} catch (IOException ioe) {
-	    throw new IndexItemException(ioe);
+	    throw new AddItemException(ioe);
 	}
 
 	return newSize;
