@@ -8,5 +8,5 @@ package com.timeindexing.index;
  * This is currently empty, but is intended to
  * be implemented later.
  */
-public abstract class SQLIndex extends AbstractIndex implements ManagedStoredIndex  {
+public abstract class SQLIndex extends AbstractIndex implements StoredIndex  {
 }
