@@ -75,6 +75,9 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	    flush();
 
+	initThread(originalIndexSpecifier);
+	startThread();
+
 	    return position;
 	} catch (IndexOpenException ioe) {
 	    throw new IndexCreateException(ioe);
@@ -130,6 +133,9 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	// read the headers
 	long position = readMetaData();
+
+	initThread(originalIndexSpecifier);
+	startThread();
 
 	return position;
    }
@@ -265,7 +271,8 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	long written = 0;
 
 	// flush out any reaming data
-	written += flushBuffer(indexChannel, indexFlushBuffer);
+	ByteBuffer indexBuffer = indexFlushBuffers.current();
+	written += flushBuffer(indexChannel, indexBuffer, indexFlushBuffers);
 
 	// flush the header
 	headerInteractor.flush();
