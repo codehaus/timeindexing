@@ -103,8 +103,6 @@ public class AbsoluteTimeMP3Indexer {
 	    item = new ReaderResultItem(result);
 
 	    indexSize = index.addItem(item, absoluteTS);
-
-	    index.hollowItem(indexSize - 1);
 	}
 
 	System.err.print('\n');
