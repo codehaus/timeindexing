@@ -325,7 +325,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * returns false if in correct place
      */
     protected boolean seekToIndex(long position) throws IOException {
-	System.err.println("Index seek to " + position);
+	//System.err.println("Index seek to " + position);
 	if (indexChannelPosition != position) {
 	    // we need to seek to a different place
 	    indexChannel.position(position);
@@ -342,7 +342,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * returns false if in correct place
      */
     protected boolean seekToData(long position) throws IOException {
-	System.err.println("Data seek to " + position);
+	//System.err.println("Data seek to " + position);
 	if (dataChannelPosition != position) {
 	    // we need to seek to a different place
 	    dataChannel.position(position);
@@ -509,10 +509,10 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Set the append position from the indexChannelPosition.
      */
     public boolean setAppendPosition() throws IOException {
-	System.err.println("Index append position = " + indexChannelPosition);
+	//System.err.println("Index append position = " + indexChannelPosition);
 	indexAppendPosition = indexChannelPosition;
 
-	System.err.println("Data append position = " + dataChannelPosition);
+	//System.err.println("Data append position = " + dataChannelPosition);
 	dataAppendPosition = dataChannelPosition;
 
 	return true;
