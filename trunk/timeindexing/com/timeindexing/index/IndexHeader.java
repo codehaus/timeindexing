@@ -36,21 +36,25 @@ public interface IndexHeader {
 
     /**
      * Get the time the first IndexItem was put into the Index.
+     * @return ZeroTimestamp if there is no first item, usually when there are no items in the index
      */
     public Timestamp getFirstTime();
 
     /**
      * Get the time the last IndexItem was put into the Index.
+     * @return ZeroTimestamp if there is no last item, usually when there are no items in the index
      */
     public Timestamp getLastTime();
 
     /**
      * Get the data time for the first IndexItem in the Index.
+     * @return ZeroTimestamp if there is no first item, usually when there are no items in the index
      */
     public Timestamp getFirstDataTime();
 
     /**
      * Get the data time for the last IndexItem in the Index.
+     * @return ZeroTimestamp if there is no last item, usually when there are no items in the index
      */
     public Timestamp getLastDataTime();
 
