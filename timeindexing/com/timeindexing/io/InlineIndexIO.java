@@ -5,7 +5,7 @@ package com.timeindexing.io;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.ManagedIndex;
-import com.timeindexing.index.ManagedStoredIndex;
+import com.timeindexing.index.StoredIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
@@ -43,12 +43,13 @@ import java.nio.channels.FileChannel;
  * <li> close </li>
  * <li> add item </li>
  * <li> access item </li>
+ * </ul>
  */
 public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor {
     /**
      * Construct an Inline Index.
      */
-    public InlineIndexIO(ManagedStoredIndex indexMgr) {
+    public InlineIndexIO(StoredIndex indexMgr) {
 	myIndex = indexMgr;
 	headerBuf = ByteBuffer.allocate(HEADER_SIZE);
 	indexBufWrite = ByteBuffer.allocate(INDEX_ITEM_SIZE);
@@ -64,6 +65,8 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	originalIndexSpecifier = (String)indexProperties.get("indexpath");
 
+	headerInteractor = new IndexHeaderIO(this);
+
 	// use the original specifier as a first cut for the header file name
 	// and the index file name
 	headerFileName = originalIndexSpecifier;
@@ -72,12 +75,14 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	indexName = (String)indexProperties.get("name");
 	indexID = (ID)indexProperties.get("indexid");
 
+	// create the header
+	headerInteractor.create(originalIndexSpecifier);
+	
+
 	try {
 	    open();
 
-	    myIndex.getHeader().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
-
-	    //was TODO: and should be myIndex.getHeader().setIndexPathName(indexFileName);
+	    myIndex.setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 
 	    long position = writeHeader(FileType.INLINE_INDEX);
 	    indexAppendPosition = position;
@@ -94,8 +99,14 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
     public long open(IndexProperties indexProperties) throws IOException, IndexOpenException {
 	creating = false;
 
-	headerInteractor = (IndexHeaderIO)indexProperties.get("header");
-	originalIndexSpecifier = (String)indexProperties.get("headerpath");
+	originalIndexSpecifier = (String)indexProperties.get("indexpath");
+
+	headerInteractor = new IndexHeaderIO(this);
+
+	// open the header
+	headerInteractor.open(originalIndexSpecifier);
+
+	//headerInteractor = (IndexHeaderIO)indexProperties.get("header");
 
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
@@ -110,6 +121,10 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    headerInteractor.getName().equals(indexName)) {
 	    // The values in the header match up so we
 	    // must be looking in the right place.
+	    
+	    // sync the read header with the index object
+	    myIndex.syncHeader(headerInteractor);
+
 	    return position;
 	} else {
 	    // The values in the header are different
@@ -270,6 +285,40 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	}
     }
 
+
+    /**
+     * Calculate the append position from the last item of the index.
+     */
+    public long calculateAppendPosition() throws IOException {
+	if (headerInteractor.getLength() == 0) {
+	    // the index has zero items
+	    // so there is nothing to read
+	    // so we use the current channel positions
+	    setAppendPosition();
+
+	    return getAppendPosition();
+
+	} else { 
+	    // where is last item
+	    Offset lastOffset = headerInteractor.getLastOffset();
+
+	    // get last item
+	    // lastOffset points to just before the last IndexItem
+	    ManagedFileIndexItem itemM = (ManagedFileIndexItem)readItem(lastOffset.value(), false);
+
+	    // work out append position
+	    // from index data offset + data size
+	    long appendPoint = itemM.getDataOffset().value() + itemM.getDataSize().value();
+
+	    // set append position
+	    indexAppendPosition = appendPoint;
+
+	    return getAppendPosition();
+
+	}
+    }
+
+
     /**
      * Operation on flush.
      * Returns how many bytes were written.
@@ -279,6 +328,10 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	// flush out any reaming data
 	written += flushBuffer(indexChannel, indexFlushBuffer);
+
+	// flush the header
+	headerInteractor.flush();
+
 	return written;
     }
 
@@ -288,6 +341,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      */
     public long close() throws IOException {
 	long size = -1;
+
 	// flush out any reaming data
 	long lastWrite = flush();
 
@@ -298,6 +352,9 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	//System.err.println("InlineIndexIO: size at close = " + size);
 
 	indexChannel.close();
+
+	// close the header
+	headerInteractor.close();
 
 	return size;
     }
