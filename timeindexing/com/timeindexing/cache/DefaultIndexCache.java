@@ -129,7 +129,7 @@ public class DefaultIndexCache implements IndexCache {
 	
 	if (data instanceof DataHolder) {
 	    // it really has the data 
-	    volumeHeld += data.getSize().value();
+	    volumeHeld += item.getDataSize().value();
 
 	    //System.err.println("Volume + = " + volumeHeld);
 	}
