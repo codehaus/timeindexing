@@ -12,7 +12,6 @@ import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.io.LoadStyle;
-import com.timeindexing.io.HeaderFileInteractor;
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
 import com.timeindexing.io.ExternalIndexIO;
@@ -43,10 +42,10 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	headerInteractor = new IndexHeaderIO(this);
+	setIndexType(IndexType.EXTERNAL_DT);
+
 	indexInteractor = new ExternalIndexIO(this);
 
-	header.setIndexType(IndexType.EXTERNAL_DT);
     }
 
     /**
@@ -56,52 +55,33 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	// check the passed in properties
 	checkProperties(properties);
 
+	// check to see if this index is already open and registered
+	if (isOpen(headerPathName)) {
+	    throw new IndexOpenException("Index is already created and is open");
+	}
+
 	// init the objects
 	init();
 
 	try {
-	    // open the index header
-	    headerInteractor.open(headerPathName);
-
 	    IndexProperties indexProperties = new IndexProperties();
 
-	    // add the header to the properties
-	    indexProperties.put("header", headerInteractor);
-
-	    indexProperties.put("headerpath", headerPathName);
-
-	    // add the indexpath to the properties
-	    indexProperties.put("indexpath", (String)((ManagedIndexHeader)headerInteractor).getOption(HeaderOption.INDEXPATH_HO));
-
-	    // add the datapath to the properties
-	    // as it was in the header
-	    indexProperties.put("datapath", (String)((ManagedIndexHeader)headerInteractor).getOption(HeaderOption.DATAPATH_HO));
-	    // WAS indexProperties.put("datapath", dataPathName);
-	    
+	    indexProperties.put("indexpath", headerPathName);
 	    
 	    // open the index and the data
 	    indexInteractor.open(indexProperties);
 
-	    // synchronize the header read using the headerInteractor
-	    // with the header object
-	    header.syncHeader((ManagedIndexHeader)headerInteractor);
-
-
-	    //System.err.print(headerInteractor);
-
-	    // go to point just after header
-	    indexInteractor.gotoFirstPosition();
 	    // load the index
 	    indexInteractor.loadIndex(loadStyle);
-	    // go to point just after last  item
-	    indexInteractor.gotoAppendPosition();
-
-	    //System.err.println(" append position = " + appendPosition);
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
 
 	    // now we're open
 	    closed = false;
+
+	    // register myself in the TimeIndex directory
+	    TimeIndexDirectory.register(this, headerPathName, getID());
+
 
 	    return true;
 	} catch (IOException ioe) {
@@ -115,6 +95,11 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     public synchronized boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
 	// check the passed in properties
 	checkProperties(properties);
+
+	// check to see if this index is already open and registered
+	if (isOpen(headerPathName)) {
+	    throw new IndexCreateException("Index is already created and is open");
+	}
 
 	// init the objects
 	init();
@@ -139,10 +124,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    indexProperties.put("indexpath", headerPathName);
 	    indexProperties.put("datapath", dataPathName);
 
-	    headerInteractor.create(headerPathName);
 
-	    // String indexFilename = headerInteractor.getIndexFileName());
- 
 	    indexInteractor.create(indexProperties);
 	
 
@@ -155,6 +137,10 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    // now we're open
 	    closed = false;
 
+
+	    // register myself in the TimeIndex directory
+	    TimeIndexDirectory.register(this, headerPathName, getID());
+
 	    return true;
 	} catch (IOException ioe) {
 	    throw new IndexCreateException(ioe);
@@ -162,6 +148,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    
     }
 
+    /**
+     * Check that all the properties needed are passed in.
+     */
     protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
 	if (indexProperties.containsKey("name")) {
 	    indexName = indexProperties.getProperty("name");
@@ -201,13 +190,6 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 		loadStyle = LoadStyle.HOLLOW;
 	    }
 	}
-    }
-
-    /**
-     * Get the headerfor the index.
-     */
-    public ManagedIndexHeader getHeader() {
-	return header;
     }
 
 

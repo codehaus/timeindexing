@@ -12,8 +12,6 @@ import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.io.LoadStyle;
-import com.timeindexing.io.HeaderFileInteractor;
-import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
 import com.timeindexing.event.*;
 
@@ -25,9 +23,7 @@ import java.io.IOException;
  * A place holder abstract class for stored Index objects
  * that are stored in files.
  */
-public abstract class FileIndex extends AbstractIndex implements ManagedStoredIndex  {
-    // The object that interacts with the header file
-    HeaderFileInteractor  headerInteractor = null;
+public abstract class FileIndex extends AbstractManagedIndex implements StoredIndex  {
     // The object that interacts with the inline index file
     IndexFileInteractor indexInteractor = null;
     // The last position that has been flushed to an index
@@ -52,7 +48,6 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
 
 	    try {
 		
-		headerInteractor.flush();
 		indexInteractor.flush();
 
 		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.FLUSHED, this));
@@ -70,7 +65,7 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
    /**
      * Close this index.
      */
-    public boolean close() {
+    public boolean reallyClose() {
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
@@ -78,8 +73,7 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
 	}
 
 	try {
-	    // now tell the file interactors to close
-	    headerInteractor.close();
+	    // now tell the file interactor to close
 	    indexInteractor.close();
 	    
 

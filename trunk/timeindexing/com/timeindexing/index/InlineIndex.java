@@ -12,7 +12,6 @@ import com.timeindexing.basic.Offset;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.io.LoadStyle;
-import com.timeindexing.io.HeaderFileInteractor;
 import com.timeindexing.io.IndexHeaderIO;
 import com.timeindexing.io.IndexFileInteractor;
 import com.timeindexing.io.InlineIndexIO;
@@ -48,10 +47,9 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	headerInteractor = new IndexHeaderIO(this);
-	indexInteractor = new InlineIndexIO(this);
+	setIndexType(IndexType.INLINE_DT);
 
-	header.setIndexType(IndexType.INLINE_DT);
+	indexInteractor = new InlineIndexIO(this);
     }
 
     /**
@@ -61,45 +59,34 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	// check the passed in properties
 	checkProperties(properties);
 
+	// check to see if this index is already open and registered
+	if (isOpen(headerPathName)) {
+	    throw new IndexOpenException("Index is already created and is open");
+	}
+
 	// init the objects
 	init();
 
 	try {
-	    headerInteractor.open(headerPathName);
-
 	    IndexProperties indexProperties = new IndexProperties();
 
-	    indexProperties.put("header", headerInteractor);
-	    
-	    indexProperties.put("headerpath", headerPathName);
-
-	    // add the indexpath to the properties
-	    indexProperties.put("indexpath", (String)((ManagedIndexHeader)headerInteractor).getOption(HeaderOption.INDEXPATH_HO));
-
+	    indexProperties.put("indexpath", headerPathName);
 
 	    // open the index 
 	    indexInteractor.open(indexProperties);
 
-	    // synchronize the header read using the headerInteractor
-	    // with the header object
-	    header.syncHeader((ManagedIndexHeader)headerInteractor);
-
-
-	    //System.err.print(headerInteractor);
-
-	    // go to point just after header
-	    indexInteractor.gotoFirstPosition();
 	    // load the index
 	    indexInteractor.loadIndex(loadStyle);
-	    // go to point just after last  item
-	    indexInteractor.gotoAppendPosition();
 
-	    //System.err.println(" append position = " + appendPosition);
 
 	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
 	    
 	    // now we're open
 	    closed = false;
+
+
+	    // register myself in the TimeIndex directory
+	    TimeIndexDirectory.register(this, headerPathName, getID());
 
 	    return true;
 	} catch (IOException ioe) {
@@ -113,6 +100,11 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     public synchronized boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
 	// check the passed in properties
 	checkProperties(properties);
+
+	// check to see if this index is already open and registered
+	if (isOpen(headerPathName)) {
+	    throw new IndexCreateException("Index is already created and is open");
+	}
 
 	// init the objects
 	init();
@@ -135,10 +127,6 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    indexProperties.put("indexid", indexID);
 	    indexProperties.put("indexpath", headerPathName);
 
-	    headerInteractor.create(headerPathName);
-
-	    // String indexFilename = headerInteractor.getIndexFileName());
- 
 	    indexInteractor.create(indexProperties);
 	
 
@@ -150,6 +138,10 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 	    // now we're open
 	    closed = false;
+
+
+	    // register myself in the TimeIndex directory
+	    TimeIndexDirectory.register(this, headerPathName, getID());
 
 	    return true;
 	} catch (IOException ioe) {
@@ -189,13 +181,6 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    }
 	}
 
-}
-    /**
-     * Get the headerfor the index.
-     */
-    public ManagedIndexHeader getHeader() {
-	return header;
     }
-
 
 }
