@@ -11,6 +11,7 @@ import com.timeindexing.time.Lifetime;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexTimestampSelector;
+import com.timeindexing.index.GetItemException;
 
 /**
  * An end-point interval is an interval where both of the the arguments
@@ -366,8 +367,16 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 
 	    case POSITION_TO_RELATIVETIMESTAMP: {
 		System.err.println("POSITION_TO_RELATIVETIMESTAMP: start = " + start);
-		IndexItem item = index.getItem(start);
+		IndexItem item = null;
 		Timestamp startTS = null;
+
+		try {
+		    item = index.getItem(start);
+		} catch (GetItemException gie) {
+		    // we failed to get the item at Position 'start' from the index
+		    // so return null
+		    return null;
+		}
 
 		if (selector == IndexTimestampSelector.DATA) {
 		    startTS = item.getDataTimestamp();
