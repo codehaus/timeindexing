@@ -298,10 +298,20 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 
 	    case ABSOLUTETIMESTAMP_PLUS_COUNT: {
 		TimestampMapping posStart = index.locate(startTimestamp, selector, lifetime);
-
+		System.err.println("ABSOLUTETIMESTAMP_PLUS_COUNT: TimestampMapping = " + posStart);
 
 		if (posStart == null) {
 		    return null;
+		} else if (posStart.position() == Position.TOO_LOW || posStart.position() == Position.TOO_HIGH) {
+		    // bad start time
+		    newInterval = (EndPointInterval)this.clone();
+
+		    newInterval.start = (Position)posStart;
+		    newInterval.end = (Position)posStart;
+
+		    newInterval.resolved = true;
+		    return newInterval;
+
 		} else {
 		    // resolved start time
 		    newInterval = (EndPointInterval)this.clone();
