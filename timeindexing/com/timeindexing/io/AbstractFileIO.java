@@ -21,6 +21,7 @@ import com.timeindexing.event.*;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.SID;
 import com.timeindexing.basic.Size;
+import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Timestamp;
@@ -357,6 +358,31 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     }
 
     /**
+     * Get the item at index position Position.
+     */
+    public ManagedIndexItem getItem(Position position, boolean doLoadData) throws IOException {
+	return getItem(position.value(), doLoadData);
+    }
+
+    /**
+     * Get the item at index position Position.
+     */
+    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
+	// calculate the position to load from
+	long start = indexFirstPosition;
+	long determined = start + (position * INDEX_ITEM_SIZE);
+
+
+	ManagedIndexItem item = readItem(determined, doLoadData);	
+
+	// post the read item into the index
+	// this is the Index callback
+	getIndex().retrieveItem(item, position);
+
+	return item;
+    }
+
+    /**
      * Read the contents of the item
      * It assumes the index file is alreayd open for writing.
      * @param offset the byte offset in the file to start reading an item from
@@ -658,14 +684,15 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	} else {
 	    for (count=0; count < itemCount; count++) {
 		// read an item
-		item =  readItem(position, doLoadData);
+		//item =  readItem(position, doLoadData);
+		item = getItem(count, doLoadData);
 
 		// set the position for next time
 		position = indexChannelPosition;
 
 		// post the read item into the index
 		// this is the Index callback
-		getIndex().retrieveItem(item);
+		getIndex().retrieveItem(item, count);
 	    }
 	}
 

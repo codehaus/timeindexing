@@ -8,6 +8,7 @@ import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.basic.Offset;
+import com.timeindexing.basic.Position;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -23,6 +24,22 @@ public interface IndexFileReader {
      * @param headerType the type of header, e.g FileType.INLINE_INDEX or FileType.EXTERNAL_INDEX
      */
     public long readHeader(byte headerType) throws IOException, IndexOpenException;
+
+    /**
+     * Get the item
+     * @param position the position of the index item to get
+     * @param withData read the data for this IndexItem if withData is true,
+     * the data needs to be read at a later time, otherwise
+     */
+    public ManagedIndexItem getItem(Position position, boolean withData) throws IOException;
+
+    /**
+     * Get the item
+     * @param position the position of the index item to get
+     * @param withData read the data for this IndexItem if withData is true,
+     * the data needs to be read at a later time, otherwise
+     */
+    public ManagedIndexItem getItem(long position, boolean withData) throws IOException;
 
     /**
      * Read the contents of the item
