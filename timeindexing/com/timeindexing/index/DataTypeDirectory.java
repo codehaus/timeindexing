@@ -343,8 +343,9 @@ public class DataTypeDirectory implements Serializable {
 	    loadedID = nextID;
 
 	} catch (IOException ioe) {
-	    System.err.println("getSavedID: IOException");
-            ioe.printStackTrace();
+	    //System.err.println("getSavedID: IOException");
+            //ioe.printStackTrace();
+	    
 	} catch (ClassNotFoundException cnfe) {
 	     System.err.println("getSavedID: ClassNotFoundException");
 	}
