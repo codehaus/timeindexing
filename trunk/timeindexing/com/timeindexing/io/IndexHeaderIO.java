@@ -179,7 +179,7 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	headerBuf.put((byte)0x00);    
 
 	// indexType
-	headerBuf.put((byte)indexType);    
+	headerBuf.put((byte)indexType.value());    
 
 	// write the start time
 	headerBuf.putLong(startTime.value()); 
