@@ -1,6 +1,6 @@
 JARGS=
 
-all: io time index cache event basic data util plugin appl tomcat
+all: io time index cache event basic data util plugin appl
 
 io:
 	jikes $(JARGS) com/timeindexing/io/*.java
