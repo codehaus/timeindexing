@@ -104,6 +104,8 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    long position = writeHeader(FileType.INLINE_INDEX);
 	    indexAppendPosition = position;
 
+	    flush();
+
 	    return position;
 	} catch (IndexOpenException ioe) {
 	    throw new IndexCreateException(ioe.getMessage());
@@ -146,8 +148,82 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    ;
 	}
 
+
+	// now check to see if this index should be opened
+	// as read-only
+	Boolean readOnly = (Boolean)indexProperties.get("readonly");
+
+	if (readOnly.equals(Boolean.TRUE)) {
+	    headerInteractor.setReadOnly(true);
+	}
+
+	// open the relevant files
 	open();
 
+	long position = readMetaData();
+
+	return position;
+    }
+
+    /**
+     * Open an index   to read it.
+     */
+    protected long open() throws IOException, IndexOpenException {
+	try {
+	    // resolve the index filename.  It replaces the first
+	    // attempt with the real thing
+	    indexFileName = FileUtils.resolveFileName(indexFileName, ".tii");
+
+	    File file = new File(indexFileName);
+
+	    // determine if the files should be opened 
+	    // read-only or read-write
+	    String openMode = null;
+
+	    /*
+	     * Attempt to resolve relative named
+	     * index file to absolute one
+	     */
+	    if (! creating) {                  // we're NOT creating
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    File headerFile = new File(headerFileName);
+
+		    file = new File(headerFile.getParent(), indexFileName);
+		    indexFileName = file.getAbsolutePath();
+		}
+
+		if (file.canWrite()) {
+		    openMode = "rw";
+		} else {
+		    openMode = "r";
+		}
+
+	    } else {                            // we ARE creating
+		openMode = "rw";
+	    }
+
+	    indexFile = new RandomAccessFile(file, openMode);
+	    indexChannel = indexFile.getChannel();
+
+	    //System.err.println("InlineIndexIO: opened \"" + actualFileName + "\"");
+
+	} catch (FileNotFoundException fnfe) {
+	    throw new IndexOpenException("Could not find index file: " + indexFileName);
+	}
+
+	return 0;
+	
+    }
+
+
+
+    /**
+     * Read all the meta data.
+     */
+    public long readMetaData() throws IOException, IndexOpenException {
 	long position = readHeader(FileType.INLINE_INDEX);
 
 	// check ID in header == ID in index
@@ -168,48 +244,6 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 					 "' is not an index associated with the header");
 	}
     }
-
-    /**
-     * Open an index   to read it.
-     */
-    protected long open() throws IOException, IndexOpenException {
-	try {
-	    // resolve the index filename.  It replaces the first
-	    // attempt with the real thing
-	    indexFileName = FileUtils.resolveFileName(indexFileName, ".tii");
-	    File file = new File(indexFileName);
-
-	    /*
-	     * Attempt to resolve relative named
-	     * index file to absolute one
-	     */
-	    if (! creating) {
-		// file names can be be realtive
-		// so we have to resolve filenames
-
-		if (! file.isAbsolute()) {
-		    File headerFile = new File(headerFileName);
-
-		    file = new File(headerFile.getParent(), indexFileName);
-		    indexFileName = file.getAbsolutePath();
-		}
-	    }
-
-
-
-	    indexFile = new RandomAccessFile(file, "rw");
-	    indexChannel = indexFile.getChannel();
-
-	    //System.err.println("InlineIndexIO: opened \"" + actualFileName + "\"");
-
-	} catch (FileNotFoundException fnfe) {
-	    throw new IndexOpenException("Could not find index file: " + indexFileName);
-	}
-
-	return 0;
-	
-    }
-
 
     /**
      * Get the item at index position Position.

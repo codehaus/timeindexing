@@ -73,6 +73,8 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	    indexAppendPosition = position;
 	    dataAppendPosition = 0;
 
+	    flush();
+
 	    return position;
 	} catch (IndexOpenException ioe) {
 	    throw new IndexCreateException(ioe);
@@ -115,29 +117,21 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	    ;
 	}
 
-	open();
+	// now check to see if this index should be opened
+	// as read-only
+	Boolean readOnly = (Boolean)indexProperties.get("readonly");
 
-	long position = readHeader(FileType.SHADOW_INDEX);
-
-	// check ID in header == ID in index
-	// and   name in header == name in index
-	if (headerInteractor.getID().equals(indexID) && 
-	    headerInteractor.getName().equals(indexName)) {
-	    // The values in the header match up so we
-	    // must be looking in the right place.
-
-	    // sync the read header with the index object
-	    getIndex().syncHeader(headerInteractor);
-
-	    return position;
-	} else {
-	    // The values in the header are different
-	    // so something is wrong
-	    throw new IndexOpenException("The file '" + indexFileName +
-					 "' is not an index for the data file '" +
-					 dataFileName);
+	if (readOnly.equals(Boolean.TRUE)) {
+	    headerInteractor.setReadOnly(true);
 	}
 
+	// open the relevant files
+	open();
+
+	// read the headers
+	long position = readMetaData();
+
+	return position;
    }
 
     /**
@@ -152,6 +146,9 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	    File file = new File(indexFileName);
 
+	    // determine if the files should be opened 
+	    // read-only or read-write
+	    String openMode = null;
 
 	    /*
 	     * Attempt to resolve relative named
@@ -167,11 +164,18 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 		    file = new File(headerFile.getParent(), indexFileName);
 		    indexFileName = file.getAbsolutePath();
 		}
+
+		if (file.canWrite()) {
+		    openMode = "rw";
+		} else {
+		    openMode = "r";
+		}
+
+	    } else {                            // we ARE creating
+		openMode = "rw";
 	    }
 
-
-
-	    indexFile = new RandomAccessFile(file, "rw");
+	    indexFile = new RandomAccessFile(file, openMode);
 	    indexChannel = indexFile.getChannel();
 
 	} catch (FileNotFoundException fnfe) {
@@ -212,6 +216,33 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
     
     /**
+     * Read all the meta data.
+     */
+    public long readMetaData() throws IOException, IndexOpenException {
+ 
+	long position = readHeader(FileType.SHADOW_INDEX);
+
+	// check ID in header == ID in index
+	// and   name in header == name in index
+	if (headerInteractor.getID().equals(indexID) && 
+	    headerInteractor.getName().equals(indexName)) {
+	    // The values in the header match up so we
+	    // must be looking in the right place.
+
+	    // sync the read header with the index object
+	    getIndex().syncHeader(headerInteractor);
+
+	    return position;
+	} else {
+	    // The values in the header are different
+	    // so something is wrong
+	    throw new IndexOpenException("The file '" + indexFileName +
+					 "' is not an index for the data file '" +
+					 dataFileName);
+	}
+    }
+
+    /**
      * Processing of the data.
      */
     protected long processData(ByteBuffer buffer) throws IOException  {
@@ -230,7 +261,7 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
      * Operation on flush.
      * Returns how many bytes were written.
      */
-    public long flush() throws IOException {
+    public synchronized long flush() throws IOException {
 	long written = 0;
 
 	// flush out any reaming data

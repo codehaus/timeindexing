@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -62,7 +63,6 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 
     String dataIndexName = null;
     ID dataIndexID = null;
-
 
     /**
      * Construct an External Index.
@@ -146,9 +146,6 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// open the index header
 	headerInteractor.open(originalIndexSpecifier);
 
-	//headerInteractor = (IndexHeaderIO)indexProperties.get("header");
-
-
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
 	dataFileName = headerInteractor.getDataPathName();
@@ -171,8 +168,125 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    ;
 	}
 
+	// now check to see if this index should be opened
+	// as read-only
+	Boolean readOnly = (Boolean)indexProperties.get("readonly");
+
+	if (readOnly.equals(Boolean.TRUE)) {
+	    headerInteractor.setReadOnly(true);
+	}
+
+	// open the relevant files
 	open();
 
+	// read the headers
+	long indexHeaderPosition = readMetaData();
+
+	return indexHeaderPosition;
+    }
+
+
+    /**
+     * Open an index  to read it.
+     * It normaises indexFileName and dataFileName.
+     */
+    protected long open() throws IOException, IndexOpenException {
+	// open the index file
+	try {
+	    // resolve the index filename.  It replaces the first
+	    // attempt with the real thing
+	    indexFileName = FileUtils.resolveFileName(indexFileName, ".tix");
+
+	    File file = new File(indexFileName);
+
+	    // determine if the files should be opened 
+	    // read-only or read-write
+	    String openMode = null;
+
+
+	    /*
+	     * Attempt to resolve relative named
+	     * index file to absolute one
+	     */
+	    if (! creating) {                   // we're NOT creating
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    File headerFile = new File(headerFileName);
+
+		    file = new File(headerFile.getParent(), indexFileName);
+		    indexFileName = file.getAbsolutePath();
+		}
+
+		if (file.canWrite()) {          // we have write permission
+		    openMode = "rw";
+		} else {                        // we don;t have write permission
+		    openMode = "r";
+		}
+
+	    } else {                            // we ARE creating
+		openMode = "rw";
+	    }
+
+	    indexFile = new RandomAccessFile(file, openMode);
+	    indexChannel = indexFile.getChannel();
+
+	} catch (FileNotFoundException fnfe) {
+	    throw new IndexOpenException("Could not find index file: " + indexFileName);
+	}
+
+	// open the data file
+	try {
+	    dataFileName = FileUtils.resolveFileName(dataFileName, ".tid");
+	    File file = new File(dataFileName);
+
+	    // determine if the files should be opened 
+	    // read-only or read-write
+	    String openMode = null;
+
+
+	    /*
+	     * Attempt to resolve relative named
+	     * data file to absolute one
+	     */
+	    if (! creating) {
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    File headerFile = new File(headerFileName);
+
+		    file = new File(headerFile.getParent(), dataFileName);
+		    dataFileName = file.getAbsolutePath();
+		}
+
+		if (file.canWrite()) {
+		    openMode = "rw";
+		} else {
+		    openMode = "r";
+		}
+	    } else {                            // we ARE creating
+		openMode = "rw";
+	    }
+
+	    dataFile = new RandomAccessFile(file, openMode);
+	    dataChannel = dataFile.getChannel();
+
+	} catch (FileNotFoundException fnfe) {
+	    throw new IndexOpenException("Could not find data file: " + dataFileName);
+	}
+
+
+	return 0;
+	
+    }
+
+
+    /**
+     * Read all the meta data.
+     */
+    public long readMetaData() throws IOException, IndexOpenException {
 	long indexHeaderPosition = readHeader(FileType.EXTERNAL_INDEX);
 
 	long dataHeaderPosition = readDataHeader(FileType.EXTERNAL_DATA);
@@ -199,80 +313,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 					 "' is not an index for the data file '" +
 					 dataFileName);
 	}
-    }
 
-
-    /**
-     * Open an index  to read it.
-     * It normaises indexFileName and dataFileName.
-     */
-    protected long open() throws IOException, IndexOpenException {
-	// open the index file
-	try {
-	    // resolve the index filename.  It replaces the first
-	    // attempt with the real thing
-	    indexFileName = FileUtils.resolveFileName(indexFileName, ".tix");
-
-	    File file = new File(indexFileName);
-
-
-	    /*
-	     * Attempt to resolve relative named
-	     * index file to absolute one
-	     */
-	    if (! creating) {
-		// file names can be be realtive
-		// so we have to resolve filenames
-
-		if (! file.isAbsolute()) {
-		    File headerFile = new File(headerFileName);
-
-		    file = new File(headerFile.getParent(), indexFileName);
-		    indexFileName = file.getAbsolutePath();
-		}
-	    }
-
-
-
-	    indexFile = new RandomAccessFile(file, "rw");
-	    indexChannel = indexFile.getChannel();
-
-	} catch (FileNotFoundException fnfe) {
-	    throw new IndexOpenException("Could not find index file: " + indexFileName);
-	}
-
-	// open the data file
-	try {
-	    dataFileName = FileUtils.resolveFileName(dataFileName, ".tid");
-	    File file = new File(dataFileName);
-
-
-	    /*
-	     * Attempt to resolve relative named
-	     * data file to absolute one
-	     */
-	    if (! creating) {
-		// file names can be be realtive
-		// so we have to resolve filenames
-
-		if (! file.isAbsolute()) {
-		    File headerFile = new File(headerFileName);
-
-		    file = new File(headerFile.getParent(), dataFileName);
-		    dataFileName = file.getAbsolutePath();
-		}
-	    }
-
-	    dataFile = new RandomAccessFile(file, "rw");
-	    dataChannel = dataFile.getChannel();
-
-	} catch (FileNotFoundException fnfe) {
-	    throw new IndexOpenException("Could not find data file: " + dataFileName);
-	}
-
-
-	return 0;
-	
     }
 
 
@@ -427,7 +468,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Operation on flush.
      * Returns how many bytes were written.
      */
-    public long flush() throws IOException {
+    public synchronized long flush() throws IOException {
 	long written = 0;
 
 	// flush out any reaming data
@@ -445,7 +486,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Operation on close
      * @return the size of the index
      */
-    public long close() throws IOException {
+    public synchronized long close() throws IOException {
 	long size = -1;
 
 	// flush out any reaming data
@@ -633,6 +674,5 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    return getAppendPosition();
 	}
     }
-
 
 }
