@@ -2,6 +2,7 @@
 
 package com.timeindexing.io;
 
+import com.timeindexing.index.ExternalIndex;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.ManagedIndex;
@@ -26,7 +27,7 @@ import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Timestamp;
-import com.timeindexing.index.ExternalIndex;
+import com.timeindexing.util.ByteBufferRing;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -57,8 +58,8 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
     long dataChannelPosition = 0;
     long dataFirstPosition = 0;
     long dataAppendPosition = 0;
-    ByteBuffer dataFlushBuffer = null;
     ByteBuffer dataHeaderBuf = null;
+    ByteBufferRing dataFlushBuffers = null;
 
 
     String dataIndexName = null;
@@ -73,8 +74,8 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	dataHeaderBuf = ByteBuffer.allocate(HEADER_SIZE);
 	indexBufWrite = ByteBuffer.allocate(INDEX_ITEM_SIZE);
 	indexBufRead = ByteBuffer.allocate(INDEX_ITEM_SIZE);
-	indexFlushBuffer = ByteBuffer.allocate(FLUSH_SIZE);
-	dataFlushBuffer = ByteBuffer.allocate(FLUSH_SIZE);
+	indexFlushBuffers = new ByteBufferRing(4, FLUSH_SIZE);
+	dataFlushBuffers = new ByteBufferRing(8, FLUSH_SIZE);
     }
 
     /**
@@ -113,6 +114,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    open();
 
 	    indexFile.setLength(0);
+	    dataFile.setLength(0);
 
 	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
@@ -126,6 +128,11 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    long dataHeaderPosition = writeDataHeader(FileType.EXTERNAL_DATA);
 	    dataAppendPosition = dataHeaderPosition;
 
+	    flush();
+
+	    initThread(originalIndexSpecifier);
+	    startThread();
+	
 	    return indexAppendPosition;
 
 	} catch (IndexOpenException ioe) {
@@ -181,6 +188,9 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 
 	// read the headers
 	long indexHeaderPosition = readMetaData();
+
+	initThread(originalIndexSpecifier);
+	startThread();
 
 	return indexHeaderPosition;
     }
@@ -377,7 +387,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Write a buffer of index items.
      */
     protected long bufferedIndexWrite(ByteBuffer buffer) throws IOException {
-	return bufferedWrite(buffer, indexChannel, indexFlushBuffer);
+	return bufferedWrite(buffer, indexChannel, indexFlushBuffers);
     }
 
 
@@ -385,7 +395,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Write a buffer of data.
      */
     protected long bufferedDataWrite(ByteBuffer buffer) throws IOException {
-	return bufferedWrite(buffer, dataChannel, dataFlushBuffer);
+	return bufferedWrite(buffer, dataChannel, dataFlushBuffers);
     }
 
 
@@ -472,8 +482,13 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	long written = 0;
 
 	// flush out any reaming data
-	written += flushBuffer(indexChannel, indexFlushBuffer);
-	written += flushBuffer(dataChannel, dataFlushBuffer);
+	ByteBuffer indexBuffer = indexFlushBuffers.current();
+	indexFlushBuffers.lock();
+	written += flushBuffer(indexChannel, indexBuffer, indexFlushBuffers);
+
+	ByteBuffer dataBuffer = dataFlushBuffers.current();
+	dataFlushBuffers.lock();
+	written += flushBuffer(dataChannel, dataBuffer, dataFlushBuffers);
 
 
 	// flush the header
@@ -493,6 +508,8 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	long lastWrite = flush();
 
 	//System.err.println("ExternalIndexIO: at close wrote = " + lastWrite);
+
+	drainWriteQueue();
 	
 	size = indexChannel.size();
 	
@@ -504,6 +521,11 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 
 	// close the header
 	headerInteractor.close();
+
+	// end thread
+	if (stopThread() == null) {
+	    System.err.println("Thread is null?");
+	}
 
 	return size;
     }
