@@ -55,6 +55,9 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	indexCache = new DefaultIndexCache(this);
 
 	indexType = IndexType.INCORE;
+
+	// creating an Incore Index is effectively opening it
+	closed = false;
     }
 
 
@@ -100,7 +103,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexActivationException   {
+    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
 	return addItem(dataitem, null);
     }
 
@@ -113,7 +116,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexActivationException {
+    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();

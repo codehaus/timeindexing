@@ -73,27 +73,27 @@ public interface Index extends IndexHeader {
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException, IndexItemException ;
+    public long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexActivationException, IndexItemException;
+    public long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n);
+    public IndexItem getItem(long n) throws GetItemException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p);
+    public IndexItem getItem(Position p) throws GetItemException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime);
+    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException;
 
     /**
      * Hollow the IndexItem at the position.
@@ -152,6 +152,11 @@ public interface Index extends IndexHeader {
      * and this sets the end time too.
      */
     public boolean flush();
+
+    /**
+     * Is the Index closed.
+     */
+    public boolean isClosed();
 
     /**
      * Close the index.

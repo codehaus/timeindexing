@@ -25,6 +25,10 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     // The Index name
     String indexName = null;
 
+    // Is the Index closed.
+    // Items can only be added when the Index is NOT closed.
+    boolean closed = true;
+
     // Is the Index activated.
     // Items can only be added when the Index is activated.
     // An index that is finalized can NEVER be activated.
@@ -231,12 +235,12 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Add a Data Item to the Index.
      */
-    public abstract long addItem(DataItem item) throws IndexTerminatedException, IndexActivationException, IndexItemException;
+    public abstract long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public abstract long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexActivationException, IndexItemException;
+    public abstract long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Add an Index Item to the Index.
@@ -247,15 +251,19 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * @throws IndexActivationException if the index has NOT been activated
      * and an attempt is made to add an Item
      */
-    public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexActivationException {
-	// TODO: check isActivated() and isTerminated()
-	// before doing this
+    public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+
+	// can't add anything if the index is closed
+	if (isClosed()) {
+	    throw new IndexClosedException("Index closed " + this);
+	}
 
 	// can't add anything if the index is terminated
 	if (isTerminated()) {
 	    throw new IndexTerminatedException("Index terminated " + this);
 	}
 
+	// can't add anything if the index is NOT activated
 	if (!isActivated()) {
 	    throw new IndexActivationException("Index NOT activated " + this);
 	}
@@ -299,7 +307,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) {
+    public IndexItem getItem(long n) throws GetItemException {
 	lastAccessTime = Clock.time.asMicros();
 	return indexCache.getItem(n);
     }
@@ -307,7 +315,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p) {
+    public IndexItem getItem(Position p) throws GetItemException {
 	lastAccessTime = Clock.time.asMicros();
 	return indexCache.getItem(p);
     }
@@ -315,7 +323,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
+    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException {
 	TimestampMapping tsm = locate(t, sel, lifetime);
 	return getItem(tsm.position());
     }
@@ -377,7 +385,8 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Try and determine the position associated
      * with the speicifed data Timestamp.
-     */
+     * @return null if no position is found
+      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) {
 	return indexCache.locate(t, sel, lifetime);
     }
@@ -426,10 +435,20 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	return true;
     }
 
+
+    /**
+     * Is the Index closed.
+     */
+    public boolean isClosed() {
+	return closed;
+    }
+
    /**
      * Close this index.
      */
     public boolean close() {
+	closed = true;
+	activated = false;
 
 	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
 
