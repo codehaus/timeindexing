@@ -54,7 +54,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	header = new IncoreIndexHeader(this,indexName);
 	indexCache = new DefaultIndexCache(this);
 
-	indexType = IndexType.INCORE;
+	header.setIndexType(IndexType.INCORE_DT);
 
 	// creating an Incore Index is effectively opening it
 	closed = false;
@@ -169,7 +169,7 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	// set the ID, the startTime, and the index type
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setIndexType(indexType);
+	//header.setIndexType(indexType);
 
 	header.setStartTime(Clock.time.asMicros());
 	header.setFirstOffset(new Offset(0));
@@ -181,6 +181,28 @@ public class IncoreIndex extends AbstractIndex implements ManagedIndex {
 	}
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+	closed = false;
+	activate();
+
+
+	return true;
+    }
+
+   /**
+     * Close this index.
+     */
+    public boolean close() {
+	// if the index is activated
+	// set the end time in the header
+	if (this.isActivated()) {
+	    header.setEndTime(Clock.time.asMicros());
+	}
+
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
+
+	closed = true;
+	activated = false;
+
 	return true;
     }
 
