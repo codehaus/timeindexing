@@ -200,7 +200,13 @@ public abstract class FileIndex extends AbstractIndex implements ManagedStoredIn
      * Hollow the IndexItem at the position.
      */
     public boolean hollowItem(Position p) {
-	return indexCache.hollowItem(p);
+        if (p == Position.TOO_LOW) {
+	    throw new PositionOutOfBoundsException("Position TOO_LOW");
+	} else if (p == Position.TOO_HIGH) {
+	    throw  new PositionOutOfBoundsException("Position TOO_HIGH");
+	} else {
+	    return indexCache.hollowItem(p);
+	}
     }
 
    /**
