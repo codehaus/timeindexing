@@ -7,6 +7,7 @@ import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.TimeIndexFactory;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.IndexCreateException;
 import com.timeindexing.time.Timestamp;
@@ -37,7 +38,7 @@ public class Test4 {
 
 	try {
 
-	    IndexView index = factory.create(IndexType.INCORE, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
 
 	    /* Item 0 */
 
@@ -103,13 +104,13 @@ public class Test4 {
 
 	    printIndex(index);
 
-	} catch (IndexCreateException ice) {
+	} catch (TimeIndexException ice) {
 	    System.err.println("Test4: " + ice.getMessage());
 	    System.exit(1);
 	}
     }
 
-    public static void printIndex(Index index) {
+    public static void printIndex(Index index) throws TimeIndexException {
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("Start:\t" + index.getStartTime() + "\n");
 	System.out.print("First:\t" + index.getFirstTime() + "\n");
@@ -127,7 +128,7 @@ public class Test4 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException {
 
 	System.out.print(item.getDataTimestamp() + "\t");
 

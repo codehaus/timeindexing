@@ -6,6 +6,7 @@ import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
@@ -62,7 +63,15 @@ public class TestSel1 {
 	Timestamp t0 = Clock.time.asMillis();
 
 	try {
-	    IndexView index = factory.open(new File(properties.getProperty("indexpath")));
+	    //IndexView index = factory.open(new File(properties.getProperty("indexpath")));
+	    IndexView index = null;
+
+	    try {
+		index = factory.open(properties);
+	    } catch (IndexOpenException ioe) {
+		System.err.println("Couldn't open \"" + properties.getProperty("indexpath") + "\". ");
+		System.exit(0);
+	    }
 
 	    Timestamp t1 = Clock.time.asMillis();
 
@@ -97,14 +106,14 @@ public class TestSel1 {
 	    }
 
 	    factory.close(index);
-	} catch (IndexOpenException ioe) {
-	    System.err.println("Cannot open index \"" +  properties.getProperty("indexpath") + "\"");
+	} catch (TimeIndexException ioe) {
+	    System.err.println("Error with index \"" +  properties.getProperty("indexpath") + "\"");
 	    System.exit(1);
 	}	    
 
     }
 
-    public static void printIndex(Index index) {
+    public static void printIndex(IndexView index) throws TimeIndexException {
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print(" End: " + index.getEndTime() + " ");
@@ -117,6 +126,13 @@ public class TestSel1 {
 
 	System.out.print("ID:" + index.getID());
 	System.out.println();
+
+	System.out.print("Start: " + index.getStartPosition() + " ");
+	System.out.print("End: " + index.getEndPosition() + " ");
+
+	System.out.print("Interval:" + index.getSelectionInterval());
+	System.out.println();
+
 	System.out.println();
 
 	long total = index.getLength();
@@ -134,7 +150,7 @@ public class TestSel1 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException  {
 	StringBuffer out = new StringBuffer(256);
 
 	out.append(item.getDataTimestamp() + "\t");
@@ -146,14 +162,21 @@ public class TestSel1 {
 	String rawData = null;	
 	String outData = null;
 
+
 	if (item.getDataSize().value() > 32) {
 	    rawData = new String(itemdata.array()).substring(0,27);
 	    outData = rawData.replace('\n', (char)182);
-	    out.append(outData + "....\t");
+	    out.append(outData + ".... ");
 	} else {
 	    rawData = new String(itemdata.array());
 	    outData = rawData.replace('\n', (char)182);
-	    out.append(outData + "\t");
+
+	    out.append(outData);
+
+            for (int c=rawData.length(); c <= 30; c++) {
+		out.append('_');
+	    }
+	    out.append(" ");
 	}
 
 	out.append(item.getDataSize() + "\t");

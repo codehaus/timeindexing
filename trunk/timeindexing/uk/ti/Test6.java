@@ -5,6 +5,7 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.index.IndexOpenException;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
@@ -52,7 +53,14 @@ public class Test6 {
 	Timestamp t0 = Clock.time.asMillis();
 
 	try { 
-	    Index index = factory.open(new File(properties.getProperty("indexpath")));
+	    IndexView index = null;
+
+	    try {
+		index = factory.open(properties);
+	    } catch (IndexOpenException ioe) {
+		System.err.println("Couldn't open \"/tmp/test5\".  You need to run Test5 first");
+		System.exit(0);
+	    }
 
 	    Timestamp t1 = Clock.time.asMillis();
 
@@ -65,7 +73,7 @@ public class Test6 {
 	    printIndex(index);
 
 	    factory.close(index);
-	} catch (IndexOpenException ioe) {
+	} catch (TimeIndexException ioe) {
 	    System.err.println("Test6: " + ioe.getMessage());
 	    System.exit(1);
 	}
@@ -73,7 +81,7 @@ public class Test6 {
 
     }
 
-    public static void printIndex(Index index) {
+    public static void printIndex(Index index) throws TimeIndexException {
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print(" End: " + index.getEndTime() + " ");
@@ -103,7 +111,7 @@ public class Test6 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException {
 	StringBuffer out = new StringBuffer(256);
 
 	out.append(item.getDataTimestamp() + "\t");
