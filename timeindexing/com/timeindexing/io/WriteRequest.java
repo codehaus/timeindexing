@@ -18,6 +18,9 @@ class WriteRequest {
     ByteBuffer buffer = null;
     ByteBufferRing ring = null;
 
+    /**
+     * Construct a WriteRequest.
+     */
     public WriteRequest(FileChannel fc, ByteBuffer bb, ByteBufferRing r) {
 	channel = fc;
 	buffer = bb;
