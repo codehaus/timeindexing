@@ -23,6 +23,15 @@ public abstract  class DefaultReader implements ReaderPlugin {
 	return eof;
     }
 
+
+    /**
+     *  The reader has hit EOF.
+     */
+    public  ReaderPlugin setEOF() {
+	eof = true;
+	return this;
+    }
+
      /**
      * Get the InputStream for the InputPlugin.
      */

@@ -28,4 +28,9 @@ public interface ReaderPlugin {
       * Determine if the reader has hit EOF.
       */
      public boolean isEOF();
+
+    /**
+     *  The reader has hit EOF.
+     */
+    public  ReaderPlugin setEOF();
  }

@@ -49,7 +49,7 @@ public class FileItem implements ReaderPlugin {
 			       " is loaded = " + buffer.isLoaded());
 
 	    // hit EOF
-	    eof = true;
+	    setEOF();
 
 	    // return the buffer
 	    return new DefaultReaderResult(buffer, null, DataType.ANY_DT);
@@ -63,6 +63,14 @@ public class FileItem implements ReaderPlugin {
 	return eof;
     }
 
+
+    /**
+     *  The reader has hit EOF.
+     */
+    public  ReaderPlugin setEOF() {
+	eof = true;
+	return this;
+    }
 
      /**
      * Get the InputStream for the InputPlugin.
