@@ -61,7 +61,7 @@ public class OutputStreamer {
 
 	for (long i=0; i<length; i++) {
 	    IndexItem itemN = selection.getItem(i);
-	    writeCount += outputPlugin.write(itemN);
+	    writeCount += outputPlugin.write(itemN, outputProperties);
 	}
 
 	return writeCount;

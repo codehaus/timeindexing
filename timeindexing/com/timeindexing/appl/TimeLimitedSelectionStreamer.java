@@ -83,7 +83,7 @@ public class TimeLimitedSelectionStreamer extends SelectionStreamer  {
 		    } 
 		}
 
-		writeCount += outputPlugin.write(itemN);
+		writeCount += outputPlugin.write(itemN, outputProperties);
 	    }
 	}
 	
