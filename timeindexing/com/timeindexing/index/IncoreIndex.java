@@ -49,22 +49,28 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      */
     public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
 	// check the passed in properties
-	checkProperties(properties);
+	checkOpenProperties(properties);
 
 	// check to see if this index is already open and registered
-	if (isOpen(getName())) {
-	    throw new IndexOpenException("Index is already created and is open");
+	try {
+	    String uri = generateURI(getName()).toString();
+
+	    if (isOpen(uri)) {
+		throw new IndexOpenException("Index is already created and is open");
+	    }
+	} catch (URISyntaxException use) {
+	    throw new IndexSpecificationException("Index badly specified as " + getName());
 	}
+
 
 	// init the objects
 	init();
 
 
 	// register myself in the TimeIndex directory
-	TimeIndexDirectory.register(this, getName(), getID());
+	TimeIndexDirectory.addHandle(this);
 
-
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.OPENED, this));
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.OPENED, this));
 	return true;
     }
 
@@ -73,15 +79,23 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      */
     public boolean create(Properties properties) throws IndexSpecificationException, IndexCreateException {
 	// check the passed in properties
-	checkProperties(properties);
-
-	// check to see if this index is already open and registered
-	if (isOpen(getName())) {
-	    throw new IndexCreateException("Index is already created and is open");
-	}
+	checkCreateProperties(properties);
 
 	// init the objects
 	init();
+
+	setName(indexName);
+
+	// check to see if this index is already open and registered
+	try {
+	    String uri = generateURI(getName()).toString();
+
+	    if (isOpen(uri)) {
+		throw new IndexCreateException("Index is already created and is open");
+	    }
+	} catch (URISyntaxException use) {
+	    throw new IndexSpecificationException("Index badly specified as " + getName());
+	}
 
 	// things to do the first time in
 	// set the ID, the startTime, first offset, last offset
@@ -102,13 +116,13 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    ;
 	}
 
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CREATED, this));
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
 	closed = false;
 	activate();
 
 
 	// register myself in the TimeIndex directory
-	TimeIndexDirectory.register(this, getName(), getID());
+	TimeIndexDirectory.addHandle(this);
 
 	return true;
     }
@@ -198,10 +212,41 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * Add a Referemnce to an IndexItem in a Index.
      */
     public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	URI indexURI = otherIndex.getURI();
+	ID indexID = otherIndex.getID();
 
-	if (! hasIndexURI(otherIndex.getURI())) {
+	// check if we have a seen this index URI before
+	if (! hasIndexURI(indexURI)) {
 	    // its a new index being referenced
-	    addIndexURI(otherIndex.getID(), otherIndex.getURI());
+	    // so keep tabs on it
+	    addIndexURI(indexID, indexURI);
+	}
+
+        IndexReference reference  = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
+
+	return addReference(reference, dataTS);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     * This version takes the Index URI, the Index ID, the IndexItem's Position,
+     * and the IndexItem's data Timestamp.
+     * It is used internally when doing a TimeIndexFactory.save().
+     */
+    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+
+        IndexReferenceDataHolder dataHolder = null;
+
+	// Convert the IndexReference into an IndexReferenceDataHolder
+	if (reference instanceof IndexReferenceDataHolder) {
+	    // The reference is already one
+	    dataHolder = (IndexReferenceDataHolder)reference;
+	} else {
+	    // we need to convert the reference into an IndexReferenceDataHolder
+	    ID indexID = reference.getIndexID();
+	    Position itemPosition = reference.getIndexItemPosition();
+
+	    dataHolder = new IndexReferenceDataHolder(indexID, itemPosition);
 	}
 
 	// set the ID to be the length
@@ -213,17 +258,20 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
 
-        IndexReferenceDataHolder dataHolder = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
-
 	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE_DT, new SID(id), new SID(0));
 
 	dataHolder.setIndexItem(item);
 
+
+	long newSize = addItem((IndexItem)item);
+
 	// mark as being changed
 	changed = true;
 
-	return addItem((IndexItem)item);
+	return newSize;
     }
+
+
 
    /**
      * Close this index.
@@ -235,7 +283,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    header.setEndTime(Clock.time.asMicros());
 	}
 
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(indexName, header.getID(), IndexPrimaryEvent.CLOSED, this));
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
 
 	closed = true;
 	activated = false;
@@ -244,7 +292,19 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	return true;
     }
 
-    protected void checkProperties(Properties indexProperties) throws IndexSpecificationException {
+    /**
+     * Check that all the properties needed to open are passed in.
+     */
+    protected void checkOpenProperties(Properties indexProperties) throws IndexSpecificationException {
+	if (indexProperties.containsKey("name")) {
+	    indexName = indexProperties.getProperty("name");
+	} else {
+	    throw new IndexSpecificationException("No 'name' specified for ExternalIndex");
+	}
+    }
+
+
+    protected void checkCreateProperties(Properties indexProperties) throws IndexSpecificationException {
 	if (indexProperties.containsKey("name")) {
 	    indexName = indexProperties.getProperty("name");
 	} else {
@@ -256,5 +316,13 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	}
     }
 
+    /**
+     * Construct a URI from a name
+     */
+    public URI generateURI(String name) throws URISyntaxException {
+	URI uri = new URI("index", name,  null);
+
+	return uri;
+    }
 
 }
