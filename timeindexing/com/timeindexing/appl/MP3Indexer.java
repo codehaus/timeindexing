@@ -4,7 +4,6 @@ package com.timeindexing.appl;
 
 import com.timeindexing.index.Index;
 import com.timeindexing.index.TimeIndex;
-import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.TimeIndexException;
@@ -18,7 +17,7 @@ import com.timeindexing.plugin.MP3;
 import com.timeindexing.plugin.ReaderPlugin;
 import com.timeindexing.plugin.ReaderResult;
 import com.timeindexing.data.DataItem;
-import com.timeindexing.data.ByteBufferItem;
+import com.timeindexing.data.ReaderResultItem;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -87,7 +86,7 @@ public class MP3Indexer {
 		prevDataTS = dataTS;
 	    }
 
-	    item = new ByteBufferItem(result.getData());
+	    item = new ReaderResultItem(result);
 
 	    indexSize = index.addItem(item, dataTS);
 
