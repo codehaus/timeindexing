@@ -103,9 +103,6 @@ public class Test6 {
 
 	    // print it
 	    printIndexItem(itemN);
-
-	    // hollow it
-	    index.hollowItem(i);
 	}
 	    
 	    
