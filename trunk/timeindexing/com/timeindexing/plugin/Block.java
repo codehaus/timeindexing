@@ -16,18 +16,17 @@ import java.io.IOException;
  * A plugin that takes an input stream and
  * returns a block at a time.
  */
-public class Block implements ReaderPlugin {
+public class Block extends DefaultReader implements ReaderPlugin {
     BufferedReader input = null;
     ByteBuffer block = null;
     int blockSize = 8192;
-    boolean eof = false;
 
     /**
      * Construct a Block plugin from an InputStream.
      */
     public Block(InputStream inStream) {
 	this( new BufferedReader (new InputStreamReader(inStream)));
-	
+	in = inStream;	
     }
 
     /**
@@ -76,12 +75,7 @@ public class Block implements ReaderPlugin {
 	return null;
     }
 
-    /**
-     * Determine if the reader has hit EOF.
-     */
-    public  boolean isEOF() {
-	return eof;
-    }
+
 
     /**
      * Process the block

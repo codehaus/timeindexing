@@ -5,7 +5,6 @@ package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.NanosecondTimestamp;
-import com.timeindexing.time.NanosecondElapsedFormat;
 import com.timeindexing.time.TimeCalculator;
 
 import java.nio.ByteBuffer;
@@ -23,9 +22,7 @@ import javazoom.jl.decoder.BitstreamException;
  * A plugin that takes an MP3 input stream and
  * returns a sample at a time.
  */
-public class MP3 implements ReaderPlugin {
-    InputStream input = null;
-    boolean eof = false;
+public class MP3 extends DefaultReader implements ReaderPlugin {
     Bitstream bitstream = null;
     Header header = null;
     NanosecondTimestamp elapsedTime = null;
@@ -34,12 +31,20 @@ public class MP3 implements ReaderPlugin {
      * Construct a Mp3 plugin from an InputStream.
      */
     public MP3(InputStream inStream) {
-	input = inStream;
-	bitstream = new Bitstream(inStream);
+	setInputStream(inStream);
 	elapsedTime = new NanosecondTimestamp(0);
     }
 
     /**
+     * Set the InputStream for the InputPlugin.
+     */
+    public ReaderPlugin setInputStream(InputStream inStream) {
+	in = inStream;
+	bitstream = new Bitstream(inStream);
+	return this;
+    }
+
+   /**
      * Get next input buffer.
      */
     public ReaderResult read() throws IOException {
@@ -47,21 +52,15 @@ public class MP3 implements ReaderPlugin {
 	    if ((header = bitstream.readFrame()) == null) {
 		// hit EOF
 		eof = true;
-		System.err.print('\n');
 		return null;
 	    } else {
 		// return the sample
 		return process();
 	    }
 	} catch (BitstreamException be) {
+	    be.printStackTrace(System.err);
 	    throw new IOException(be.getMessage());
 	}
-    }
-    /**
-     * Determine if the reader has hit EOF.
-     */
-    public  boolean isEOF() {
-	return eof;
     }
 
     /**
@@ -89,13 +88,6 @@ public class MP3 implements ReaderPlugin {
 
 	// create a Result object
 	DefaultReaderResult result = new DefaultReaderResult(buffer, elapsedTime);
-
-	//System.err.print("framesize = " + framesize);
-	//System.err.print(" buf size = " + buffer.limit());
-	//System.err.print(" ms/frame = " + millis);
-	//System.err.print(" nanos = " + frameTime);
-	System.err.print( NanosecondElapsedFormat.fullFormat(elapsedTime));
-	System.err.print('\r');
 
 	bitstream.closeFrame();
 

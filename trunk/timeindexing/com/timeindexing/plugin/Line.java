@@ -16,10 +16,9 @@ import java.io.IOException;
  * A plugin that takes an input stream and
  * returns a line at a time.
  */
-public class Line implements ReaderPlugin {
+public class Line extends DefaultReader implements ReaderPlugin {
     BufferedReader input = null;
     String line = null;
-    boolean eof = false;
 
     /**
      * Construct a Line plugin from an InputStream.
@@ -49,18 +48,12 @@ public class Line implements ReaderPlugin {
 	if ((line = input.readLine()) == null) {
 	    // hit EOF
 	    eof = true;
+	    eofProcess();
 	    return null;
 	} else {
-	    // return the processed line
-	    return process(line);
+	    // return the processed line and add back the EOL 
+	    return process(line + System.getProperty("line.separator"));
 	}
-    }
-
-    /**
-     * Determine if the reader has hit EOF.
-     */
-    public  boolean isEOF() {
-	return eof;
     }
 
     /**
@@ -71,4 +64,11 @@ public class Line implements ReaderPlugin {
 	return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null);
     }
 
+    /**
+     * Processing at EOF.
+     * Return values states if something happended.
+     */
+    protected boolean eofProcess() {
+	return false;
+    }
 }

@@ -35,6 +35,7 @@ public class WebServerLogLine extends Line {
     SimpleDateFormat format = null;
     Date date = null;
     Timestamp timestamp = null;
+    int count = 0;
 
     /**
      * Construct a WebServerLogLine plugin from an InputStream.
@@ -75,6 +76,9 @@ public class WebServerLogLine extends Line {
 	compPat = Pattern.compile(pattern);
 	matcher = compPat.matcher("");
 
+	// how many 
+	count = 0;
+
 	return this;
     }
 
@@ -83,6 +87,7 @@ public class WebServerLogLine extends Line {
      */
     protected ReaderResult process(String line) {
 	timestamp = null;
+	count++;
 
 	// pass the matcher the current  line
 	matcher.reset(line);
@@ -109,10 +114,26 @@ public class WebServerLogLine extends Line {
 	    timestamp = new MillisecondTimestamp(date.getTime());
 
 	    // return the line as a ReaderResult with the timestamp
-	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp);
+	    DefaultReaderResult result = new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), timestamp);
+
+	    System.err.print(count);
+	    System.err.print(" ");
+	    System.err.print(date);
+	    System.err.print('\r');
+
+	    return result;
 	} else {
 	    return new DefaultReaderResult(ByteBuffer.wrap(line.getBytes()), null);
 	}
+    }
+
+    /**
+     * Processing at EOF.
+     * Return values states if something happended.
+     */
+    protected boolean eofProcess() {
+	 System.err.print('\n');
+	 return true;
     }
 }
 		    
