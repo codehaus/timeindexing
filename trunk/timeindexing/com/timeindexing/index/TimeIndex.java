@@ -727,7 +727,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Flush this index.
      */
-    public boolean flush() {
+    public boolean flush() throws IndexFlushException {
 	return indexModel.flush();
     }
 
@@ -743,7 +743,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Intened to close all associated streams and files,
      * and this sets the end time too.
      */
-    public boolean close() {
+    public boolean close() throws IndexCloseException {
 	return indexModel.close();
     }
 
