@@ -18,6 +18,9 @@ public class MassiveBitSet {
     // The doubly linked list of BitSets
     DoubleLinkedList linkedList = null;
 
+    // the highest bit number to be set
+    long highest = 0;
+
     /**
      * Construct a MassiveBitSet
      */
@@ -48,7 +51,7 @@ public class MassiveBitSet {
      * @param n the bit to get
      */
     public boolean get(long n) {
-	if (n > size()) {
+	if (n >= size()) {
 	    return false;
 	} else {
 	    // get the appropriate BitSet
@@ -65,7 +68,7 @@ public class MassiveBitSet {
      * @param n the bit to get
      */
     public MassiveBitSet clear(long n) {
-	if (n > size()) {
+	if (n >= size()) {
 	    return this;
 	} else {
 	    // get the appropriate BitSet
@@ -96,6 +99,18 @@ public class MassiveBitSet {
     }
 
     /**
+     * This resets the MassiveBitSet by clearing all of the bits,
+     * and setting the highest back to zero.
+     */
+    public MassiveBitSet reset() {
+	linkedList.clear();
+	allocate(1);
+	highest = 0;
+
+	return this;
+    }
+
+    /**
      * Set the value of the nth bit.
      * @param n the bit to get
      */
@@ -121,7 +136,19 @@ public class MassiveBitSet {
 	// set the bit
 	segment.set((int)(n % SET_SIZE), value);
 
+	// set the highest
+	if (n > highest) {
+	    highest = n;
+	}
+
 	return this;
+    }
+
+    /**
+     * Return the highest bit position to be set.
+     */
+    public long highest() {
+	return highest;
     }
 
     /**
