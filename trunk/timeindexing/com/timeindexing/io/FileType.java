@@ -28,9 +28,14 @@ public interface FileType {
     public final byte EXTERNAL_DATA = 0x04;
 
     /**
+     * A shadow index file 
+     */
+    public final byte SHADOW_INDEX = 0x05;
+
+    /**
      * An annotations file
      */
-    public final byte ANNOTATIONS = 0x05;
+    public final byte ANNOTATIONS = 0x06;
 
 
     /**

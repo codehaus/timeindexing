@@ -5,6 +5,7 @@ package com.timeindexing.io;
 import com.timeindexing.index.DataType;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.ManagedIndex;
+import com.timeindexing.index.ManagedStoredIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
@@ -13,6 +14,10 @@ import com.timeindexing.index.DataAbstraction;
 import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.DataReference;
 import com.timeindexing.index.DataReferenceObject;
+import com.timeindexing.index.IndexProperties;
+import com.timeindexing.index.HeaderOption;
+import com.timeindexing.index.IndexOpenException;
+import com.timeindexing.index.IndexCreateException;
 import com.timeindexing.event.*;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.SID;
@@ -39,506 +44,210 @@ import java.nio.channels.FileChannel;
  * <li> add item </li>
  * <li> access item </li>
  */
-public class InlineIndexIO implements InlineIndexInteractor, IndexPrimaryEventListener, IndexAddEventListener { // , IndexAccessEventListener {
-    ManagedIndex myIndex = null;
-    String fileName = null;
-    RandomAccessFile indexFile = null;
-    FileChannel channel = null;
-    ByteBuffer headerBuf = null;
-    ByteBuffer indexBufWrite = null;
-    ByteBuffer indexBufRead = null;
-    ByteBuffer flushBuffer = null;
-    TimestampDecoder timestampDecoder = new TimestampDecoder();
-
-    int versionMajor = 0;
-    int versionMinor = 0;
-    String indexName = null;
-    ID indexID = null;
-    int dataType = DataType.NOTSET;
-    
-    long channelPosition = 0;
-    long appendPosition = 0;
-
-    /*
-     * The size of a header
-     */
-    final static int HEADER_SIZE = 512;
-
-    /*
-     * The size of an index item in the index file
-     */
-    static int INDEX_ITEM_SIZE = 52;
-
-
-    /*
-     * The size of a flush buffer
-     */
-    final static int FLUSH_SIZE = 1 * 1024;
-
-
-
+public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor {
     /**
      * Construct an Inline Index.
      */
-    public InlineIndexIO(ManagedIndex indexMgr) {
+    public InlineIndexIO(ManagedStoredIndex indexMgr) {
 	myIndex = indexMgr;
 	headerBuf = ByteBuffer.allocate(HEADER_SIZE);
 	indexBufWrite = ByteBuffer.allocate(INDEX_ITEM_SIZE);
 	indexBufRead = ByteBuffer.allocate(INDEX_ITEM_SIZE);
-	flushBuffer = ByteBuffer.allocate(FLUSH_SIZE);
+	indexFlushBuffer = ByteBuffer.allocate(FLUSH_SIZE);
     }
 
     /**
      * Operation on creation.
      */
-    public long create(String filename) throws IOException {
-	fileName = filename;
-	indexName = myIndex.getName();
-	indexID = myIndex.getID();
+    public long create(IndexProperties indexProperties) throws IOException, IndexCreateException{
+	creating = true;
 
-	open();
+	originalIndexSpecifier = (String)indexProperties.get("indexpath");
 
-	long position = writeHeader();
-	appendPosition = position;
+	// use the original specifier as a first cut for the header file name
+	// and the index file name
+	headerFileName = originalIndexSpecifier;
+	indexFileName = originalIndexSpecifier;
 
-	return position;
+	indexName = (String)indexProperties.get("name");
+	indexID = (ID)indexProperties.get("indexid");
+
+	try {
+	    open();
+
+	    myIndex.getHeader().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
+
+	    //was TODO: and should be myIndex.getHeader().setIndexPathName(indexFileName);
+
+	    long position = writeHeader(FileType.INLINE_INDEX);
+	    indexAppendPosition = position;
+
+	    return position;
+	} catch (IndexOpenException ioe) {
+	    throw new IndexCreateException(ioe.getMessage());
+	}
     }
 
     /**
      * Open an index file  to read it.
      */
-    public long open(String filename) throws IOException {
-	fileName = filename;
+    public long open(IndexProperties indexProperties) throws IOException, IndexOpenException {
+	creating = false;
+
+	headerInteractor = (IndexHeaderIO)indexProperties.get("header");
+	originalIndexSpecifier = (String)indexProperties.get("headerpath");
+
+	headerFileName = headerInteractor.getHeaderPathName();
+	indexFileName = headerInteractor.getIndexPathName();
 
 	open();
 
-	long position = readHeader();
+	long position = readHeader(FileType.INLINE_INDEX);
 
-	return position;
-
+	// check ID in header == ID in index
+	// and   name in header == name in index
+	if (headerInteractor.getID().equals(indexID) && 
+	    headerInteractor.getName().equals(indexName)) {
+	    // The values in the header match up so we
+	    // must be looking in the right place.
+	    return position;
+	} else {
+	    // The values in the header are different
+	    // so something is wrong
+	    throw new IndexOpenException("The file '" + indexFileName +
+					 "' is not an index associated with the header");
+	}
     }
 
     /**
      * Open an index   to read it.
      */
-    protected long open() throws IOException {
+    protected long open() throws IOException, IndexOpenException {
 	try {
-	    String actualFileName = null;
+	    // resolve the index filename.  It replaces the first
+	    // attempt with the real thing
+	    indexFileName = FileUtils.resolveFileName(indexFileName, ".tii");
+	    File file = new File(indexFileName);
 
-	    // encure filename ends in .tih
-	    if (fileName.endsWith(".tii")) {
-		actualFileName = fileName;
-	    } else {
-		actualFileName = fileName + ".tii";
+	    /*
+	     * Attempt to resolve relative named
+	     * index file to absolute one
+	     */
+	    if (! creating) {
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    File headerFile = new File(headerFileName);
+
+		    file = new File(headerFile.getParent(), indexFileName);
+		    indexFileName = file.getAbsolutePath();
+		}
 	    }
-	    File file = new File(actualFileName);
+
+
 
 	    indexFile = new RandomAccessFile(file, "rw");
-	    channel = indexFile.getChannel();
+	    indexChannel = indexFile.getChannel();
 
 	    //System.err.println("InlineIndexIO: opened \"" + actualFileName + "\"");
 
 	} catch (FileNotFoundException fnfe) {
-	    throw new IOException("Could not open index file: " + fileName);
+	    throw new IndexOpenException("Could not find index file: " + indexFileName);
 	}
 
 	return 0;
 	
     }
 
+
     /**
-     * Read an index header from the header stream.
+     * Align the index for an append of the Data
      */
-    public long readHeader() throws IOException {
-	// seek to start
-	seek(0);
-
-	// The first two bytes are T & I
-	byte byteT = indexFile.readByte();
-	byte byteI = indexFile.readByte();
-	// byte 3 = 0x03
-	byte three = indexFile.readByte();
-	byte type = indexFile.readByte();
-
-	// check first 4 bytes
-	if (byteT == FileType.T &&
-	    byteI == FileType.I &&
-	    three == FileType.BYTE_3 &&
-	    type == FileType.INLINE_INDEX) {
-	    // we've opened a TimeIndex Header
-
-	    
-	    // get the version no
-	    versionMajor = (int)indexFile.readByte();
-	    versionMinor = (int)indexFile.readByte();
-
-	    // get the index ID
-	    indexID = new SID(indexFile.readLong());
-
-	    // read the Index name
-	    short nameSize = indexFile.readShort();
-	    byte[] nameRaw = new byte[nameSize-1];
-	    indexFile.readFully(nameRaw, 0, nameSize-1);
-	    indexName = new String(nameRaw);
-
-	    // soak up index name padding
-	    indexFile.readByte();
-
-	    //System.err.println("Inline Index Header read size = " + indexFile.getFilePointer());
-	
-	}
-
-	channelPosition = channel.position(); //indexFile.getFilePointer();
-	return channelPosition;
+    protected long alignForData() throws IOException   {
+	 return indexChannelPosition + INDEX_ITEM_SIZE;
     }
 
 
     /**
-     * Write the contents of the header out
-     * It assumes the index file is alreayd open for writing.
+     * Processing of the idnex item.
      */
-    public long writeHeader() throws IOException {
-	// seek to start
-	seek(0);
-
-	// clear the header buffer
-	headerBuf.clear();
-
-	// fill the buffer with the bytes
-
-	// TimeIndex Header magic
-	headerBuf.put(FileType.T);
-	headerBuf.put(FileType.I);
-	headerBuf.put(FileType.BYTE_3);
-	headerBuf.put(FileType.INLINE_INDEX);
-
-	// version major
-	headerBuf.put((byte)versionMajor);
-	// version minor
-	headerBuf.put((byte)versionMinor);
-
-	// write the ID
-	headerBuf.putLong(indexID.value());
-
-	// size of name, +1 for null terminator
-	headerBuf.putShort((short)(indexName.length()+1));
-
-	// the name
-	headerBuf.put(indexName.getBytes());
-	// plus null terminator
-	headerBuf.put((byte)0x00);
-
-	// now write it out
-	headerBuf.flip();
-	long writeCount = channel.write(headerBuf);
-
-	channelPosition = channel.position();
-
-	
-	//System.err.println("Inline Index Header size = " + count);
-
-	return writeCount;
-
-    }
-
-    /**
-     * Write the contents of the item
-     * It assumes the index file is alreayd open for writing.
-     */
-    public long writeItem(ManagedIndexItem itemM) throws IOException {
-	// cast the item to the correct class
-	ManagedFileIndexItem item = (ManagedFileIndexItem)itemM;
-
-	long count = 0;
-
-	// seek to the append position
-	seek(appendPosition);
-
-	// where are we in the file
-	long currentPosition = channelPosition; 
-
-	//System.err.println("P(W) = " + appendPosition);
-
-	// tell the IndexItem where its index is
-	item.setIndexOffset(new Offset(currentPosition));
-
-	// an index item is INDEX_ITEM_SIZE bytes, so
-	// in an inline index the data will start at
-	// currentPosition + INDEX_ITEM_SIZE
-	long dataPos = currentPosition + INDEX_ITEM_SIZE;
-
-	// tell the IndexItem where its data is
-	item.setDataOffset(new Offset(dataPos));
-
-	// clear the index buf
-	indexBufWrite.clear();
-
-	// fill the buffer
-	indexBufWrite.putLong(item.getIndexTimestamp().value());
-	indexBufWrite.putLong(item.getDataTimestamp().value());
-	indexBufWrite.putLong(dataPos);
-	indexBufWrite.putLong(item.getDataSize().value());
-	indexBufWrite.putInt(item.getDataType());
-	indexBufWrite.putLong(item.getItemID().value());
-	indexBufWrite.putLong(item.getAnnotations().value()); // TODO: fix annoation code
-
-	// make it ready for writing
-	indexBufWrite.flip();
-
+    protected long processIndexItem(ByteBuffer buffer) throws IOException  {
 	// write the index item
-	count += bufferedWrite(indexBufWrite);
-	channelPosition += INDEX_ITEM_SIZE;
-	
-	// write the data
-	count += bufferedWrite(item.getData());
-	channelPosition += item.getDataSize().value();
+	long count = bufferedIndexWrite(buffer);
 
-	// set the append position for the next writeItem()
-	appendPosition = channelPosition;
-	
+	indexChannelPosition += INDEX_ITEM_SIZE;
+
+	indexAppendPosition = indexChannelPosition;
+
 	return count;
     }
 
+    /**
+     * Processing of the data.
+     */
+    protected long processData(ByteBuffer buffer) throws IOException  {
+	// write the data
+	long count= bufferedDataWrite(buffer);
 
-    public long bufferedWrite(ByteBuffer buffer) throws IOException {
-	long written = 0;
-	int origLimit = buffer.limit();
-	ByteBuffer slice = null;
+	indexChannelPosition += buffer.limit();  // was item.getDataSize().value();
 
-	
-	while (buffer.hasRemaining()) {
+	indexAppendPosition = indexChannelPosition;
 
+	return count;
+    }
 
-
-	    /*
-	    System.err.println("flushBuffer() FB(P) = " + flushBuffer.position() +
-			   " FB(C) = " + flushBuffer.capacity() +
-			   " B(P) = " + buffer.position() + 
-			   " B(L) = " + buffer.limit() +
-			   " B(C) = " + buffer.capacity());
-	    */
-
-	    // no of bytes available in flushBuffer
-	    int available = flushBuffer.capacity() - flushBuffer.position();
-	    // no of bytes to place
-	    int todo = buffer.limit() - buffer.position();
-
-	    // if the flushBuffer is too full to take the specified buffer
-	    if (todo > available) {
-		// take some bytes from the input buffer
-		// set the limit to be the amount available
-		buffer.limit(buffer.position() + available);
-
-		// take a slice
-		slice = buffer.slice();
-
-		//  put the slice in
-		flushBuffer.put(slice);
-		
-		// this should have filled the flushBuffer
-		// so flush the buffer
-		written += flushBuffer();
-
-		// adjust the pointers into the buffer
-		buffer.position(buffer.limit());
-		buffer.limit(origLimit);
-	    } else {
-
-		//  put the new contents in
-		flushBuffer.put(buffer);
-	    }
-
-	
-	}
-	
-	return written;
+    /**
+     * Write a buffer of index items.
+     */
+    protected long bufferedIndexWrite(ByteBuffer buffer) throws IOException {
+	return bufferedWrite(buffer, indexChannel, indexFlushBuffer);
     }
 
 
     /**
-     * Actually flush the buffer out.
-     * Returns how man bytes were written.
+     * Write a buffer of data.
      */
-    public long flushBuffer()  throws IOException {
-	long written = 0;
-
-	if (flushBuffer.position() > 0) {
-	    flushBuffer.flip();
-	    written = channel.write(flushBuffer);
-
-	    // clear it
-	    flushBuffer.clear();
-
-	    //System.err.println("flushBuffer() wrote: " + written);
-	}
-
-	return written;
-    }
-
-    /**
-     * Read the contents of the item
-     * It assumes the index file is alreayd open for writing.
-     * @param position the byte offset in the file to start reading an item from
-     * @param withData read the data for this IndexItem if withData is true,
-     * the data needs to be read at a later time, otherwise
-     */
-    public ManagedIndexItem readItem(long position, boolean withData) throws IOException {
-	int readCount = 0;
-
-	// tmp var for reading index item values
-	Timestamp indexTS = null;
-	Timestamp dataTS = null;
-	DataAbstraction data = null;
-	long offset = -1;
-	long size = 0;
-	int type = DataType.NOTSET;
-	long id = 0;
-	long annotationID = 0;
-	ManagedFileIndexItem indexItem = null;
-	
-
-	seek(position);
-
-	// where are we in the file
-	long currentPosition = channelPosition;
-
-	//System.err.println("P(R) = " + currentPosition);
-
-
-	// an index item is INDEX_ITEM_SIZE bytes, so
-	// in an inline index the data will start at
-	// currentPosition + INDEX_ITEM_SIZE
-	long dataPos = currentPosition + INDEX_ITEM_SIZE;
-
-	// clear the index buf
-	indexBufRead.clear();
-
-	// read a block of data
-	if ((readCount = channel.read(indexBufRead)) != INDEX_ITEM_SIZE) {
-	    throw new IOException("Index Item too short: position = " +
-				  currentPosition + " read count = " + readCount);
-	}
-
-	channelPosition += readCount;
-
-	// we read the right amount, so carry on
-
-	indexBufRead.flip();
-	indexTS = timestampDecoder.decode(indexBufRead.getLong());
-	dataTS = timestampDecoder.decode(indexBufRead.getLong());
-	offset = indexBufRead.getLong();
-	size = indexBufRead.getLong();
-	type = indexBufRead.getInt();
-	id = indexBufRead.getLong();
-	annotationID = indexBufRead.getLong();
-
-
-	if (withData) {	// go and get the data now, if it's needed
-	    // TODO: add code that checks how big the data
-	    // actually is.
-	    // only read it if the index isn't too big
-	    // and the data isn't too big
-	    ByteBuffer buffer = readData(offset, size);
-
-	    // we got the data successfully, so build a DataHolderObject
-	    data = new DataHolderObject(buffer, new Size(size));
-	} else {	    // don;t get the data now
-	    // no need to get the  data, so build a DataReferenceObject
-	    data = new DataReferenceObject(new Offset(offset), new Size(size));
-	    // skip to right place
-	    seek(offset + size);
-	}
-
-	indexItem = new FileIndexItem(dataTS, indexTS, data, type, new SID(id), new SID(annotationID));
-
-	// tell the IndexItem where its index is
-	indexItem.setIndexOffset(new Offset(currentPosition));
-
-	indexItem.setDataOffset(new Offset(dataPos));
-
-
-	//System.err.println("Item size = (52 + " + size + ")");
-			   
-	return indexItem;
+    protected long bufferedDataWrite(ByteBuffer buffer) throws IOException {
+	return bufferedWrite(buffer, indexChannel, indexFlushBuffer);
     }
 
 
     /**
-     * Read some data, given an offset and a size.
+     * Actually read in the data.
      */
-    public ByteBuffer readData(long offset, long size) throws IOException {
-	ByteBuffer buffer = null;
-	int readCount = 0;
+    protected long readDataIntoBuffer(ByteBuffer buffer, long size) throws IOException {
+	long readCount = 0;
 
-	if (size > Integer.MAX_VALUE) {
-	    // buffers can only be so big
-	    // check we can allocate one big enough
-		throw new Error("InlineIndexIO: readItem() has not implemented reading of data > " + Integer.MAX_VALUE + ". Actual size is " + size);
-	} else if (size <= 4096) {
-	    // the data is less than a page size so read it
-	    // allocate a buffer
-	    buffer = ByteBuffer.allocate((int)size);
-	    // seek to the right place
-	    seek(offset);
-
-	    // read the data of index item
-	    if ((readCount = channel.read(buffer)) != size) {
-		throw new IOException("Index Item Data too short: position = " +
-				      channel.position() + " read count = " + readCount);
-	    }
-	    buffer.limit((int)size);
-	    buffer.position(0);
-	    channelPosition += readCount;
-
-	    return buffer;
-
-	} else {
-	    // the data is bigger than a page size
-	    // so its better to
-	    // getting data using memory mapping
-	    buffer = channel.map(FileChannel.MapMode.READ_ONLY, offset, size);
-	    seek(offset+size);
-	    return buffer;
-
+	// read the data of index item
+	if ((readCount = indexChannel.read(buffer)) != size) {
+	    throw new IOException("Index Item Data too short: position = " +
+				  indexChannel.position() + " read count = " + readCount);
 	}
+	indexChannelPosition += readCount;
+
+	return readCount;
+    }	
+    
+
+    /**
+     * Memory map some data from a channel.
+     */
+    protected ByteBuffer memoryMapData(long offset, long size) throws IOException {
+	return indexChannel.map(FileChannel.MapMode.READ_ONLY, offset, size);
     }
-
-
-    /**
-     * Read some data, given a DataReference.
-     */
-    public ByteBuffer readData(DataReference ref) throws IOException {
-	long offset = ref.getOffset().value();
-	long size = ref.getSize().value();
-
-	return readData(offset, size);	
-   }
-
-    /**
-     * Read some data, given a DataReference
-     * and return it as a DataHolderObject.
-     */
-    public DataHolderObject convertDataReference(DataReference dataReference) {
-	try { 
-	    ByteBuffer rawData = readData(dataReference);
-	    return new DataHolderObject(rawData, dataReference.getSize());
-
- 	} catch (IOException ioe) {
-	    ioe.printStackTrace();
-	    return null;
-	}
-   }
+    
 
     /**
      * Seek to a certain position.
      * @return true if actually had to move the position,
      * returns false if in correct place
      */
-    public boolean seek(long position) throws IOException {
-	if (channelPosition != position) {
+    protected boolean seekToIndex(long position) throws IOException {
+	if (indexChannelPosition != position) {
 	    // we need to seek to a different place
-	    channel.position(position);
-	    channelPosition = position;
+	    indexChannel.position(position);
+	    indexChannelPosition = position;
 	    return true;
 	} else {
 	    return false;
@@ -546,173 +255,51 @@ public class InlineIndexIO implements InlineIndexInteractor, IndexPrimaryEventLi
     }
 
     /**
-     * Load the index
+     * Seek to a certain position in the data file.
+     * @return true if actually had to move the position,
+     * returns false if in correct place
      */
-    public long loadIndex(LoadStyle loadStyle) throws IOException {
-
-	if (loadStyle == LoadStyle.ALL) {
-	    appendPosition = loadAll(true);
-	    return appendPosition;
-
-	} else if (loadStyle == LoadStyle.HOLLOW) {
-	    appendPosition = loadAll(false);
-	    return appendPosition;
-
-	} else if (loadStyle == LoadStyle.NONE) {
-	    // where is last item
-	    Offset lastOffset = myIndex.getLastOffset();
-	    // get last item
-	    ManagedFileIndexItem item = (ManagedFileIndexItem)readItem(lastOffset.value(), false);
-	    System.err.print("last offset = " + lastOffset);
-	    System.err.print(" index offset = " + item.getIndexOffset());
-	    System.err.print(" data offset = " + item.getDataOffset());
-	    System.err.print(" data size = " + item.getDataSize());
-	    // work out append position
-	    // from index data offset + data size
-	    long appendPoint = item.getDataOffset().value() + item.getDataSize().value();
-	    // set append position
-	    appendPosition = appendPoint;
-
-	    System.err.println(" append position = " + appendPosition);
-	    return appendPosition;
-
+    protected boolean seekToData(long position) throws IOException {
+	if (indexChannelPosition != position) {
+	    // we need to seek to a different place
+	    indexChannel.position(position);
+	    indexChannelPosition = position;
+	    return true;
 	} else {
-	    throw new Error("Unknow LoadStyle" + loadStyle);
+	    return false;
 	}
     }
-
-    /**
-     * Load all of the items.
-     * @return the position in the index after loading all the items
-     */
-    private long loadAll(boolean doLoadData) throws IOException {
-	ManagedIndexItem item = null;
-	long position = channelPosition;
-	long itemCount = myIndex.getLength();
-	long count = 0;
-
-	// we have just read the header
-	// so we are going to read all the items
-	for (count=0; count < itemCount; count++) {
-	    // read an item
-	    item =  readItem(position, doLoadData);
-
-	    // set the position for next time
-	    position = channelPosition;
-
-	    // post the read item into the index
-	    myIndex.retrieveItem(item);
-	}
-
-	return channelPosition;
-
-    }
-
 
     /**
      * Operation on flush.
      * Returns how many bytes were written.
      */
-    public long flush() {
+    public long flush() throws IOException {
 	long written = 0;
 
-	try {
-	    written = flushBuffer();
-	    return written;
-	} catch (IOException ioe) {
-	    ioe.printStackTrace();
-	} finally {
-	    return written;
-	}
-
+	// flush out any reaming data
+	written += flushBuffer(indexChannel, indexFlushBuffer);
+	return written;
     }
 
     /**
      * Operation on close
+     * @return the size of the index
      */
-    public long close() {
+    public long close() throws IOException {
 	long size = -1;
-	try {
-	    long lastWrite = flush();
+	// flush out any reaming data
+	long lastWrite = flush();
 
-	    //System.err.println("InlineIndexIO: at close wrote = " + lastWrite);
+	//System.err.println("InlineIndexIO: at close wrote = " + lastWrite);
+	
+	size = indexChannel.size();
+	
+	//System.err.println("InlineIndexIO: size at close = " + size);
 
-	    size = channel.size();
+	indexChannel.close();
 
-	    //System.err.println("InlineIndexIO: size at close = " + size);
-
-	    channel.close();
-
-	} catch (IOException ioe) {
-	    ioe.printStackTrace();
-	} finally {
-	    return size;
-	}
+	return size;
     }
 
-    /**
-     * A notification that an Index has been opened.
-     */
-    public  void opened(IndexPrimaryEvent ipe) {
-	ManagedIndex index = (ManagedIndex)ipe.getSource();
-	//System.err.println("InlineIndexIO opened: IndexPrimaryEvent source = " + index.getName());
-
-	indexName = ipe.getName();
-	indexID = ipe.getID();	
-    }
-
-    /**
-     * A notification that an Index has been closed.
-     */
-    public  void closed(IndexPrimaryEvent ipe) {
-	Index index = (Index)ipe.getSource();
-	//System.err.println("InlineIndexIO: closed() IndexPrimaryEvent source = " + index.getName());
-
-    }
-
-    /**
-     * A notification that an Index has been flushed.
-     */
-    public  void flushed(IndexPrimaryEvent ipe) {
-	flush();
-    }
-
-    /**
-     * A notification that an Index has been created.
-     */
-    public  void created(IndexPrimaryEvent ipe) {
-	Index index = (Index)ipe.getSource();
-	//System.err.println("InlineIndexIO: IndexPrimaryEvent source = " + index.getName());
-
-	indexName = ipe.getName();
-	indexID = ipe.getID();
-
-    }
-
-    /**
-     * A notification that an IndexItem has been added to an Index.
-     */
-    public void itemAdded(IndexAddEvent iae) {
-	Index index = (Index)iae.getSource();
-	//System.err.println("InlineIndexIO: IndexAddEvent source = " + index.getName());
-
-	IndexItem item = iae.getIndexItem();
-
-	try {
-	    writeItem((ManagedIndexItem)item);
-	} catch (IOException ioe) {
-	    ioe.printStackTrace();
-	}
-    }
-
-    /**
-     * Set the index item size.
-     * The size is determined by the header I/O object
-     * at index create time.
-     * Return the old index item size in bytes.
-     */
-    public InlineIndexInteractor setItemSize(int itemSize) {	
-	INDEX_ITEM_SIZE = itemSize;
-	return this;
-    }
 }

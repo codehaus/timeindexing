@@ -12,6 +12,9 @@ import com.timeindexing.index.ManagedIndexHeader;
 import com.timeindexing.index.DefaultIndexHeader;
 import com.timeindexing.index.IndexType;
 import com.timeindexing.index.DataType;
+import com.timeindexing.index.DataTypeDirectory;
+import com.timeindexing.index.Description;
+import com.timeindexing.index.HeaderOption;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Clock;
@@ -35,6 +38,7 @@ import java.nio.channels.FileChannel;
 public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHeader, IndexHeaderReader {
     String openMode = "r";
 
+    String originalFileSpecifier = null;
     String fileName = null;
     RandomAccessFile headerFile = null;
     FileChannel channel = null;
@@ -58,9 +62,9 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
     /**
      * Construct a decoder.
      */
-    public IndexDecoder(String fileName) throws IOException  {
+    public IndexDecoder(String filename) throws IOException  {
 	itemSize = INDEX_ITEM_SIZE;
-	open(fileName);
+	open(filename);
     }
 
     /**
@@ -70,6 +74,12 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	open(file.getCanonicalPath());
     }
 
+    /**
+     * Get the header path name.
+     */
+    public String getHeaderPathName() {
+	return fileName;
+    }
 
     /**
      * Get the major version no.
@@ -106,7 +116,7 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      * Open an index header  to read it.
      */
     public boolean open(String filename) throws IOException {
-	fileName = filename;
+	originalFileSpecifier = filename;
 
 	return open();
     }
@@ -116,15 +126,8 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      */
     public boolean open() throws IOException {
 	try {
-	    String actualFileName = null;
-
-	    // encure filename ends in .tih
-	    if (fileName.endsWith(".tih")) {
-		actualFileName = fileName;
-	    } else {
-		actualFileName = fileName + ".tih";
-	    }
-	    File file = new File(actualFileName);
+	    fileName = FileUtils.resolveFileName(originalFileSpecifier, ".tih");
+	    File file = new File(fileName);
 
 	    headerFile = new RandomAccessFile(file, openMode);
 
@@ -170,14 +173,30 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      */
     public long read() throws IOException {
 	try { 
-	    headerFile.seek(0);
+	    long  fileSize = headerFile.length();
+	    long readCount = 0;
+
+	    // memory map the header 
+	    ByteBuffer readBuf = ByteBuffer.allocate((int)fileSize);
+
+	    // seek(0);
+	    channel.position(0);
+
+	    // read a block of data
+	    if ((readCount = channel.read(readBuf)) != fileSize) {
+		throw new IOException("Header read failure. Didn't get " + fileSize + " bytes.");
+	    }
+
+	    readBuf.flip();
+
+	    /* read the complusory parts of the header */
 
 	    // The first two bytes are T & I
-	    byte byteT = headerFile.readByte();
-	    byte byteI = headerFile.readByte();
+	    byte byteT = readBuf.get();
+	    byte byteI = readBuf.get();
 	    // byte 3 = 0x03
-	    byte three = headerFile.readByte();
-	    byte type = headerFile.readByte();
+	    byte three = readBuf.get();
+	    byte type = readBuf.get();
 
 	    // check first 4 bytes
 	    if (byteT == 'T' &&
@@ -188,77 +207,143 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 
 	    
 		// get the version no
-		versionMajor = (int)headerFile.readByte();
-		versionMinor = (int)headerFile.readByte();
+		versionMajor = (int)readBuf.get();
+		versionMinor = (int)readBuf.get();
 
 		// read index ID
-		indexID = new SID(headerFile.readLong());
+		indexID = new SID(readBuf.getLong());
 
 		// read the Index name
-		short nameSize = headerFile.readShort();
+		short nameSize = readBuf.getShort();
 		byte[] nameRaw = new byte[nameSize-1];
-		headerFile.readFully(nameRaw, 0, nameSize-1);
+		readBuf.get(nameRaw, 0, nameSize-1);
 		indexName = new String(nameRaw);
 
 		// soak up index name padding
-		headerFile.readByte();
+		readBuf.get();
 
 		// get the index type
-		indexType = (int)headerFile.readByte();
+		indexType = (int)readBuf.get();
 
 		long aTime = 0;
 
 		// startTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		startTime = timestampDecoder.decode(aTime);
 
 		// endTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		endTime = timestampDecoder.decode(aTime);
 
 
 		// firstTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		firstTime = timestampDecoder.decode(aTime);
 
 		// lastTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		lastTime = timestampDecoder.decode(aTime);
 
 
 		// firstDataTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		firstDataTime = timestampDecoder.decode(aTime);
 
 		// lastDataTime
-		aTime = headerFile.readLong();
+		aTime = readBuf.getLong();
 		lastDataTime = timestampDecoder.decode(aTime);
 
 		// item size
-		itemSize = headerFile.readInt();
+		itemSize = readBuf.getInt();
 
 		// data size
-		dataSize = headerFile.readLong();
+		dataSize = readBuf.getLong();
 
 		// length
-		length = headerFile.readLong();
+		length = readBuf.getLong();
 
 		// first offset
-		firstOffset = new Offset(headerFile.readLong());
+		firstOffset = new Offset(readBuf.getLong());
 
 		// last offset
-		lastOffset = new Offset(headerFile.readLong());
+		lastOffset = new Offset(readBuf.getLong());
 
 		// last offset
 		// terminated
-		byte terminatedByte = headerFile.readByte();
+		byte terminatedByte = readBuf.get();
 		if (terminatedByte > 0) {
 		    terminated = true;
 		} else {
 		    terminated = false;
 		}
 
-		return headerFile.getFilePointer();
+		/* now process the optional values */
+
+		HeaderOption anOption = null;
+		Object value = null;
+
+		while (readBuf.position() < fileSize) {
+		    byte optionValue = readBuf.get();
+
+		     switch (optionValue) {
+		     case HeaderOption.DESCRIPTION: {
+			 value = processDescription(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.DESCRIPTION_HO;
+
+			 setDescription((Description)value);
+			 break;
+		     }
+	    
+		     case HeaderOption.INDEXPATH: {
+			 value = processIndexPath(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.INDEXPATH_HO;
+
+			 setIndexPathName((String)value);
+			 break;
+		     }
+
+		     case HeaderOption.DATAPATH: {
+			 value = processDataPath(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.DATAPATH_HO;
+
+			 setDataPathName((String)value);
+			 break;
+		     }
+
+		     case HeaderOption.DATATYPE: {
+			 value = processDataType(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.DATATYPE_HO;
+
+			 setIndexDataType((DataType)value);
+			 break;
+		     }
+
+		     case HeaderOption.IS_IN_TIME_ORDER: {
+			 value = processIsInTimeOrder(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.IS_IN_TIME_ORDER_HO;
+
+			 // if the value is false
+			 // then the index is NOT in time order
+			 if (((Boolean)value).booleanValue() == false) {
+			     notInTimeOrder();
+			 }
+
+			 break;
+		     }
+
+		     default: {
+		     }
+		     }
+
+		     setOption(anOption, value);
+		     //System.err.println("Read option " + anOption);
+		}
+		  
+
+		// release the memory mapped buffer
+		readBuf = null;
+
+		return fileSize; // was headerFile.getFilePointer();
 	    } else {
 		throw new IOException(fileName + " is not a TimeIndex Header");
 	    }
@@ -269,4 +354,95 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	}
     }
 
+
+    /**
+     * Process a description
+     */
+    protected Object processDescription(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the description
+	int dataTypeID = readBuf.getInt();
+	DataType dataType = DataTypeDirectory.find(dataTypeID);
+
+	short descSize = readBuf.getShort();
+	byte[] descRaw = new byte[descSize-1];
+	readBuf.get(descRaw, 0, descSize-1);
+	readBuf.get();  // get NUL
+	return  new Description(descRaw, dataType);
+    }
+
+
+    /**
+     * Process a index path
+     */
+    protected Object processIndexPath(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the index path
+	short nameSize = readBuf.getShort();
+	byte[] nameRaw = new byte[nameSize-1];
+	readBuf.get(nameRaw, 0, nameSize-1);
+	readBuf.get();  // get NUL
+	return  new String(nameRaw);
+    }
+
+    /**
+     * Process a data path
+     */
+    protected Object processDataPath(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the data path
+	short nameSize = readBuf.getShort();
+	byte[] nameRaw = new byte[nameSize-1];
+	readBuf.get(nameRaw, 0, nameSize-1);
+	readBuf.get();  // get NUL
+	return  new String(nameRaw);
+    }
+
+    /**
+     * Process a data type
+     */
+    protected Object processDataType(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the data type
+	int  dataTypeID = readBuf.getInt();
+
+	short nameSize = readBuf.getShort();
+	byte[] nameRaw = new byte[nameSize-1];
+	readBuf.get(nameRaw, 0, nameSize-1);
+	readBuf.get();  // get NUL
+
+	DataType dataType = null;
+
+	if ((dataType = DataTypeDirectory.find(dataTypeID)) == null) {
+	    // did'nt find data type
+	    // so register it
+	    dataType = DataTypeDirectory.register(new String(nameRaw), dataTypeID);
+	}
+
+	return dataType;
+    }
+
+    /**
+     * Is the index in time order
+     */
+    protected Boolean  processIsInTimeOrder(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the status
+	byte value = readBuf.get();
+
+	Boolean inOrder = null;
+
+	if (value == 1) {
+	    inOrder = new Boolean(true);
+	} else {
+	    inOrder = new Boolean(false);
+	}
+
+	return inOrder;
+    }
 }

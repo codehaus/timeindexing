@@ -4,6 +4,7 @@ package com.timeindexing.io;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.util.Properties;
 
 /**
  * An index header writer
@@ -22,14 +23,20 @@ public interface IndexHeaderWriter {
     public long write() throws IOException;
 
     /**
-     * Open an index header
+     * Open an index header, given a filename.
      */
     public boolean open(String filename) throws IOException;
 
     /**
-     * Create an index header
+     * Create an index header, given a filename.
      */
     public boolean create(String filename) throws IOException;
+
+    /**
+     * Create an index header, given a filename
+     * and some create time options.
+     */
+    public boolean create(String filename, Properties options) throws IOException;
 
     /**
      * Is the index header open
