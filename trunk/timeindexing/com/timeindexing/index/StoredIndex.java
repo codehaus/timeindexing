@@ -12,9 +12,10 @@ public interface StoredIndex extends ManagedIndex  {
     /**
      * Retrieve an Index Item into the Index.
      * @param item the IndexItem to add
-     * @return the no of items in the index.
+     * @param position the position to add the item at
+     * @return the no of items in the cache
      */
-    public long retrieveItem(IndexItem item);
+    public long retrieveItem(IndexItem item, long position);
 
     /**
      * Read data for an index item
