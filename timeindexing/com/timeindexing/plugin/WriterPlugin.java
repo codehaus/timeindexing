@@ -3,6 +3,7 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.index.IndexItem;
+import com.timeindexing.index.IndexProperties;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,7 +25,7 @@ public interface WriterPlugin {
      /**
       * 
       */
-     public long write(IndexItem item) throws IOException;
+     public long write(IndexItem item, IndexProperties properties) throws IOException;
 
 
  }

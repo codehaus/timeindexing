@@ -4,6 +4,7 @@ package com.timeindexing.plugin;
 
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
+import com.timeindexing.index.IndexProperties;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -23,9 +24,11 @@ public interface OutputPlugin {
 
     /**
      * Do some output.
+     * @param item The IndexItem to putput
+     * @param properties Some IndexProperties 
      * @return the number of byte written
      */
-    public long write(IndexItem item) throws IOException;
+    public long write(IndexItem item, IndexProperties properties) throws IOException;
     
 
     /**
