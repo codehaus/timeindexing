@@ -50,7 +50,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	indexCache.setPolicy(new HollowAtDataVolumePolicy());  // (new HollowAfterTimeoutPolicy());
+	setCachePolicy(new HollowAtDataVolumePolicy());  // (new HollowAfterTimeoutPolicy());
 
 	setIndexType(IndexType.INLINE_DT);
 
@@ -133,7 +133,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	// set the ID, the startTime, first offset, last offset
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setStartTime(Clock.time.asMicros());
+	header.setStartTime(Clock.time.time());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
 
