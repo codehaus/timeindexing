@@ -9,6 +9,7 @@ import com.timeindexing.index.IndexView;
 import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
+import com.timeindexing.time.TimeDateParser;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.appl.SelectionProcessor;
 import java.io.OutputStream;
@@ -48,7 +49,7 @@ public class TimeLimitedSelectionStreamer extends SelectionStreamer  {
 	    // if a time limit was specified
 	    if (timeLimitStr != null) {
 		// parse the time 
-		timeLimit = new TimeParser().parse(timeLimitStr, false);
+		timeLimit = new TimeDateParser().parse(timeLimitStr, false);
 
 		// if the time was unparsabe or was zero
 		if (timeLimit.getSeconds() == 0 && timeLimit.getNanoSeconds() == 0) {
