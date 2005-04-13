@@ -20,7 +20,7 @@ public class PositionParser {
      * e.g "500"
      * @return a Position object if the input is valid, null otherwise.
      */
-    public Position parse(String posStr) {
+    public AbsolutePosition parse(String posStr) {
 	long result = 0;
 
 	try {
