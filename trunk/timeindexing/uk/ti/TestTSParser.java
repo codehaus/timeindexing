@@ -3,7 +3,8 @@ package uk.ti;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.MillisecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
-import com.timeindexing.appl.TimeParser;
+//import com.timeindexing.appl.TimeParser;
+import com.timeindexing.time.TimeDateParser;
 import java.util.TimeZone;
 
 /**
@@ -11,14 +12,16 @@ import java.util.TimeZone;
  */
 public class TestTSParser {
     public static void main(String [] args) {
+	/*
 	System.err.println("TZ = " + TimeZone.getDefault());
 
 	TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
 	System.err.println("TZ = " + TimeZone.getDefault());
+	*/
 
 	Timestamp t0 = null;
-	TimeParser timeParser = new TimeParser();
+	TimeDateParser timeParser = new TimeDateParser();
 
 
 	String timeStr = null;
