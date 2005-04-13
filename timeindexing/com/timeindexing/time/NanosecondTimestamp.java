@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -15,7 +16,7 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
     /*
      * The mask used for before/after epoch
      */
-    public final static long BEFORE_EPOCH = (long)0x01 << 61;
+    public final static long BEFORE_EPOCH = Timestamp.NANOSECOND_SIGN;
 
     /*
      * The value of the timestamp
@@ -43,9 +44,21 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * and a number of nanoseconds.
      */
     public NanosecondTimestamp(long seconds, int nanoseconds) {
-	// TODO: what if no of seconds amounts to more than 31 bits
-	value = seconds * 1000000000;
+	// check to see if the no of seconds is in the correct range.
+	if (Math.abs(seconds) > (Timestamp.NANOSECOND_SIGN/1000000000)) {   // the number is too big
+	    throw new IllegalArgumentException("The number of seconds is out of range. The maximum size is " + (Timestamp.NANOSECOND_SIGN/1000000000));
+	}
+
+	if (seconds < 0) {			// a before epoch time
+	    value = (-seconds) * 1000000000;
+	    value |= BEFORE_EPOCH;
+	} else {
+	    value = seconds * 1000000000;
+	}
+
+	// add on the nanoseconds
 	value += nanoseconds;
+	// set mask
 	value |= Timestamp.NANOSECOND;
     }
 	
@@ -68,7 +81,14 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return valueT / 1000000000;
+	    if (isAfterEpoch()) {
+		return valueT / 1000000000;
+	    } else {
+		// the time is before epoch
+		// so throw away the BEFORE_EPOCH bit
+		long valueB = valueT ^ BEFORE_EPOCH;
+		return -(valueB / 1000000000);
+	    }
 	}
     }
 
@@ -81,8 +101,22 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return ((int)(valueT % 1000000000)) * (int)1;
+	    if (isAfterEpoch()) {
+		return ((int)(valueT % 1000000000)) * (int)1;
+	    } else {
+		// the time is before epoch
+		// so throw away the BEFORE_EPOCH bit
+		long valueB = valueT ^ BEFORE_EPOCH;
+		return ((int)(valueB % 1000000000)) * (int)1;
+	    }
 	}
+    }
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return NanosecondScale.SCALE;
     }
 
     /**
