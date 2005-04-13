@@ -3,6 +3,7 @@
 package com.timeindexing.time;
 
 import com.timeindexing.basic.Value;
+import com.timeindexing.basic.Scale;
 
 /*
  * <p>
@@ -16,15 +17,15 @@ import com.timeindexing.basic.Value;
  * The timestamp styles are:
  * <p>
  * TRADITIONAL - MILLISECONDS since Epoch
- * 2 bits type - 1 sign bit for pre/post epoch - 61 bits millisecond data
+ * 2 bits type - 1 sign bit for pre/post epoch - 51 bits seconds - 10 bits milliseconds
  * About 73,000,000 years in seconds
  * <p>
  * MICROSECONDS
- * 2 bits type - 1 sign bit for pre/post epoch - 41 bits seconds - 20 bits microsecond
+ * 2 bits type - 1 sign bit for pre/post epoch - 41 bits seconds - 20 bits microseconds
  * Allows for about 69,000 years in seconds.
  * <p>
  * NANOSECONDS
- * 2 bits type - 1 sign bit for pre/post epoch - 31 bits seconds - 30 bits nanosecond
+ * 2 bits type - 1 sign bit for pre/post epoch - 31 bits seconds - 30 bits nanoseconds
  * Allows for about 68 years in seconds.
  * <p>
  * SECONDS
@@ -260,9 +261,7 @@ public interface Timestamp extends Value {
     public int getNanoSeconds();
 
     /**
-     * Is the Timestamp negative or pre epoch. That is a specification of
-     * time before zero for RelativeTimestamps and before 1/1/1970 00:00:00
-     * for AbsoluteTimestamps.
+     * Get the scale of a Timestamp.
      */
-    //public boolean isNegative();
+    public Scale getScale();
 }
