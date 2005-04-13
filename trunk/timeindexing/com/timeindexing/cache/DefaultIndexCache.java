@@ -90,7 +90,7 @@ public class DefaultIndexCache implements IndexCache {
 	// add the IndexItem to the rlevant position
 	// if the doubly linked list is not big enough
 	// list cells are allocated to fill the gap
-	// TODO: it would be better to have a spare data structure
+	// TODO: it would be better to have a sparce data structure
 	if (position < indexItems.size()) {
 	    // set relevant element in list
 	    indexItems.set(position, item);
