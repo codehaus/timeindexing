@@ -156,17 +156,17 @@ public class TestSel3 {
 
 	    TimestampMapping mappingP = narrow5.locate(narrow5.position(), IndexTimestampSelector.DATA, Lifetime.DISCRETE);
 
-	    System.err.println("narrow5: TimestampMapping = " + mappingP);
+	    System.err.println("narrow5: forward position TimestampMapping = " + mappingP);
 
 	    narrow5.mark();
 
 	    TimestampMapping mappingT = narrow5.locate(mappingP.timestamp(), IndexTimestampSelector.DATA, Lifetime.DISCRETE);
 
-	    System.err.println("narrow5: TimestampMapping = " + mappingT);
+	    System.err.println("narrow5: marked TimestampMapping = " + mappingT);
 
 	    narrow5.position(TimeCalculator.addTimestamp(mappingP.timestamp(), new ElapsedSecondTimestamp(2)), IndexTimestampSelector.DATA, Lifetime.DISCRETE);
 
-	    System.err.println("narrow5: timestamp determined position = " + narrow5.position());
+	    System.err.println("narrow5: timestamp determined position for 2 secs forward = " + narrow5.position());
 
 	    System.err.println("narrow5: region =  = " + narrow5.region());
 
