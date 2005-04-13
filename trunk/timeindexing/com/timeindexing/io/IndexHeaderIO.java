@@ -156,11 +156,10 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
     public long flush()  throws IOException {
 	long writeCount = 0;
 
-	//System.err.println("In IndexHeaderIO.flush()");
 	// sync the incore header with this
 	syncHeader(myIndex.getHeader());
 
-	if (myIndex.isActivated()) {
+	if (myIndex.isActivated() && myIndex.isChanged()) {
 	    if (isOpen()) {
 		// the header file is open, so
 		// write the contents out
@@ -286,10 +285,8 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	// sync the incore header with this
 	syncHeader(myIndex.getHeader());
 
-	//System.err.println("Sync Header: with " + myIndex.getIndexType() + " " + myIndex.getName());
-
 	// write out header, iff the index has been activated
-	if (myIndex.isActivated()) {
+	if (myIndex.isActivated() && myIndex.isChanged()) {
 	    write();
 	}
     }
