@@ -41,27 +41,28 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
 
     /**
-     * Flush this index.
+     * Commit this index.
      */
-    public boolean flush() throws IndexFlushException  {
+    public boolean commit() throws IndexCommitException  {
 	// if the index is activated and has changed
 	// then flush out any changes
 	if (this.isActivated() && isChanged()) {
-	    lastFlushTime = Clock.time.asMicros();
+	    lastFlushTime = Clock.time.time();
 	    //lastFlushPosition = indexCache.length();
 
 	    try {
 		
+		// get the index interactor to flush out the data
 		indexInteractor.flush();
 
 		// mark as NOT being changed
 		changed = false;
 
-		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.FLUSHED, this));
+		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
 
 		return true;
 	    } catch (IOException ioe) {
-		throw new IndexFlushException("Got IOException message '" + ioe.getMessage() + "' from index " + getURI().toString() + " when attemting to flush");
+		throw new IndexCommitException("Got IOException message '" + ioe.getMessage() + "' from index " + getURI().toString() + " when attemting to commit");
 	    }
 	} else {
 	    // nothing to do, and notihg flushed
@@ -76,7 +77,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
-	    header.setEndTime(Clock.time.asMicros());
+	    header.setEndTime(Clock.time.time());
 	}
 
 	try {
@@ -126,7 +127,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// as it's unique
 	long id = getLength();
 	// the record Timestamp is now (as microseconds)
-	Timestamp recordTS = Clock.time.asMicros();
+	Timestamp recordTS = Clock.time.time();
 	// the actual data Timestamp is the record Timestamp
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
@@ -135,10 +136,20 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), new SID(0));
 
 
+	// writeItem calls addItem(IndexItem)
 	long newSize = writeItem(item);
 
 	// mark as being changed
 	changed = true;
+
+	// if autoCommit is on, then commit
+	if (autoCommitOn) {
+	    try {
+		commit();
+	    } catch (IndexCommitException ice) {
+		throw new AddItemException("Can't add this item. " + ice.getMessage());
+	    }
+	}
 
 	return newSize;
     }
@@ -196,7 +207,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// as it's unique
 	long id = getLength();
 	// the record Timestamp is now (as microseconds)
-	Timestamp recordTS = Clock.time.asMicros();
+	Timestamp recordTS = Clock.time.time();
 	// the actual data Timestamp is the record Timestamp
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
@@ -250,8 +261,6 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// and write it out to the file
 	try {
 	    // do a write now
-	    // TODO: have non immediate write version
-	    // and get flush() to do the work
 	    indexInteractor.addItem(item);
 
 
