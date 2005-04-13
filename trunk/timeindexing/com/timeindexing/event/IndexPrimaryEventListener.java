@@ -7,7 +7,7 @@ import java.util.EventListener;
 /**
  * An Index Primary Event Listener, which is used
  * at primary moments.
- * These include: open , close, flush, create.
+ * These include: open , close, commit, create.
  */
 public interface IndexPrimaryEventListener extends EventListener {
     /**
@@ -21,9 +21,9 @@ public interface IndexPrimaryEventListener extends EventListener {
     public  void closed(IndexPrimaryEvent ipe);
 
     /**
-     * A notification that an Index has been flushed.
+     * A notification that an Index has been committed.
      */
-    public  void flushed(IndexPrimaryEvent ipe);
+    public  void committed(IndexPrimaryEvent ipe);
 
     /**
      * A notification that an Index has been created.

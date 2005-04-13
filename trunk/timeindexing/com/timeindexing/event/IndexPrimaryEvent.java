@@ -7,7 +7,7 @@ import com.timeindexing.basic.ID;
 /**
  * An Index Primary Event, which is generated 
  * at primary moments.
- * These include: open , close, flush, create.
+ * These include: open , close, committed, create.
  */
 public class IndexPrimaryEvent extends IndexEvent {
     /**
@@ -21,9 +21,9 @@ public class IndexPrimaryEvent extends IndexEvent {
     public static final int CLOSED       = 2;
 
     /**
-     * Used when an Index is flushed.
+     * Used when an Index is committed.
      */
-    public static final int FLUSHED    = 3;
+    public static final int COMMITTED    = 3;
 
     /**
      * Used when an Index is created.
