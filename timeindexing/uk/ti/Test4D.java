@@ -85,7 +85,7 @@ public class Test4D {
 	    index.addItem(data, dTS);
 
 	    /* A few more */
-	    for (int few = 0; few < 10; few++) {
+	    for (int few = 0; few < 1000; few++) {
 
 		int myDelay = 100 + (few * 10);
 
