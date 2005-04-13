@@ -37,6 +37,19 @@ public class DefaultWriter implements WriterPlugin {
     }
 
     /**
+     * Construct a DefaultWriter.
+     */
+    public DefaultWriter() {
+    }
+
+    /**
+     * Construct a DefaultWriter given an OutputStream.
+     */
+    public DefaultWriter(OutputStream out) {
+	setOutputStream(out);
+    }
+
+    /**
      * Output properties include:
      * <ul>
      * <li> "eolmark" -> ¶
