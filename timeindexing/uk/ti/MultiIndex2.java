@@ -87,7 +87,7 @@ public class MultiIndex2 {
 	     */
 	    delay(200);
 
-	    createProperties.setProperty("incore", "true");
+	    //createProperties.setProperty("incore", "true");
 	    IndexView index2 = factory.open(createProperties);
 
 	    IndexItem anItem = index2.getItem(0);
