@@ -29,9 +29,16 @@ public class MillisecondTimestamp implements AbsoluteTimestamp, MillisecondScale
      * Construct a MillisecondTimestamp with 'now' as the timestamp.
      */
     public MillisecondTimestamp() {
-	value = System.currentTimeMillis();
+	this(Clock.time);
     }
 	
+    /**
+     * Construct a MillisecondTimestamp with 'now' as the timestamp,
+     * using the specified Clock.
+     */
+    MillisecondTimestamp(Clock clock) {
+	value = clock.getRawTime();
+    }
     /**
      * Construct a MillisecondTimestamp from a number of milliseconds.
      */
@@ -116,7 +123,7 @@ public class MillisecondTimestamp implements AbsoluteTimestamp, MillisecondScale
      * Get the toString() version of a MillisecondTimestamp.
      */
     public String toString() {
-	return ("[" + new MillisecondDateFormat().format(this) + "]");
+	return ("[" + new MillisecondDateFormat().format((Timestamp)this) + "]");
     }
 
     /**

@@ -29,7 +29,16 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * so these are a bit inaccurate.
      */
     public NanosecondTimestamp() {
-	value = (System.currentTimeMillis() * (long)1000000) | Timestamp.NANOSECOND;
+	this(Clock.time);
+    }
+	
+    /**
+     * Construct a NanosecondTimestamp with 'now' as the timestamp.
+     * The Java runtime currently goes down to milliseconds,
+     * so these are a bit inaccurate.
+     */
+    NanosecondTimestamp(Clock clock) {
+	value = (clock.getRawTime() * (long)1000000) | Timestamp.NANOSECOND;
     }
 	
     /**
@@ -124,7 +133,7 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * This formats the first day specially.
      */
     public String toString() {
-	return ("[" + new NanosecondDateFormat().format(this) + "]");
+	return ("[" + new NanosecondDateFormat().format((Timestamp)this) + "]");
     }
 
     /**

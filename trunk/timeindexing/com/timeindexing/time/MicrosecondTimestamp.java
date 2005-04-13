@@ -29,7 +29,16 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * so these are a bit inaccurate.
      */
     public MicrosecondTimestamp() {
-	value = (System.currentTimeMillis() * (long)1000) | Timestamp.MICROSECOND;
+	this(Clock.time);
+    }
+
+    /**
+     * Construct a MicrosecondTimestamp with 'now' as the timestamp.
+     * The Java runtime currently goes down to milliseconds,
+     * so these are a bit inaccurate.
+     */
+    MicrosecondTimestamp(Clock clock) {
+	value = (clock.getRawTime() * (long)1000) | Timestamp.MICROSECOND;
     }
 	
     /**
@@ -124,7 +133,7 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * Get the toString() version of a MicrosecondTimestamp.
      */
     public String toString() {
-	return ("[" + new MicrosecondDateFormat().format(this) + "]");
+	return ("[" + new MicrosecondDateFormat().format((Timestamp)this) + "]");
     }
 
     /**

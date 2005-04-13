@@ -29,7 +29,16 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
      * so these are a bit inaccurate.
      */
     public SecondTimestamp() {
-	value = (System.currentTimeMillis() / 1000) | Timestamp.SECOND;
+	this(Clock.time);
+    }
+	
+    /**
+     * Construct a SecondTimestamp with 'now' as the timestamp.
+     * The Java runtime currently goes down to milliseconds,
+     * so these are a bit inaccurate.
+     */
+    SecondTimestamp(Clock clock) {
+	value = (clock.getRawTime() / 1000) | Timestamp.SECOND;
     }
 	
     /**
@@ -109,7 +118,7 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
      * Get the toString() version of a SecondTimestamp.
      */
     public String toString() {
-	return ("[" + new SecondDateFormat().format(this) + "]");
+	return ("[" + new SecondDateFormat().format((Timestamp)this) + "]");
     }
 
     /**
