@@ -17,21 +17,44 @@ public class DefaultWriter implements WriterPlugin {
     OutputStream out = null;
 
     private final static int BUFSIZE = 1024;
+
+    /*
+     * The EOL mark ¶
+     */
     static byte[] eol = null;
 
     static {
 	eol = new Character((char)182).toString().getBytes();
     }
 
+    /*
+     * Newline
+     */
+    static byte[] nl = null;
+
+    static {
+	nl = new Character((char)10).toString().getBytes();
+    }
+
     /**
-     * 
+     * Output properties include:
+     * <ul>
+     * <li> "eolmark" -> ¶
+     * <li> "newline" -> \n
+     * </ul>
      */
     public long write(IndexItem item, IndexProperties outputProperties) throws IOException {
 	ByteBuffer itemdata = item.getData();
 	byte [] outbuf = new byte[BUFSIZE];
 	long writeCount = 0;
 
-	boolean doMarkEOL = Boolean.valueOf((String)outputProperties.get("newline")).booleanValue();
+	boolean doEOL = false;
+	byte [] eolBytes = null;
+
+	if (outputProperties != null) {
+	    doEOL = Boolean.valueOf((String)outputProperties.get("newline")).booleanValue();
+	    eolBytes = nl;
+	}
 
 	// pump out the data
 
@@ -45,9 +68,9 @@ public class DefaultWriter implements WriterPlugin {
 	out.write(outbuf, 0, remaining);
 	writeCount += remaining;
 
-	if (doMarkEOL) {
-	    out.write(eol);
-	    writeCount += eol.length;
+	if (doEOL) {
+	    out.write(eolBytes);
+	    writeCount += eolBytes.length;
 	}
 
 	return writeCount;
