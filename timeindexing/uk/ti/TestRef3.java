@@ -104,7 +104,7 @@ public class TestRef3 {
 
 	    printIndex(index);
 
-	    index.flush();
+	    index.commit();
 
 	    System.out.println();
 

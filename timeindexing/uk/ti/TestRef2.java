@@ -102,6 +102,8 @@ public class TestRef2 {
 
 	    }
 
+	    index.commit();
+
 	    printIndex(index);
 
 	    System.out.println();
