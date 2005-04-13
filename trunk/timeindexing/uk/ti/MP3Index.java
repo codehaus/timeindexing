@@ -19,7 +19,7 @@ import com.timeindexing.data.ByteBufferItem;
 import com.timeindexing.plugin.ReaderPlugin;
 import com.timeindexing.plugin.ReaderResult;
 import com.timeindexing.plugin.*;
-import com.timeindexing.appl.MP3Indexer;
+import com.timeindexing.module.audio.MP3Indexer;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
