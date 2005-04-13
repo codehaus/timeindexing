@@ -132,7 +132,8 @@ public class TICreate {
 	}
 
 	// set up the Index based on system property
-	type = System.getProperty("indextype", "shadow");
+	// make it "external", if nothing is set
+	type = System.getProperty("indextype", "external");
 
 	// allocate local objs
 	//BufferedReader buffered = new BufferedReader (new InputStreamReader(input));
