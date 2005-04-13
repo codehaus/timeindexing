@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -56,6 +57,13 @@ public class ElapsedMillisecondTimestamp implements RelativeTimestamp, Milliseco
     }
 	
     /**
+     * Construct a ElapsedTimestamp from a Millisecond TimeSpecifier.
+     */
+    public ElapsedMillisecondTimestamp(Millisecond timeSpecifier) {
+	this((long)0, (int)(timeSpecifier.value()*1000000));
+    }
+
+    /**
      * Construct a  ElapsedMillisecondTimestamp from a number of seconds
      * and a number of nanoseconds.
      */
@@ -105,10 +113,24 @@ public class ElapsedMillisecondTimestamp implements RelativeTimestamp, Milliseco
     }
 
     /**
+     * Does the Timestamp specify a negative time.
+     */
+    public boolean isNegative() {
+	return isNegative;
+    }
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return MillisecondScale.SCALE;
+    }
+
+    /**
      * Get the toString() version of a ElapsedTimestamp.
      */
     public String toString() {
-	return ("(" + (isNegative ? "-" : "") + new MillisecondElapsedFormat().format(this) + ")");
+	return ("(" + new MillisecondElapsedFormat().format(this) + ")");
     }
 
     /**
