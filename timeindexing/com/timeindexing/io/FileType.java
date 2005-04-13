@@ -53,7 +53,10 @@ public interface FileType {
      */
     public final byte BYTE_3 = 0x03;
 
-
+    /**
+     * Trailer
+     */
+    public final long TRAILER = 0x0102030405060708L;
 
 }
 
