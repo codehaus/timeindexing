@@ -97,6 +97,7 @@ public class TIRef extends TIAbstractRestore {
     protected void printIndexItem(IndexItem item, OutputStream out) {
 	StringBuffer buf = new StringBuffer(256);
 
+	// follow all references
 	try {
 	    while (item.isReference()) {
 		item = item.follow();
