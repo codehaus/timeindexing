@@ -18,8 +18,6 @@ import com.timeindexing.time.TimestampDecoder;
 import com.timeindexing.time.Clock;
 import com.timeindexing.event.*;
 
-import com.timeindexing.index.InlineIndex;
-
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.IOException;
@@ -152,11 +150,12 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	}
     }
 
-
     /**
      * Flush the current values to the header file.
      */
     public long flush()  throws IOException {
+	long writeCount = 0;
+
 	//System.err.println("In IndexHeaderIO.flush()");
 	// sync the incore header with this
 	syncHeader(myIndex.getHeader());
@@ -165,14 +164,14 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	    if (isOpen()) {
 		// the header file is open, so
 		// write the contents out
-		write();
-		return 0L;
+		writeCount = write();
+		return writeCount;
 	    } else {
 		// not open yet
 		if (open()) {
 		    // so open it and then write contents out
-		    write();
-		    return 0L;
+		    writeCount = write();
+		    return writeCount;
 		} else {
 		    //create it and then write it
 		    // we should;nt get here as RandomAccessFile
@@ -280,10 +279,10 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
     }
 
     /**
-     * Operation on close
+     * Sync this header with the Index header, and write it
+     * out, if required to.
      */
-    public long close() throws IOException {
-	//System.err.println("In IndexHeaderIO.close()");
+    protected void syncWithIndex() throws IOException {
 	// sync the incore header with this
 	syncHeader(myIndex.getHeader());
 
@@ -293,7 +292,24 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	if (myIndex.isActivated()) {
 	    write();
 	}
+    }
 
+    /**
+     * Operation on close
+     */
+    public long close() throws IOException {
+	//System.err.println("In IndexHeaderIO.close()");
+	syncWithIndex();
+
+	return reallyClose();
+    }
+
+    /**
+     * The final close functionaliy.
+     * Release the write lock, and 
+     * really really close.
+     */
+    protected long reallyClose() throws IOException {
 	// release the lock if it exists
 	if (lock != null) {
 	    releaseWriteLock();
@@ -306,13 +322,24 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
     /**
      * Write the contents of the header file out
      * It assumes the header file is alreayd open for writing.
+     * @return the total no of bytes written
      */
     public long write() throws IOException {
-	//System.err.println("In IndexHeaderIO.write()");
-	int count = 0;
-
 	// seek to start
 	headerFile.seek(0);
+
+	return writeToChannel(channel);
+    }
+
+
+    /**
+     * Write the contents of the header file out
+     * It assumes the header file is alreayd open for writing.
+     * @return the total no of bytes written
+     */
+    protected long writeToChannel(FileChannel channel) throws IOException {
+	//System.err.println("In IndexHeaderIO.write()");
+	int count = 0;
 
 	// clear the header buffer
 	headerBuf.clear();
@@ -457,6 +484,11 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 		    break;
 		}
 	
+		case HeaderOption.NO_DATA_FILE_HEADER: {
+		    spaceNeeded += processNoDataFileHeader(HeaderOptionProcess.SIZE, anOption, null);
+		    break;
+		}
+	
 		case HeaderOption.REFERENCEMAPPING: {
 		    spaceNeeded += processReferenceMapping(HeaderOptionProcess.SIZE, anOption, null);
 		    break;
@@ -509,6 +541,11 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 			
 		    case HeaderOption.IS_IN_TIME_ORDER: {
 			processIsInTimeOrder(HeaderOptionProcess.WRITE, anOption, optionBuffer);
+			break;
+		    }
+	
+		    case HeaderOption.NO_DATA_FILE_HEADER: {
+			spaceNeeded += processNoDataFileHeader(HeaderOptionProcess.WRITE, anOption, optionBuffer);
 			break;
 		    }
 	
@@ -664,6 +701,29 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	    // output
 	    optionBuffer.put(anOption.value()); // the option bytes
 	    optionBuffer.put(inTimeOrder.booleanValue() ? (byte)1 : (byte)0);
+
+	    return size;
+	}
+
+    }
+
+    /**
+     * Is there a header on the data file
+     */
+    protected int processNoDataFileHeader(HeaderOptionProcess what, HeaderOption anOption, ByteBuffer optionBuffer) {
+	// the data type
+	Boolean noDataFileHeader = (Boolean)getOption(anOption); 
+
+	// 1 for option byte, 1 for boolean
+	int size = 1 + 1;
+
+	
+    	if (what == HeaderOptionProcess.SIZE) {
+	    return size;
+	} else {
+	    // output
+	    optionBuffer.put(anOption.value()); // the option bytes
+	    optionBuffer.put(noDataFileHeader.booleanValue() ? (byte)1 : (byte)0);
 
 	    return size;
 	}
