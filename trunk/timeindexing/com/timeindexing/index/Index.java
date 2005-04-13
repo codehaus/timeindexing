@@ -9,6 +9,7 @@ import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.data.DataItem;
+import com.timeindexing.cache.CachePolicy;
 
 import java.util.Iterator;
 import java.util.List;
@@ -110,6 +111,14 @@ public interface Index extends IndexHeader {
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime);
 
+    /**
+     * Try and determine the Timestamp associated
+     * with the speicifed Position.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     */
+    public TimestampMapping locate(Position p, IndexTimestampSelector sel, Lifetime lifetime);
+
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
@@ -137,11 +146,19 @@ public interface Index extends IndexHeader {
     public Index terminate();
 
     /**
-     * Flush the index.
+     * Commit all changes to the index.
      * Intened to sync all associated streams and files,
      * and this sets the end time too.
      */
-    public boolean flush() throws IndexFlushException;
+    public boolean commit() throws IndexCommitException;
+
+    /**
+     * Set auto commit to be true or false.
+     * When auto commit is true, then every addItem() is
+     * automatically committed.
+     * @return the previous value of auto commit.
+     */
+    public boolean setAutoCommit(boolean commit);
 
     /**
      * Is the Index closed.
@@ -174,6 +191,11 @@ public interface Index extends IndexHeader {
      * Get a view onto the Index.
      */
     public IndexView asView();
+
+    /**
+     * Set a CachePolicy in order to manage the cache.
+     */
+    public boolean setCachePolicy(CachePolicy policy); 
 }
 
 
