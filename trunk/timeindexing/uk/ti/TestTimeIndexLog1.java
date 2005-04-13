@@ -1,7 +1,6 @@
 package uk.ti;
 
 import com.timeindexing.index.*;
-import uk.co.timeindexing.projects.searchsite.TimeIndexLog;
 import java.io.OutputStream;
 
 /**
@@ -36,9 +35,11 @@ public class TestTimeIndexLog1 {
 	index = (TimeIndex)TimeIndexLog.openIndex("/tmp/", "test-TIL-1");
 	printIndex(index, System.out);
 
+	System.out.println("ADD");
 	TimeIndexLog.addEntry(index, "<two>");
 	printIndex(index, System.out);
 
+	System.out.println("CLOSE");
 	TimeIndexLog.closeIndex(index);
 
 	
