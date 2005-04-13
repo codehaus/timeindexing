@@ -15,6 +15,7 @@ import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.basic.Position;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.IndexCache;
+import com.timeindexing.cache.CachePolicy;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
@@ -33,6 +34,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
     // data type
     DataType dataType = DataType.NOTSET_DT;
+
+    // the value for auto commit
+    boolean autoCommitOn = false;
 
     // Is the Index closed.
     // Items can only be added when the Index is NOT closed.
@@ -251,7 +255,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * @throws IndexActivationException if the index has NOT been activated
      * and an attempt is made to add an Item
      */
-    public synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    protected synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
 	// can't add anything if the index is terminated
 	// check this first as this can never change.
@@ -318,16 +322,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) throws GetItemException {
-	setLastAccessTime();
-
-	IndexItem item = indexCache.getItem(n);
-
-	// tell all the listeners that an item has been accessed
-	eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
-
-	return item;
-    }
+    public abstract IndexItem getItem(long n) throws GetItemException;
 
     /**
      * Get an Index Item from the Index.
@@ -338,12 +333,12 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} else if (p == Position.TOO_HIGH) {
 	    throw  new PositionOutOfBoundsException("Position TOO_HIGH");
 	} else {
-	    setLastAccessTime();
+	    //setLastAccessTime();
 
 	    IndexItem item = getItem(p.value());
 
 	    // tell all the listeners that an item has been accessed
-	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+	    //eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
 
 	    return item;
 	}
@@ -370,7 +365,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * Set the  last time an IndexItem was accessed from the index.
      */
     protected Index setLastAccessTime() {
-	lastAccessTime = Clock.time.asMicros();
+	lastAccessTime = Clock.time.time();
 	return this;
     }
 
@@ -488,6 +483,36 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
+     * Try and determine the Timestamp associated
+     * with the speicifed Position.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     * Lifetime has no effect in this situation.
+     */
+    public TimestampMapping locate(Position pos, IndexTimestampSelector selector, Lifetime lifetime) {
+	IndexItem item = null;
+	Timestamp foundTS = null;
+
+	// Get the index item at position p
+	try {
+	    item = getItem(pos);
+	} catch (GetItemException gie) {
+	    // there was no item at Position p
+	    return null;
+	}
+
+	// now get the relevant Timestamp
+	if (selector == IndexTimestampSelector.DATA) {
+	    foundTS = item.getDataTimestamp();
+	} else {
+	    foundTS = item.getIndexTimestamp();
+	}
+
+	return new TimestampMapping(foundTS, pos);
+    }
+
+
+    /**
      * Do a binary search of the list.
      */
     protected TimestampMapping binarySearch(Timestamp t, long start, long end, IndexTimestampSelector selector, Lifetime lifetime, int depth) throws GetItemException {
@@ -545,7 +570,11 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	//System.err.println();
 	    
 
-	if (TimeCalculator.greaterThanEquals(t, itemTS) &&
+	if (TimeCalculator.equals(t, itemTS)) {
+	    // if the timestamp equals  itemTS
+	    // we are there
+	    return new TimestampMapping(itemTS,  item.getPosition());
+	} else if (TimeCalculator.greaterThan(t, itemTS) &&
 	    TimeCalculator.lessThan(t, itemTSN)) {
 
 	    // if the timestamp is between itemTS and itemTSN
@@ -627,6 +656,30 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
+     * Commit all changes to the index.
+     */
+    public boolean commit() throws IndexCommitException {
+
+	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
+
+	return true;
+    }
+
+    /**
+     * Set auto commit to be true or false.
+     * When auto commit is true, then every addItem() is
+     * automatically committed.
+     * @return the previous value of auto commit.
+     */
+    public boolean setAutoCommit(boolean commit) {
+	boolean oldAutoCommit = autoCommitOn;
+
+	autoCommitOn = commit;
+
+	return oldAutoCommit;
+    }
+
+    /**
      * Is the Index closed.
      */
     public boolean isClosed() {
@@ -652,6 +705,18 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      */
     public Iterator iterator() {
 	return new IndexIterator(this);
+    }
+
+    /**
+     * Set a CachePolicy in order to manage the cache.
+     * Setting a new CachePolicy in the middle of operation
+     * can lose some timing information held by the existing CachePolicy,
+     * so use with care.
+     * @return true if the policy was set
+     */
+    public boolean setCachePolicy(CachePolicy policy) {
+	indexCache.setPolicy(policy);
+	return true;
     }
 
     /**

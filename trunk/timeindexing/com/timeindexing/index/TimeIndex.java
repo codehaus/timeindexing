@@ -19,6 +19,7 @@ import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.basic.ID;
+import com.timeindexing.cache.CachePolicy;
 
 import java.util.Iterator;
 import java.net.URI;
@@ -368,7 +369,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public IndexItem getItem(Position p) throws GetItemException {
 	if (isSelection) {
-	    return indexModel.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start.value()));
+	    return indexModel.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start));
 	} else {
 	    return indexModel.getItem(p);
 	}
@@ -479,7 +480,11 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 	if (isSelection) {
 	    if (contains(t, sel)) {
-		return indexModel.locate(t, sel, lifetime);
+		// locate in underlying index
+		TimestampMapping underlyingMapping = indexModel.locate(t, sel, lifetime);
+		// now map the position into one in this selection
+		Position selectionPosition = (Position)new AbsoluteAdjustablePosition(underlyingMapping.position()).adjust(- (start.value()));
+		return new TimestampMapping(underlyingMapping.timestamp(), selectionPosition);
 	    } else {
 		// now try and determine if it is too low or too high
 		IndexItem first = null;
@@ -521,6 +526,30 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 
     /**
+     * Try and determine the Timestamp associated
+     * with the speicifed Position.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     * Lifetime has no effect in this situation.
+     */
+    public TimestampMapping locate(Position p, IndexTimestampSelector sel, Lifetime lifetime) {
+	if (isSelection) {
+	    // map selection position into underlying position
+	    Position newStartPos = (Position)new AbsoluteAdjustablePosition(p).adjust(start);
+	    // locate in underlying index
+	    TimestampMapping underlyingMapping = indexModel.locate(newStartPos, sel, lifetime);
+	    // now map the underlying position into one in this selection
+	    Position selectionPosition = (Position)new AbsoluteAdjustablePosition(underlyingMapping.position()).adjust(- (start.value()));
+	    // ASSERT: selectionPosition == p
+	    return new TimestampMapping(underlyingMapping.timestamp(), selectionPosition);
+	    
+	} else {
+	    return indexModel.locate(p, sel, lifetime);
+	}
+    }
+
+
+    /**
      * Select an Interval.
      * Returns null if it cant be done.
      */
@@ -539,15 +568,17 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	    if (resolvedInterval == null) { // it was not possible to resolved the Interval
 		return null;
 	    } else {
+		// the interval has resolved
+		// so now we try to determine the new selection
 
 		Position intervalStart = ((Position)resolvedInterval.start()).position();
 		Position intervalEnd = ((Position)resolvedInterval.end()).position();
-
+		long selectionLength = 0;
 
 		System.err.println("TimeIndex: select() pre: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
 
 		if (overlap == Overlap.STRICT) {
-		    // if the Interval must have strict over lap with 
+		    // if the Interval must have strict overlap with 
 		    // the index then complain if the start or the end
 		    // position is out of bounds
 
@@ -559,10 +590,14 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 			throw new PositionOutOfBoundsException("Can't select beyond the end of an Index");
 		    }
 
-		} else {            // overlap == Overlap.FREE
+		} else {
+		    // if (overlap == Overlap.FREE)
+
 		    // if the Interval can overlap freely with 
-		    // the index then do some tweaking if the start or the end
-		    // position is out of bounds
+		    // the index then, if the start or the end
+		    // position is out of bounds, we can
+		    // do some tweaking on the intervalStart and intervalEnd
+		    // to get a valid interval
 
 		    if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_LOW) { // both TOO_LOW
 			selectionLength = 0;
@@ -571,18 +606,18 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 			selectionLength = 0;
 
 		    } else if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH) { // start too low, end too high
-			System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
-			intervalStart = getStartPosition(); // new AbsolutePosition(0);
-			intervalEnd = getEndPosition();     // new AbsolutePosition(getLength()-1);
+			//System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
+			intervalStart =  new AbsolutePosition(0); //getStartPosition(); // new AbsolutePosition(0);
+			intervalEnd = new AbsolutePosition(getLength()-1); //getEndPosition();     // new AbsolutePosition(getLength()-1);
 			selectionLength = intervalEnd.value() - intervalStart.value() + 1;
 
 		    } else if (intervalStart == Position.TOO_LOW) { // intervalStart TOO_LOW
-			intervalStart = getStartPosition();  // new AbsolutePosition(0);
+			intervalStart =  new AbsolutePosition(0);  //getStartPosition();  // new AbsolutePosition(0);
 
 			// check the end position also
 			if (intervalEnd.value() >= getLength()) {
 			    // if it's too high reset it
-			    intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    intervalEnd =  new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
 			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
 
 			} else {
@@ -590,12 +625,12 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 			}
 
 		    } else if (intervalEnd == Position.TOO_HIGH) {  // intervalEnd TOO_HIGH
-			intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
 
 			// check the start position also
 			if (intervalStart.value() >= getLength()) {
 			    // if it's too high reset it
-			    intervalStart = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
 			    selectionLength = 0;
 
 			} else {
@@ -608,13 +643,13 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 			if (intervalStart.value() >= getLength()) {
 			    // intervalEnd.value() MUST BE > getLength() due to the nature of Intervals
 			    // both too high so reset them
-			    intervalStart = getEndPosition(); // new AbsolutePosition(getLength()-1);
-			    intervalEnd = getEndPosition(); //new AbsolutePosition(getLength()-1);
+			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition(); // new AbsolutePosition(getLength()-1);
+			    intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition(); //new AbsolutePosition(getLength()-1);
 			    selectionLength = 0;
 
 			} else if (intervalEnd.value() >= getLength()) {
 			    // if end is too high reset it
-			    intervalEnd = getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    intervalEnd =  new AbsolutePosition(getLength()-1); // getEndPosition(); //new AbsolutePosition(getLength()-1);
 			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
 			} else {
 			    // both OK
@@ -624,7 +659,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 		}
 
-		System.err.println("TimeIndex: select() post: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
+		System.err.println("TimeIndex: select() post: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd + " selectionLength = " + selectionLength);
 		try {
 		    TimeIndex selection = (TimeIndex)this.clone();
 
@@ -725,10 +760,20 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
-     * Flush this index.
+     * Commit all changes to the index.
      */
-    public boolean flush() throws IndexFlushException {
-	return indexModel.flush();
+    public boolean commit() throws IndexCommitException {
+	return indexModel.commit();
+    }
+
+    /**
+     * Set auto commit to be true or false.
+     * When auto commit is true, then every addItem() is
+     * automatically committed.
+     * @return the previous value of auto commit.
+     */
+    public boolean setAutoCommit(boolean commit) {
+	return indexModel.setAutoCommit(commit);
     }
 
     /**
@@ -928,7 +973,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	} else if (mark == null) {
 	    throw new PositionOutOfBoundsException("Mark not set. Region does not exist");
 	} else {
-	    return new EndPointInterval(mark, position);
+	    return new EndPointInterval((AbsolutePosition)mark, (AbsolutePosition)position);
 	}
     }
 
@@ -950,6 +995,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	super.finalize();
     }
 
+    /**
+     * Set a CachePolicy in order to manage the cache.
+     * Setting a new CachePolicy in the middle of operation
+     * can lose some timing information held by the existing CachePolicy,
+     * so use with care.
+     * @return true if the policy was set
+     */
+    public boolean setCachePolicy(CachePolicy policy) {
+	return indexModel.setCachePolicy(policy);
+    }
 }
 
 
