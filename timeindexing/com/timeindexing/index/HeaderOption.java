@@ -11,6 +11,7 @@ public interface HeaderOption {
 
     /**
      * Index Path
+     * The path to the file that contains the index.
      */
     public final static byte INDEXPATH = 1;
     public final static HeaderOption INDEXPATH_HO = new HeaderOption() {
@@ -27,6 +28,7 @@ public interface HeaderOption {
 
     /**
      * Data Path
+     * The path to the file that contains the data.
      */
     public final static byte DATAPATH = 2;
     public final static HeaderOption DATAPATH_HO = new HeaderOption() {
@@ -77,13 +79,31 @@ public interface HeaderOption {
     public final static byte IS_IN_TIME_ORDER = 5;
     public final static HeaderOption IS_IN_TIME_ORDER_HO = new HeaderOption() {
 	    public String toString() {
-		return "isintimeorder";
+		return "is_in_time_order";
 	    }
 
 	    public byte value() {
 		return IS_IN_TIME_ORDER;
 	    }
 	};
+
+
+    /**
+     * No data file header.
+     * This means that the data file will not have the usual
+     * Timeindexing header, but will start immediately with the data.
+     */
+    public final static byte NO_DATA_FILE_HEADER = 6;
+    public final static HeaderOption NO_DATA_FILE_HEADER_HO = new HeaderOption() {
+	    public String toString() {
+		return "no_data_file_header";
+	    }
+
+	    public byte value() {
+		return NO_DATA_FILE_HEADER;
+	    }
+	};
+
 
 
     /**
