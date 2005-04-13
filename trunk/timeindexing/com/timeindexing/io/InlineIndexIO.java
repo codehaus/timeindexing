@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -49,6 +50,11 @@ import java.net.URISyntaxException;
  * </ul>
  */
 public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor {
+    /*
+     * The index header is trailing the index file.
+     */
+    boolean trailingHeader = false;
+
     /**
      * Construct an Inline Index.
      */
@@ -126,22 +132,78 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	headerInteractor = new IndexHeaderIO(this);
 
-	// open the header
-	headerInteractor.open(originalIndexSpecifier);
+
+	if (headerInteractor.exists(originalIndexSpecifier)) {
+	    //System.err.println("Header file '" + originalIndexSpecifier + "' exists.");
+
+	    // open the header
+	    headerInteractor.open(originalIndexSpecifier);
+
+	    trailingHeader = false;
+
+	    indexFileName = originalIndexSpecifier;
+
+	    // open the index
+	    open();
+	} else {
+	    //System.err.println("Header file '" + originalIndexSpecifier + "' doesnt exist.");
+
+	    // use the trailing Header
+	    trailingHeader = true;
+
+	    indexFileName = originalIndexSpecifier;
+
+	    // open the index
+	    open();
+
+	    /*
+	     * Need to check if there is a trailing header.
+	     * If there is then we use that one.
+	     */
+
+	    ByteBuffer trailerBuffer = ByteBuffer.allocate(24);
+	    indexChannel.position(indexChannel.size() - 24);
+	    indexChannel.read(trailerBuffer);
+	    trailerBuffer.flip();
+
+	    long value = trailerBuffer.getLong();
+	    long headerSize = 0;
+	    long headerOffset = 0;
+	    
+	    if (value == FileType.TRAILER) {
+		headerSize = trailerBuffer.getLong();
+		headerOffset = trailerBuffer.getLong();
+
+		//System.err.println("We have a trailing header of size " + headerSize + " at offset " + headerOffset);
+	    }
+
+
+	    // now read the header
+	    // set the position in the indexChannel
+	    indexChannel.position(headerOffset);
+	    headerInteractor.readFromChannel(indexChannel, headerSize);
+	    
+	    // sync header up to Index 
+	    getIndex().syncHeader(headerInteractor);
+
+	    // close it for now
+	    // it will be opened again soon
+	    //reallyClose();
+
+	}
 
 	//headerInteractor = (IndexHeaderIO)indexProperties.get("header");
 
 	headerFileName = headerInteractor.getHeaderPathName();
 	indexFileName = headerInteractor.getIndexPathName();
 
-
 	// determine the URI
 	// if the index path name is relative we need to make it an absolute path name
-	File indexSpecFile = new File(headerFileName);
+	File indexSpecFile = new File(indexFileName);
 	String uriPath = null;
 
 	if (indexSpecFile.isAbsolute()) {
-	    uriPath = headerFileName;
+	    uriPath = indexFileName;
 	} else {
 	    uriPath = indexSpecFile.getAbsolutePath();
 	}
@@ -151,6 +213,8 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	} catch (URISyntaxException use) {
 	    ;
 	}
+
+	//System.err.println("URI = " + headerInteractor.getURI());
 
 
 	// now check to see if this index should be opened
@@ -162,7 +226,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	}
 
 	// open the relevant files
-	open();
+	//open();
 
 	long position = readMetaData();
 
@@ -231,6 +295,9 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Read all the meta data.
      */
     public long readMetaData() throws IOException, IndexOpenException {
+	// seek to 0
+	indexChannel.position(0);
+
 	long position = readHeader(FileType.INLINE_INDEX);
 
 	// check ID in header == ID in index
@@ -439,7 +506,9 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	written += flushBuffer(indexChannel, indexBuffer, indexFlushBuffers);
 
 	// flush the header
-	headerInteractor.flush();
+	long headerWritten = headerInteractor.flush();
+
+	//System.err.println("Flushed out " + written + " index bytes + " + headerWritten + " header bytes");
 
 	return written;
     }
@@ -449,28 +518,102 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * @return the size of the index
      */
     public long close() throws IOException {
-	long size = -1;
-
 	// flush out any reaming data
 	long lastWrite = flush();
 
 	//System.err.println("InlineIndexIO: at close wrote = " + lastWrite);
 	
-	size = indexChannel.size();
+	long channelSize = indexChannel.size();
 	
-	//System.err.println("InlineIndexIO: size at close = " + size);
+	/*
+	 * Now we need to get the header at the end of the index.
+	 * Only do this if the index has been activated.
+	 */
 
-	indexChannel.close();
+	if (myIndex.isActivated()) {
 
+	    // sync the IO header with the index
+	    headerInteractor.syncWithIndex();
+
+	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+
+	    // now copy it to the end of the indexChannel
+	    long headerSize = headerInteractor.writeToChannel(indexChannel);
+
+	    // now add the trailer which points to the header
+	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+
+	    ByteBuffer trailerBuffer = ByteBuffer.allocate(24);
+	    trailerBuffer.putLong(FileType.TRAILER);
+	    trailerBuffer.putLong(headerSize);
+	    trailerBuffer.putLong(channelSize);
+	    trailerBuffer.flip();
+	    indexChannel.write(trailerBuffer);
+
+	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+	}
+
+	// really close the channel
+	reallyClose();
+
+	// really close the IO header 
+	headerInteractor.reallyClose();
+
+	/* 
+	 * Original close code.
 	// close the header
 	headerInteractor.close();
+	*/
 
 	// end thread
 	if (stopThread() == null) {
 	    System.err.println("Thread is null?");
 	}
 
-	return size;
+	return channelSize;
     }
 
+    /**
+     * Close the index channel
+     */
+    protected void reallyClose() throws IOException {
+	// close the channel
+	indexChannel.close();
+    }
+	
+    /**
+     * Has the Index been write-locked.
+     */
+    public boolean isWriteLocked() {
+	if (trailingHeader) {
+	    return false;
+	} else {
+	    return headerInteractor.isWriteLocked();
+	}
+    }
+
+    /**
+     * Get a write-lock on this index.
+     */
+    public FileLock getWriteLock() {
+	// we need to lock the Index
+	// which requires the header file to exist as
+	// a separate entity.
+
+	if (trailingHeader) {
+	    // now write out a version of the header file
+	    try {
+		headerInteractor.create(originalIndexSpecifier, null);
+		headerInteractor.write();
+	    } catch (IOException ioe) {
+		// couln't write the header file
+		return null;
+	    }
+
+	    trailingHeader = false;
+	}
+
+
+	return super.getWriteLock();
+    }
 }
