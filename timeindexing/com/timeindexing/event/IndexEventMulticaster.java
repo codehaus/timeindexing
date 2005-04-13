@@ -84,8 +84,8 @@ public class IndexEventMulticaster implements IndexEventGenerator {
 		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.CLOSED) {
 		    ipeL.closed(ipE);
 
-		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.FLUSHED) {
-		    ipeL.flushed(ipE);
+		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.COMMITTED) {
+		    ipeL.committed(ipE);
 
 		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.CREATED) {
 		    ipeL.created(ipE);
