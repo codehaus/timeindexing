@@ -319,7 +319,6 @@ public class TimeDateParser {
 	    }
 	} else if (subSecondLen <= 9) {
 	    // time string was seconds.sssssssss
-	    System.err.println("Parser: seconds = " + seconds + " nanos = " + subSeconds);
 	    if (absolute) {
 		timestamp = new NanosecondTimestamp(seconds, subSeconds);
 	    } else { // elapsed
