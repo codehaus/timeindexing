@@ -233,7 +233,7 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 	buffer.append("Interval (");
 
 	buffer.append(startValue.toString());
-	buffer.append(" <- ");
+	buffer.append(" - ");
 
 	if (midPointIsTimestamp) {
 	    buffer.append(midTimestamp.toString());
@@ -241,7 +241,7 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 	    buffer.append(midPosition.toString());
 	}
 
-	buffer.append(" -> ");
+	buffer.append(" + ");
 	buffer.append(endValue.toString());
 	buffer.append(")");
 

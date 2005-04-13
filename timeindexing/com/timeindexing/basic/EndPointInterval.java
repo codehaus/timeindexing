@@ -227,7 +227,7 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
 	    buffer.append(startPosition.toString());
 	}
 
-	buffer.append(" -> ");
+	buffer.append(" + ");
 	buffer.append(endValue.toString());
 	buffer.append(")");
 
