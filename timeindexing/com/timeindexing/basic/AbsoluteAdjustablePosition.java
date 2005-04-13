@@ -6,12 +6,7 @@ package com.timeindexing.basic;
  * An AbsoluteAdjustablePosition is a value that is an absolute position 
  * from the zeroth index element but can be modified.
  */
-public class AbsoluteAdjustablePosition implements AdjustablePosition, Absolute, Cloneable {
-    /*
-     * The position from 0;
-     */
-    long position = 0;
-
+public class AbsoluteAdjustablePosition extends AbsolutePosition implements AdjustablePosition, Absolute, Cloneable {
     /**
      * Construct a new AbsoluteAdjustablePosition
      */
@@ -42,20 +37,6 @@ public class AbsoluteAdjustablePosition implements AdjustablePosition, Absolute,
 	} else {
 	    throw new IndexOutOfBoundsException("AbsoluteAdjustablePosition: Position value must be >= 0");
 	}
-    }
-
-    /**
-     * Get the position.
-     */
-    public Position position() {
-	return this;
-    }
-
-    /**
-     * Get the count.
-     */
-    public long value() {
-	return position;
     }
 
     /**

@@ -6,12 +6,7 @@ package com.timeindexing.basic;
  * An RelativeCount is a count that is an relative count from the current index element.
  * This is basically a constant, which can be +ve or -ve and can also be modified.
  */
-public class RelativeAdjustableCount implements AdjustableCount, Relative, Cloneable {
-    /*
-     * The count from 0;
-     */
-    long count = 0;
-
+public class RelativeAdjustableCount extends RelativeCount implements AdjustableCount, Relative, Cloneable {
     /**
      * Construct a new RelativeCount
      */
@@ -34,13 +29,6 @@ public class RelativeAdjustableCount implements AdjustableCount, Relative, Clone
 	long value = c.value();
 
 	count = value;
-    }
-
-    /**
-     * Get the count.
-     */
-    public long value() {
-	return count;
     }
 
     /**
