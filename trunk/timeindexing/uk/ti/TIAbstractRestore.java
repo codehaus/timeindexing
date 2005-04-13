@@ -67,7 +67,7 @@ public abstract class TIAbstractRestore {
     /**
      * Close 
      */
-    public void close() {
+    public void close() throws TimeIndexException {
 	// close the index
 	boolean doClose = Boolean.valueOf(properties.getProperty("close")).booleanValue();
 	if (doClose) {

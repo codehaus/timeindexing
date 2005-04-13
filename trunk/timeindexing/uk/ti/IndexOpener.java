@@ -129,7 +129,7 @@ public class IndexOpener {
 	}
 
     }
-    public boolean close(Index index) {
+    public boolean close(Index index) throws TimeIndexException {
 	// close all the objects in the index
 	boolean closed = index.close();
 
