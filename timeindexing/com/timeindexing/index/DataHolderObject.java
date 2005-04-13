@@ -25,7 +25,7 @@ public class DataHolderObject implements DataHolder {
     public DataHolderObject(ByteBuffer buffer, Size bufSize) {
 	theBuffer = buffer;
 	size = bufSize;
-	readTime = Clock.time.asMicros();
+	readTime = Clock.time.time();
 	lastAccessTime = Timestamp.ZERO;
     }
 
@@ -40,7 +40,7 @@ public class DataHolderObject implements DataHolder {
      * Get the bytes.
      */
     public ByteBuffer getBytes() {
-	lastAccessTime = Clock.time.asMicros();
+	lastAccessTime = Clock.time.time();
 	return theBuffer;
     }
 
