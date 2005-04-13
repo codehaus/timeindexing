@@ -3,7 +3,7 @@
 package com.timeindexing.index;
 
 import com.timeindexing.basic.ID;
-import com.timeindexing.io.IndexDecoder;
+import com.timeindexing.io.IndexTyper;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.data.ByteBufferItem;
 import com.timeindexing.event.*;
@@ -363,9 +363,9 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	} else {
 	    // its a stored Index, so it really needs to be opened
 	    
-	    // an IndexDecoder
-	    // try and open the index and decode the header
-	    IndexDecoder decoder = indexDecoder(indexProperties);
+	    // an IndexTyper
+	    // try and open the index and decode the tye
+	    IndexTyper decoder = indexTyper(indexProperties);
 	    
 	    // get some values out of the header
 
@@ -463,7 +463,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    }
 	}
 
-	newIndex.flush();
+	newIndex.commit();
 	    
 	return newIndexView;
 	    
@@ -530,11 +530,11 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * @return whether the index was really closed. It might still be held open
      * by another TimeIndex.
      */
-    public boolean close(Index index) throws IndexFlushException, IndexCloseException {
-	// flush out the contents
-	boolean flushed = index.flush();
+    public boolean close(Index index) throws IndexCommitException, IndexCloseException {
+	// commit the contents
+	boolean committed = index.commit();
 
-	// TODO: what should we do if flushed == false
+	// TODO: what should we do if committed == false
 
 	// close all the objects in the index
 	boolean closed = index.close();
@@ -546,8 +546,8 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * Open an Index and decode the header.
      * The Index is closed when this method returns.
      */
-    private IndexDecoder indexDecoder(Properties indexProperties) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
-	IndexDecoder decoder = null;
+    private IndexTyper indexTyper(Properties indexProperties) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
+	IndexTyper decoder = null;
 
 	// decode the named file
 	String fileName = null;
@@ -564,7 +564,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    }
 
 	    // create an index decoder
-	    decoder = new IndexDecoder(indexFile);
+	    decoder = new IndexTyper(indexFile);
 
 	    // read the header
 	    decoder.read();
@@ -671,10 +671,10 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
     /**
-     * A notification that an Index has been flushed.
+     * A notification that an Index has been committed.
      */
-    public  void flushed(IndexPrimaryEvent ipe) {
-	//System.err.println("Flush event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
+    public  void committed(IndexPrimaryEvent ipe) {
+	//System.err.println("Commit event from " + ipe.getName() + ". Class = " + ipe.getSource().getClass().getName());
 	eventMulticaster.firePrimaryEvent(ipe);
     }
 
