@@ -3,6 +3,7 @@
 package com.timeindexing.time;
 
 import com.timeindexing.basic.Scale;
+import java.util.TimeZone;
 
 /**
  * A simple wall clock class that returns AbsoluteTimestamps.
@@ -25,6 +26,42 @@ public class Clock {
      */
     public static final Timestamp ZERO = new ZeroTimestamp();
 
+
+    /**
+     * A TimeZone for getting the current DST offset
+     */
+    private TimeZone timeZone = null;
+
+    /*
+     * The DST offset currently
+     */
+    private int dstOffset = 0;
+
+    /**
+     * The next time to check if the DST has changed.
+     * We check the dstOffset hourly, to see if it has changed
+     * during the running of the program.
+     * This  is done because doing TimeZone.getOffset() for
+     * each call to getRawTime() is too expensive.
+     */
+    private long dstOffsetCheckTime = 0;
+
+    /**
+     * Construct a Clock
+     */
+    public Clock() {
+	timeZone = TimeZone.getDefault();
+	processDSTOffset(System.currentTimeMillis());
+    }
+
+    /**
+     * Construct a Clock in a specific TimeZone
+     */
+    public Clock(TimeZone tz) {
+	timeZone = tz;
+	processDSTOffset(System.currentTimeMillis());
+    }
+
     /**
      * Return the current time.
      * The Scale is the best that the platform will support naturally.
@@ -32,9 +69,41 @@ public class Clock {
      * so the Scale is MillisecondScale.
      */
     public Timestamp time(){
-	return new MillisecondTimestamp();
+	return asMillis();
+    }
+
+    /**
+     * Get the system time.
+     * This gets the clock to the best resolution that the platform will 
+     * support. Currently, Java only resolves times to milliseconds.
+     */
+    long getRawTime() {
+	long time = System.currentTimeMillis();
+
+	// check to see if we need to refetch the DST offset
+	if (time > dstOffsetCheckTime) {
+	    // we've gone past the check time
+	    // determine the dstOffset
+	    // and set the new check time
+	    processDSTOffset(time);
+	}
+
+	return time + dstOffset;
     }
     
+    /**
+     * Get the DST offset and set the new time to check 
+     * for the offset again.
+     */
+    private void processDSTOffset(long time) {
+	final int anHour = 60 * 60 * 1000;
+	dstOffset = timeZone.getOffset(time);
+
+	dstOffsetCheckTime = (time / anHour + 1) * anHour;
+
+	//System.err.println("time = " + time + " dstOffset = " + dstOffset + " dstOffsetCheckTime = " + dstOffsetCheckTime);
+    }
+       
     /**
      * Convert a Timestamp to a specific Scale.
      */
@@ -57,14 +126,14 @@ public class Clock {
      * Get the current time resolved to seconds.
      */
     public Timestamp asSeconds() {
-	return new SecondTimestamp();
+	return new SecondTimestamp(this);
     }
 
     /**
      * Get the current time resolved to milliseconds.
      */
     public Timestamp asMillis() {
-	return new MillisecondTimestamp();
+	return new MillisecondTimestamp(this);
     }
 
     
@@ -72,14 +141,14 @@ public class Clock {
      * Get the current time resolved to microseconds.
      */
     public Timestamp asMicros() {
-	return new MicrosecondTimestamp();
+	return new MicrosecondTimestamp(this);
     }
 
     /**
      * Get the current time resolved to nanoseconds.
      */
     public Timestamp asNanos() {
-	return new NanosecondTimestamp();
+	return new NanosecondTimestamp(this);
     }
 
 }
