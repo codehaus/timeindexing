@@ -4,6 +4,7 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
 import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.index.GetItemException;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -93,6 +94,15 @@ public class TICat extends TIAbstractRestore {
      * Print an individual IndexItem to the OutputStream.
      */
     protected void printIndexItem(IndexItem item, OutputStream out) {
+	// follow all references
+	try {
+	    while (item.isReference()) {
+		item = item.follow();
+	    }
+	} catch (GetItemException gie) {
+	    return;
+	}
+
 	ByteBuffer itemdata = item.getData();
 	byte [] outbuf = new byte[1024];
 
