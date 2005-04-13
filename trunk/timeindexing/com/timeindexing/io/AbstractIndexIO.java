@@ -74,7 +74,10 @@ public abstract class AbstractIndexIO implements IndexInteractor,  Runnable {
 	if (myThread != null) {
 	    myThread.stop();
 	    //System.err.println("Stopped Thread " + myThread);
-	    return myThread;
+
+	    Thread retVal = myThread;
+	    //myThread = null;
+	    return retVal;
 	} else {
 	    return null;
 	}
