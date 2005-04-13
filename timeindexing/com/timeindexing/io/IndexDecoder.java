@@ -113,6 +113,21 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
     }
 
 
+
+    /**
+     * Does the index header file exist
+     */
+    public boolean exists(String filename) {
+	String fileName = FileUtils.resolveFileName(filename, ".tih");
+	File file = new File(fileName);
+
+	if (file.exists()) {
+	    return true;
+	} else {
+	    return false;
+	}
+    }
+
     /**
      * Is the IndexHeader open
      */
@@ -128,11 +143,13 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
      * Operation on close
      */
     public long close() throws IOException {
-	long size = -1;
+	long size = 0;
 
-	size = channel.size();
+	if (channel != null) {
+	    size = channel.size();
 
-	channel.close();
+	    channel.close();
+	}
 
 	return size;
     }
@@ -140,22 +157,27 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
  
    /**
      * Read an index header from the header stream.
-     * TODO:  Use Channels and ByteBuffer
      */
     public long read() throws IOException {
+	// seek(0);
+	channel.position(0);
+	
+	return readFromChannel(channel, getHeaderLength());
+    }
+	    
+   /**
+     * Read an index header from the header stream.
+     */
+    public long readFromChannel(FileChannel channel, long headerSize) throws IOException {
 	try { 
-	    long  fileSize = headerFile.length();
 	    long readCount = 0;
 
 	    // memory map the header 
-	    ByteBuffer readBuf = ByteBuffer.allocate((int)fileSize);
-
-	    // seek(0);
-	    channel.position(0);
+	    ByteBuffer readBuf = ByteBuffer.allocate((int)headerSize);
 
 	    // read a block of data
-	    if ((readCount = channel.read(readBuf)) != fileSize) {
-		throw new IOException("Header read failure. Didn't get " + fileSize + " bytes.");
+	    if ((readCount = channel.read(readBuf)) != headerSize) {
+		throw new IOException("Header read failure. Didn't get " + headerSize + " bytes.");
 	    }
 
 	    readBuf.flip();
@@ -274,7 +296,7 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 		HeaderOption anOption = null;
 		Object value = null;
 
-		while (readBuf.position() < fileSize) {
+		while (readBuf.position() < headerSize) {
 		    byte optionValue = readBuf.get();
 
 		     switch (optionValue) {
@@ -323,6 +345,19 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 			 break;
 		     }
 
+		     case HeaderOption.NO_DATA_FILE_HEADER: {
+			 value = processIsInTimeOrder(HeaderOptionProcess.READ, readBuf);
+			 anOption = HeaderOption.NO_DATA_FILE_HEADER_HO;
+
+			 // if the value is true
+			 // then there is no data file header
+			 if (((Boolean)value).booleanValue() == true) {
+			     setOption(anOption, Boolean.TRUE);
+			 }
+
+			 break;
+		     }
+
 		     case HeaderOption.REFERENCEMAPPING: {
 			 value = processReferenceMapping(HeaderOptionProcess.READ, readBuf);
 			 anOption = HeaderOption.REFERENCEMAPPING_HO;
@@ -342,7 +377,7 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 		// release the memory mapped buffer
 		readBuf = null;
 
-		return fileSize; // was headerFile.getFilePointer();
+		return headerSize;
 	    } else {
 		throw new IOException(fileName + " is not a TimeIndex Header");
 	    }
@@ -351,6 +386,13 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	    System.err.println(this);
 	    throw eofe;
 	}
+    }
+
+    /**
+     * Determine the length of a Header
+     */
+    protected long getHeaderLength() throws IOException {
+	return headerFile.length();
     }
 
 
@@ -443,6 +485,26 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	}
 
 	return inOrder;
+    }
+
+    /**
+     * Is there a header on the data file
+     */
+    protected Boolean  processNoDataFileHeader(HeaderOptionProcess what, ByteBuffer readBuf) {
+	// the buffer is positioned just after the option byte
+
+	// read the status
+	byte value = readBuf.get();
+
+	Boolean noDataHeader = null;
+
+	if (value == 1) {
+	    noDataHeader = new Boolean(true);
+	} else {
+	    noDataHeader = new Boolean(false);
+	}
+
+	return noDataHeader;
     }
 
     /**
