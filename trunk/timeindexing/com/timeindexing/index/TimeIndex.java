@@ -554,145 +554,38 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Returns null if it cant be done.
      */
     public IndexView select(Interval interval, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime) {
-	if (interval instanceof AbsoluteInterval) {
-	    AbsoluteInterval absInterval = (AbsoluteInterval)interval;
-	    AbsoluteInterval resolvedInterval = null;
+	if (isSelection) {
+	    // get the actual selection
+	    TimeIndex selection = (TimeIndex)indexModel.select(interval, selector, overlap, lifetime);
 
-	    if (! absInterval.isResolved()) { // not resolved yet
-		// so resolve the interval w.r.t this index
-		resolvedInterval = absInterval.resolve(this, selector, lifetime);
+	    // setup the new selection values
+	    selection.selectionIndexView = this;
+	    selection.position = new AbsoluteAdjustablePosition(0);
+
+	    // setup the start and end values
+	    if (selection.start == Position.TOO_LOW || selection.start == Position.TOO_HIGH) {
+		// selection start is out of bounds
 	    } else {
-		resolvedInterval = absInterval;
+		// realign start to reflect existing view
+		long startValue = selection.start.value();
+		selection.start = new AbsolutePosition(start.value() +  startValue);
 	    }
 
-	    if (resolvedInterval == null) { // it was not possible to resolved the Interval
-		return null;
+	    if (selection.end == Position.TOO_LOW || selection.end == Position.TOO_HIGH) {
+		// selection end is out of bounds
 	    } else {
-		// the interval has resolved
-		// so now we try to determine the new selection
-
-		Position intervalStart = ((Position)resolvedInterval.start()).position();
-		Position intervalEnd = ((Position)resolvedInterval.end()).position();
-		long selectionLength = 0;
-
-		System.err.println("TimeIndex: select() pre: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
-
-		if (overlap == Overlap.STRICT) {
-		    // if the Interval must have strict overlap with 
-		    // the index then complain if the start or the end
-		    // position is out of bounds
-
-		    if (intervalStart == Position.TOO_LOW) {
-			throw new PositionOutOfBoundsException("Can't select before the start of an Index");
-		    }
-
-		    if (intervalEnd == Position.TOO_HIGH) {
-			throw new PositionOutOfBoundsException("Can't select beyond the end of an Index");
-		    }
-
-		} else {
-		    // if (overlap == Overlap.FREE)
-
-		    // if the Interval can overlap freely with 
-		    // the index then, if the start or the end
-		    // position is out of bounds, we can
-		    // do some tweaking on the intervalStart and intervalEnd
-		    // to get a valid interval
-
-		    if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_LOW) { // both TOO_LOW
-			selectionLength = 0;
-
-		    } else if (intervalStart == Position.TOO_HIGH && intervalEnd == Position.TOO_HIGH) { // both TOO_HIGH
-			selectionLength = 0;
-
-		    } else if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH) { // start too low, end too high
-			//System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
-			intervalStart =  new AbsolutePosition(0); //getStartPosition(); // new AbsolutePosition(0);
-			intervalEnd = new AbsolutePosition(getLength()-1); //getEndPosition();     // new AbsolutePosition(getLength()-1);
-			selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-
-		    } else if (intervalStart == Position.TOO_LOW) { // intervalStart TOO_LOW
-			intervalStart =  new AbsolutePosition(0);  //getStartPosition();  // new AbsolutePosition(0);
-
-			// check the end position also
-			if (intervalEnd.value() >= getLength()) {
-			    // if it's too high reset it
-			    intervalEnd =  new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
-			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-
-			} else {
-			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-			}
-
-		    } else if (intervalEnd == Position.TOO_HIGH) {  // intervalEnd TOO_HIGH
-			intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
-
-			// check the start position also
-			if (intervalStart.value() >= getLength()) {
-			    // if it's too high reset it
-			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
-			    selectionLength = 0;
-
-			} else {
-			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-
-			}
-
-		    } else {
-			// check the start and end position
-			if (intervalStart.value() >= getLength()) {
-			    // intervalEnd.value() MUST BE > getLength() due to the nature of Intervals
-			    // both too high so reset them
-			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition(); // new AbsolutePosition(getLength()-1);
-			    intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition(); //new AbsolutePosition(getLength()-1);
-			    selectionLength = 0;
-
-			} else if (intervalEnd.value() >= getLength()) {
-			    // if end is too high reset it
-			    intervalEnd =  new AbsolutePosition(getLength()-1); // getEndPosition(); //new AbsolutePosition(getLength()-1);
-			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-			} else {
-			    // both OK
-			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
-			}
-		    }
-
-		}
-
-		System.err.println("TimeIndex: select() post: intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd + " selectionLength = " + selectionLength);
-		try {
-		    TimeIndex selection = (TimeIndex)this.clone();
-
-		    // setup the new selection values
-		    selection.selectionInterval = interval;
-		    selection.selectionLength = selectionLength;
-		    selection.isSelection = true;
-		    selection.selectionIndexView = this;
-		    selection.isTerminated = true;
-		    selection.position = new AbsoluteAdjustablePosition(0);
-		    selection.mark = null;
-
-		    // setup the start and end values
-		    if (intervalStart == Position.TOO_LOW || intervalStart == Position.TOO_HIGH) {
-			selection.start = intervalStart;
-		    } else {
-			selection.start = new AbsolutePosition(start.value() +  intervalStart.value());
-		    }
-
-		    if (intervalEnd == Position.TOO_LOW || intervalEnd == Position.TOO_HIGH) {
-			selection.end = intervalEnd;
-		    } else {
-			selection.end = new AbsolutePosition(start.value() + intervalEnd.value());
-		    }
-
-		    return selection;
-		} catch ( CloneNotSupportedException cnse) {
-		    // the clone failed
-		    throw new RuntimeException("TimeIndex::select().  Failed to clone " + this);
-		}
+		// realign end to reflect existing view
+		long endValue = selection.end.value();
+		selection.end = new AbsolutePosition(start.value() + endValue);
 	    }
+
+	    return selection;
 	} else {
-	    return null;
+	    TimeIndex selection = (TimeIndex)indexModel.select(interval, selector, overlap, lifetime);
+	    selection.selectionIndexView = this;
+
+	    return selection;
+	    
 	}
     }
 
@@ -877,8 +770,14 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 	Position pos = tsMapping.position();
 
-	if (position == Position.TOO_LOW || position == Position.TOO_HIGH) {
-	    throw new PositionOutOfBoundsException("TimeIndex: position(): Can;t set the position outside if the IndexView");
+	if (pos == Position.TOO_LOW) {
+	    System.err.println("TimeIndex: position located = " + pos);
+	    position = new AbsolutePosition(0);
+	    return this;
+	} else if (pos == Position.TOO_HIGH) {
+	    System.err.println("TimeIndex: position located = " + pos);
+	    position = new AbsolutePosition(end.value() - start.value());
+	    return this;
 	} else {
 	    position = pos;
 	    return this;
