@@ -155,7 +155,7 @@ public class MPEGPresentationTimestamp implements RelativeTimestamp, UnitBasedTi
      * Get the toString() version of a NanosecondTimestamp.
      */
     public String toString() {
-	return ("(" + (isNegative ? "-" : "") + getUnits() + ")");
+	return ("(" + (isNegative ? "-" : "") + getUnits() + "/" + unitsPerSecond + ")");
     }
 
     /**
