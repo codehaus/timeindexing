@@ -294,6 +294,7 @@ public class SelectServlet extends HttpServlet {
  	}
 
 	properties.clear();
+	response = null;
     }
 
     /**
@@ -318,33 +319,44 @@ public class SelectServlet extends HttpServlet {
 	    out = response.getOutputStream();
 	}
 
-	properties.putProperty("close", "false");
-
 
 	// Lets open the index and select the relevant interval
 	//
 	// GO
+
+	Selecter selecter = null;
+
 	try {
 	    String filename = (String)properties.get("indexpath");
-	    Selecter selecter = new Selecter(filename, out);
+	    selecter = new Selecter(filename, out);
 	    selecter.select(properties);
 
-	} catch (TimeIndexException tie) {
-	    System.err.println("SelectServlet: Selecter failed selection");
-	    tie.printStackTrace(System.err);
+	} catch (Exception ex) {
+	    System.err.println("SelectServlet: Selecter failed selection for " + 
+			       (String)properties.get("indexpath") );
+	    System.err.println("Reason: " + ex.getMessage());
 
 	    // the selection failed
 	    status = SELECT_EXCEPTION;
-	    request.setAttribute("exception", tie);
+	    request.setAttribute("exception", ex);
+
+	    try {
+		selecter.close();
+	    } catch (TimeIndexException tie) {
+		System.err.println("SelectServlet:clsoe failed for " + 
+			       (String)properties.get("indexpath") );
+	    }
+	} finally {
+	    selecter = null;
 	}
 
-	    // when we get here check to see the status
-	    // we hope it is still GOOD;
-	    if (status != GOOD) {
-		// something went wrong, so
-		// call postPlaybackError()
-		postPlaybackError(request, response);
-	    }
+	// when we get here check to see the status
+	// we hope it is still GOOD;
+	if (status != GOOD) {
+	    // something went wrong, so
+	    // call postPlaybackError()
+	    postPlaybackError(request, response);
+	}
 
     }
 
