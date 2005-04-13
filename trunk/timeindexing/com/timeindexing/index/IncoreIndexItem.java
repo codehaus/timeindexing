@@ -199,7 +199,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * Set the last access time of the item.
      */
     public ManagedIndexItem setLastAccessTime() {
-	lastAccessTime = Clock.time.asMicros();
+	lastAccessTime = Clock.time.time();
 	//System.err.println("Set last access time for IndexItem: " + position + " to " + getLastAccessTime());
 	return this;
     }
