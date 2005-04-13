@@ -113,23 +113,40 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	try {
 	    open();
 
-	    indexFile.setLength(0);
-	    dataFile.setLength(0);
+	    // deal with the options
 
 	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
-	    //myIndex.getHeader().setIndexPathName(indexFileName);
-	    //myIndex.getHeader().setDataPathName(dataFileName);
+	    // process no_data_file_header option
+	    Boolean noDataFileHeader = Boolean.valueOf((String)indexProperties.get("nodatafileheader"));
+
+	    if (noDataFileHeader.equals(Boolean.TRUE)) {
+		headerInteractor.setOption(HeaderOption.NO_DATA_FILE_HEADER_HO, Boolean.TRUE);
+	    }
+
+
+	    // deal with the headers
+	    indexFile.setLength(0);
+	    dataFile.setLength(0);
 
 	    long indexHeaderPosition = writeHeader(FileType.EXTERNAL_INDEX);
 	    indexAppendPosition = indexHeaderPosition;
 
-	    long dataHeaderPosition = writeDataHeader(FileType.EXTERNAL_DATA);
+	    long dataHeaderPosition = 0;
+
+	    // write a data file header
+	    // unless NO_DATA_FILE_HEADER is set
+	    if (headerInteractor.getOption(HeaderOption.NO_DATA_FILE_HEADER_HO) == Boolean.FALSE) { //	    if (noDataFileHeader.booleanValue() == false) {
+		dataHeaderPosition = writeDataHeader(FileType.EXTERNAL_DATA);
+	    }
+
 	    dataAppendPosition = dataHeaderPosition;
 
+	    // flush out all the data
 	    flush();
 
+	    // get a output thread going
 	    initThread(originalIndexSpecifier);
 	    startThread();
 	
@@ -299,31 +316,40 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
     public long readMetaData() throws IOException, IndexOpenException {
 	long indexHeaderPosition = readHeader(FileType.EXTERNAL_INDEX);
 
-	long dataHeaderPosition = readDataHeader(FileType.EXTERNAL_DATA);
+	long dataHeaderPosition = 0;
 
-	// check ID in header == ID in index
-	// and   ID in header == ID in data 
-	// and   name in header == name in index
-	// and   name in header == name in data 
-	if (headerInteractor.getID().equals(indexID) && 
-	    headerInteractor.getID().equals(dataIndexID) &&
-	    headerInteractor.getName().equals(indexName) &&
-	    headerInteractor.getName().equals(dataIndexName)) {
-	    // The values in the header match up so we
-	    // must be looking in the right place.
+	if (headerInteractor.getOption(HeaderOption.NO_DATA_FILE_HEADER_HO) == Boolean.FALSE) {
+	    dataHeaderPosition = readDataHeader(FileType.EXTERNAL_DATA);
+
+	    // check ID in header == ID in index
+	    // and   ID in header == ID in data 
+	    // and   name in header == name in index
+	    // and   name in header == name in data 
+	    if (headerInteractor.getID().equals(indexID) && 
+		headerInteractor.getID().equals(dataIndexID) &&
+		headerInteractor.getName().equals(indexName) &&
+		headerInteractor.getName().equals(dataIndexName)) {
+		// The values in the header match up so we
+		// must be looking in the right place.
+
+		// sync the read header with the index object
+		getIndex().syncHeader(headerInteractor);
+
+		return indexHeaderPosition;
+	    } else {
+		// The values in the header are different
+		// so something is wrong
+		throw new IndexOpenException("The file '" + indexFileName +
+					     "' is not an index for the data file '" +
+					     dataFileName);
+	    }
+	} else {  // There is NO data header
 
 	    // sync the read header with the index object
 	    getIndex().syncHeader(headerInteractor);
-
+	    
 	    return indexHeaderPosition;
-	} else {
-	    // The values in the header are different
-	    // so something is wrong
-	    throw new IndexOpenException("The file '" + indexFileName +
-					 "' is not an index for the data file '" +
-					 dataFileName);
 	}
-
     }
 
 
