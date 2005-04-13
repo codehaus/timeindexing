@@ -92,6 +92,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
 	    closed = true;
 	    activated = false;
+	    indexInteractor = null;
 
 	    return true;
 	} catch (IOException ioe) {
