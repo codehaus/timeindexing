@@ -2,14 +2,56 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
+
 /**
- * A simple wall clock class.
+ * A simple wall clock class that returns AbsoluteTimestamps.
  */
 public class Clock {
     /**
      * A publically usable clock that tells the time.
      */
     public static final Clock time = new Clock();
+
+    /**
+     * A single tick of a clock.
+     * This is 1 unit of the lowest resolution that TimeIndexing can handle.
+     * In the current implementation it is 1 nanosecond.
+     */
+    public static final Timestamp TICK = new OneTick();
+
+    /**
+     * The zero point on the clock.
+     */
+    public static final Timestamp ZERO = new ZeroTimestamp();
+
+    /**
+     * Return the current time.
+     * The Scale is the best that the platform will support naturally.
+     * Currently, Java only resolves times to milliseconds,
+     * so the Scale is MillisecondScale.
+     */
+    public Timestamp time(){
+	return new MillisecondTimestamp();
+    }
+    
+    /**
+     * Convert a Timestamp to a specific Scale.
+     */
+    public Timestamp asScale(Scale scale) {
+	if (scale instanceof SecondScale) {
+	    return asSeconds();
+	} else 	if (scale instanceof MillisecondScale) {
+	    return asMillis();
+	} else if (scale instanceof MicrosecondScale) {
+	    return asMicros();
+	} else if (scale instanceof NanosecondScale) {
+	    return asNanos();
+	} else {
+	    throw new Error("Unhandled type of scale for argument to asScale(). It is: " +
+			    scale.getClass().getName());
+	}
+    }
 
     /**
      * Get the current time resolved to seconds.
@@ -40,5 +82,17 @@ public class Clock {
 	return new NanosecondTimestamp();
     }
 
-    
+}
+
+/**
+ * A special class for one clock tick.
+ */
+class OneTick extends NanosecondTimestamp {
+    protected OneTick() {
+	super(1);
+    }
+
+    public String toString() {
+	return "0.00000001";
+    }
 }
