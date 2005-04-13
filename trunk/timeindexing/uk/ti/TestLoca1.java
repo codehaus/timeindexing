@@ -14,8 +14,8 @@ import com.timeindexing.time.ElapsedSecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.*;
 import com.timeindexing.basic.Interval;
-import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.MidPointInterval;
 import com.timeindexing.basic.AbsolutePosition;
@@ -144,9 +144,10 @@ public class TestLoca1 {
 		printIndex(narrow2);
 	    }
 
-	    // add 1 hour
+	    // add 1 minute
 	    Interval interval3 = new EndPointInterval(new AbsolutePosition(foundP),
-						      new ElapsedSecondTimestamp(1 * 60 * 60));
+						    //new ElapsedSecondTimestamp(1 * 60));
+						    new Second(60, TimeDirection.FORWARD_DT));
 	    Index narrow3 = index.select(interval3, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 	    if (narrow3 == null) {
@@ -156,10 +157,13 @@ public class TestLoca1 {
 		printIndex(narrow3);
 	    }
 
-	    // foundP , - 1hour, + 1 hour
+	    // foundP , - 1 minute, + 1 minute
 	    Interval interval4 = new MidPointInterval(new AbsolutePosition(foundP),
-						      new ElapsedSecondTimestamp(-1 * 60 * 60),
-						      new ElapsedSecondTimestamp(1 * 60 * 60));
+						    //new ElapsedSecondTimestamp(-1 * 60),
+						    //new ElapsedSecondTimestamp(1 * 60));
+						    new Second(60, TimeDirection.FORWARD_DT),
+						    new Second(60, TimeDirection.BACKWARD_DT)
+						    );
 	    Index narrow4 = index.select(interval4, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 
