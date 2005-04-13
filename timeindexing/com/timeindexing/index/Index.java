@@ -5,6 +5,7 @@ package com.timeindexing.index;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Interval;
 import com.timeindexing.basic.Position;
+import com.timeindexing.basic.Overlap;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.Lifetime;
@@ -119,6 +120,12 @@ public interface Index extends IndexHeader {
      */
     public TimestampMapping locate(Position p, IndexTimestampSelector sel, Lifetime lifetime);
 
+
+    /**
+     * Select an Interval.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(Interval interval, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime);
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
