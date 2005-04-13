@@ -32,4 +32,23 @@ public class IndexProperties extends CascadingMap {
 	super((CascadingMap)aSubMap);
     }
 
+    /**
+     * Get an entry from the IndexProperties.
+     */
+    public Object getProperty(Object key) {
+	return super.get(key);
+    }
+
+    /**
+     * Put an entry in the IndexProperties.
+     * This version returns the IndexProperties object,
+     * so it can be composed.
+     * @return the IndexProperties object
+     */
+    public IndexProperties putProperty(Object key, Object value) {
+	super.put(key, value);
+
+	return this;
+    }
+
 }
