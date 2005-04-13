@@ -22,7 +22,9 @@ public class SecondDateFormat extends AbstractDateFormat {
     /**
      * Format a time as seconds and nanoseconds.
      */
-    public String format(long seconds, int nanoseconds) {
+    public String format(AbsoluteTimestamp t) {
+	long seconds = t.getSeconds();
+
 	long milliseconds = seconds * 1000;
 
 	return formatter.format((new Date(milliseconds)));

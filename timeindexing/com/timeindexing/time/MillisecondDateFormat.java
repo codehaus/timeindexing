@@ -28,7 +28,10 @@ public class MillisecondDateFormat extends AbstractDateFormat {
     /**
      * Format a time as seconds and nanoseconds.
      */
-    public String format(long seconds, int nanoseconds) {
+    public String format(AbsoluteTimestamp t) {
+	long seconds = t.getSeconds();
+	int nanoseconds = t.getNanoSeconds();
+
 	long milliseconds = (seconds * 1000) + (nanoseconds / 1000000);
 	long millisOnly = nanoseconds  / 1000000;
 
