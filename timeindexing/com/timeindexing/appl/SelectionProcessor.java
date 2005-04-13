@@ -29,11 +29,11 @@ import com.timeindexing.time.*;
  * Types of values in the properties are:
  * <ul>
  * <li> "startpos" -> value accepted by PositionParser
- * <li> "starttime" -> value accepted by TimeParser
+ * <li> "starttime" -> value accepted by TimeDateParser
  * <li> "endpos" ->  value accepted by PositionParser
- * <li> "endtime" -> value accepted by TimeParser
+ * <li> "endtime" -> value accepted by TimeDateParser
  * <li> "count" -> value accepted by CountParser
- * <li> "for" -> value accepted by TimeParser
+ * <li> "for" -> value accepted by TimeDateParser
  * </ul>
  */
 public class SelectionProcessor {
@@ -67,7 +67,7 @@ public class SelectionProcessor {
 	IndexView selection = null;
 	PositionParser positionParser = new PositionParser();
 	CountParser countParser = new CountParser();
-	TimeParser timeParser = new TimeParser();
+	TimeDateParser timeParser = new TimeDateParser();
 
 	/*
 	 * Determine start of selection.
@@ -193,8 +193,6 @@ public class SelectionProcessor {
 
 	}
 	   
-	System.err.println("Interval = " + interval);
-	
 	// select from the interval
 	selection = index.select(interval, IndexTimestampSelector.DATA, Overlap.FREE, lifetime);
 
