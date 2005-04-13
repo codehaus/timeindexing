@@ -69,14 +69,16 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	    getIndex().setOption(HeaderOption.INDEXPATH_HO, indexFileName);
 	    getIndex().setOption(HeaderOption.DATAPATH_HO, dataFileName);
 
+	    headerInteractor.setOption(HeaderOption.NO_DATA_FILE_HEADER_HO, Boolean.TRUE);
+
 	    long position = writeHeader(FileType.SHADOW_INDEX);
 	    indexAppendPosition = position;
 	    dataAppendPosition = 0;
 
 	    flush();
 
-	initThread(originalIndexSpecifier);
-	startThread();
+	    initThread(originalIndexSpecifier);
+	    startThread();
 
 	    return position;
 	} catch (IndexOpenException ioe) {
