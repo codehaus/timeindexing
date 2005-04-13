@@ -18,9 +18,17 @@ public class TimeDateParser {
      */
     protected static DateParser fullestFormat = new DateParser("yyyy/MM/dd HH:mm:ss");
     /*
+     * A format for year/month/day plus hour:minutes:seconds with no spaces
+     */
+    protected static DateParser fullestFormatNS = new DateParser("yyyy/MM/dd-HH:mm:ss");
+    /*
      * A format for year/month/day plus hour:minutes
      */
     protected static DateParser fullFormat = new DateParser("yyyy/MM/dd HH:mm");
+    /*
+     * A format for year/month/day plus hour:minutes with no spaces
+     */
+    protected static DateParser fullFormatNS = new DateParser("yyyy/MM/dd-HH:mm");
     /*
      * A format for year/month/day
      */
@@ -131,8 +139,20 @@ public class TimeDateParser {
 
 	if (date == null) {	// the time string is null
 	    // let's try Format
+	    date = fullestFormatNS.parse(timeStr);
+	    //System.err.println("Parse Fullest date = " + date);
+	}
+
+	if (date == null) {	// the time string is null
+	    // let's try Format
 	    date = fullestFormat.parse(timeStr);
 	    //System.err.println("Parse Fullest date = " + date);
+	}
+
+	if (date == null) {	// the time string is null
+	    // let's try Format
+	    date = fullFormatNS.parse(timeStr);
+	    //System.err.println("Parse Full  date = " + date);
 	}
 
 	if (date == null) {	// the time string is null
