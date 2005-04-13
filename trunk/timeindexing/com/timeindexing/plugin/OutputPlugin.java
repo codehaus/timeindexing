@@ -23,6 +23,22 @@ public interface OutputPlugin {
     public OutputStream getOutputStream();
 
     /**
+     * Set the context for the OutputPlugin, which is
+     * the Index we are going output for, and the OutputStream
+     * that is being written to.
+     */
+    public OutputPlugin setContext(Index index, OutputStream outStream);
+
+    /**
+     * Set a writer plugin, to read input from the InputStream.
+     */
+    public OutputPlugin setWriterPlugin(WriterPlugin writer);
+
+    /**
+     * Get the writer plugin.
+     */
+    public WriterPlugin getWriterPlugin();
+    /**
      * Do some output.
      * @param item The IndexItem to putput
      * @param properties Some IndexProperties 
@@ -43,13 +59,5 @@ public interface OutputPlugin {
      */
     public Object end() throws IOException;
 
-    /**
-     * Set a writer plugin, to read input from the InputStream.
-     */
-    public OutputPlugin setWriterPlugin(WriterPlugin writer);
-
-    /**
-     * Get the writer plugin.
-     */
-    public WriterPlugin getWriterPlugin();
 }
+
