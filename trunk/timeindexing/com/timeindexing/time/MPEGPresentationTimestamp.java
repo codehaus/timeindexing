@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -23,6 +24,15 @@ public class MPEGPresentationTimestamp implements RelativeTimestamp, UnitBasedTi
      */
     private final static double timePerUnit = ((double)1) / unitsPerSecond * 1000000000;
        
+    /*
+     * The scale of this Timestamp.
+     */
+    private final static Scale SCALE = new Scale() {
+	    public long value() {
+		return -unitsPerSecond;
+	    };
+	};
+
     /*
      * The value of the timestamp in units from zero.
      */
@@ -131,6 +141,14 @@ public class MPEGPresentationTimestamp implements RelativeTimestamp, UnitBasedTi
      */
     public long getUnitsPerSecond() {
 	return unitsPerSecond;
+    }
+
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return this.SCALE;
     }
 
     /**
