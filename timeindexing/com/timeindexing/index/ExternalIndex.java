@@ -45,7 +45,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	indexCache.setPolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy()); // new HollowAfterTimeoutPolicy()); 
+	setCachePolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy()); // new HollowAfterTimeoutPolicy()); 
 
 	setIndexType(IndexType.EXTERNAL_DT);
 
@@ -130,7 +130,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	// set the ID, the startTime, first offset, last offset
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setStartTime(Clock.time.asMicros());
+	header.setStartTime(Clock.time.time());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
 
@@ -146,6 +146,13 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    indexProperties.put("indexpath", headerPathName);
 	    indexProperties.put("datapath", dataPathName);
 
+	    // process optional properties
+
+	    // don;t put a timeindexing header  on the data file
+	    if (properties.containsKey("nodatafileheader")) {
+		indexProperties.put("nodatafileheader" , properties.getProperty("nodatafileheader"));
+	    }
+		
 	    // create the relevant objects
 	    indexInteractor.create(indexProperties);	
 	
