@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.Date;
@@ -45,7 +46,7 @@ public class TimeCalculator {
 	    } else if (t0 instanceof SecondScale && t1 instanceof SecondScale) {
 		return addTimestampS(rt0, rt1);
 	    } else {
-		throw new Error("addTimestamp implementation error for 2 RelativeTimestamps.");
+		throw new Error("addTimestamp implementation error for 2 RelativeTimestamps. Can't determine Scale.");
 	    }
 	} else {
 
@@ -58,7 +59,7 @@ public class TimeCalculator {
 	    } else if (t0 instanceof SecondScale && t1 instanceof SecondScale) {
 		return addTimestampS(t0, t1);
 	    } else {
-		throw new Error("addTimestamp implementation error for 2 Timestamps.");
+		throw new Error("addTimestamp implementation error for 2 Timestamps. Can't determine Scale.");
 	    }
 
 	}
@@ -160,7 +161,7 @@ public class TimeCalculator {
 	    } else if (t0 instanceof SecondScale && t1 instanceof SecondScale) {
 		return subtractTimestampS(rt0, rt1);
 	    } else {
-		throw new Error("subtractTimestamp implementation error for 2 RelativeTimestamps.");
+		throw new Error("subtractTimestamp implementation error for 2 RelativeTimestamps. Can't determine Scale.");
 	    }
 	} else {
 
@@ -173,7 +174,7 @@ public class TimeCalculator {
 	    } else if (t0 instanceof SecondScale && t1 instanceof SecondScale) {
 		return subtractTimestampS(t0, t1);
 	    } else {
-		throw new Error("subtractTimestamp implementation error for 2 Timestamps.");
+		throw new Error("subtractTimestamp implementation error for 2 Timestamps. Can't determine Scale.");
 	    }
 
 	}
@@ -313,14 +314,96 @@ public class TimeCalculator {
 
 
     /*
-     * Change scale.
+     * Changes.  Scale or Type.
      */
+
+    /**
+     * Convert an AbsoluteTimestamp to a RelativeTimestamp.
+     * Converts number of seconds and number of nanoseconds,
+     * without any processing.
+     * The AbsoluteTimestamp Epoch maps to RelativeTimestamp 0.
+     */
+    public static RelativeTimestamp toRelative(AbsoluteTimestamp timestamp) {
+	RelativeTimestamp relative = asRelativeTimestamp(timestamp.getSeconds(), timestamp.getNanoSeconds());
+
+	return relative;
+    }
+
+    /**
+     * Convert an RelativeTimestamp to an AbsoluteTimestamp.
+     * Converts number of seconds and number of nanoseconds,
+     * without any processing.
+     * The  RelativeTimestamp 0 maps to AbsoluteTimestamp Epoch.
+     */
+    public static AbsoluteTimestamp toAbsolute(RelativeTimestamp timestamp) {
+	AbsoluteTimestamp absolute = asAbsoluteTimestamp(timestamp.getSeconds(), timestamp.getNanoSeconds());
+
+	return absolute;
+    }
+
+    /**
+     * Take some seconds and some nanoseconds, and return
+     * a AbsoluteTimestamp in the best scale.
+     */
+    public static AbsoluteTimestamp asAbsoluteTimestamp(long seconds, int nanos) {
+	int  nanoseconds = Math.abs(nanos);
+
+	if (nanoseconds % 1000000000 == 0) {
+	    return new SecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds % 1000000 == 0) {
+	    return new MillisecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds % 1000 == 0) {
+	    return new MicrosecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds < 1000000000) {
+	    return new NanosecondTimestamp(seconds, nanoseconds);
+	} else {
+	    return new NanosecondTimestamp(seconds, nanoseconds);
+	}
+    }
+
+    /**
+     * Take some seconds and some nanoseconds, and return
+     * a RelativeTimestamp in the best scale.
+     */
+    public static RelativeTimestamp asRelativeTimestamp(long seconds, int nanos) {
+	int nanoseconds = Math.abs(nanos);
+
+	if (nanoseconds % 1000000000 == 0) {
+	    return new ElapsedSecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds % 1000000 == 0) {
+	    return new ElapsedMillisecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds % 1000 == 0) {
+	    return new ElapsedMicrosecondTimestamp(seconds, nanoseconds);
+	} else 	if (nanoseconds < 1000000000) {
+	    return new ElapsedNanosecondTimestamp(seconds, nanoseconds);
+	} else {
+	    return new ElapsedNanosecondTimestamp(seconds, nanoseconds);
+	}
+    }
+
+    /**
+     * Convert a Timestamp to a specific Scale.
+     */
+    public static Timestamp asScale(Timestamp t, Scale scale) {
+	if (scale instanceof SecondScale) {
+	    return toSeconds(t);
+	} else 	if (scale instanceof MillisecondScale) {
+	    return toMillis(t);
+	} else if (scale instanceof MicrosecondScale) {
+	    return toMicros(t);
+	} else if (scale instanceof NanosecondScale) {
+	    return toNanos(t);
+	} else {
+	    throw new Error("Unhandled type of scale for argument to asScale(). It is: " +
+			    scale.getClass().getName());
+	}
+    }
 
     /**
      * Convert a Timestamp to SecondScale Timestamp.
      * May lose some data.
      */
-    public static  SecondScale toSeconds(Timestamp ts) {
+    public static  Timestamp toSeconds(Timestamp ts) {
 	if (ts instanceof AbsoluteTimestamp) {
 	    return toSeconds((AbsoluteTimestamp)ts);
 	} else if (ts instanceof RelativeTimestamp) {
@@ -352,7 +435,7 @@ public class TimeCalculator {
      * Convert a Timestamp to MillisecondScale Timestamp.
      * May lose some data.
      */
-    public static  MillisecondScale toMillis(Timestamp ts) {
+    public static Timestamp toMillis(Timestamp ts) {
 	if (ts instanceof AbsoluteTimestamp) {
 	    return toMillis((AbsoluteTimestamp)ts);
 	} else if (ts instanceof RelativeTimestamp) {
@@ -386,7 +469,7 @@ public class TimeCalculator {
      * Convert a Timestamp to MicrosecondScale Timestamp.
      * May lose some data.
      */
-    public static  MicrosecondScale toMicros(Timestamp ts) {
+    public static Timestamp toMicros(Timestamp ts) {
 	if (ts instanceof AbsoluteTimestamp) {
 	    return toMicros((AbsoluteTimestamp)ts);
 	} else if (ts instanceof RelativeTimestamp) {
@@ -420,7 +503,7 @@ public class TimeCalculator {
      * Convert a Timestamp to NanosecondScale Timestamp.
      * May lose some data.
      */
-    public static  NanosecondScale toNanos(Timestamp ts) {
+    public static  Timestamp toNanos(Timestamp ts) {
 	if (ts instanceof AbsoluteTimestamp) {
 	    return toNanos((AbsoluteTimestamp)ts);
 	} else if (ts instanceof RelativeTimestamp) {
@@ -456,6 +539,14 @@ public class TimeCalculator {
 	long milliseconds = (ts.getSeconds() * 1000) + (ts.getNanoSeconds() / 1000000);
 
 	return new Date(milliseconds);
+    }
+
+
+    /**
+     * Convert a java.util.Date to a Timestamp.
+     */
+    public static AbsoluteTimestamp fromDate(Date date) {
+	return new MillisecondTimestamp(date);
     }
 
 
