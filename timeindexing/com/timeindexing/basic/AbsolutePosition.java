@@ -15,7 +15,7 @@ public class AbsolutePosition implements Position, Absolute, Cloneable {
     /**
      * Construct a new AbsolutePosition
      */
-    private AbsolutePosition() {
+    AbsolutePosition() {
 	position = 0;
     }
 

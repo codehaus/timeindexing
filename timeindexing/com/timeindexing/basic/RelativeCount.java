@@ -15,7 +15,7 @@ public class RelativeCount implements Count, Relative, Cloneable {
     /**
      * Construct a new RelativeCount
      */
-    private RelativeCount() {
+    RelativeCount() {
 	count = 0;
     }
 
