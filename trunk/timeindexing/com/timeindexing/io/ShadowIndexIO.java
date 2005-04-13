@@ -77,7 +77,7 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 
 	    flush();
 
-	    initThread(originalIndexSpecifier);
+	    initThread(indexName + "-IOThread");
 	    startThread();
 
 	    return position;
@@ -136,7 +136,7 @@ public class  ShadowIndexIO extends ExternalIndexIO implements IndexFileInteract
 	// read the headers
 	long position = readMetaData();
 
-	initThread(originalIndexSpecifier);
+	initThread(indexName + "-IOThread");
 	startThread();
 
 	return position;

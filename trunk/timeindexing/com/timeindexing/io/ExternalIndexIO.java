@@ -147,7 +147,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    flush();
 
 	    // get a output thread going
-	    initThread(originalIndexSpecifier);
+	    initThread(indexName + "-IOThread");
 	    startThread();
 	
 	    return indexAppendPosition;
@@ -206,7 +206,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// read the headers
 	long indexHeaderPosition = readMetaData();
 
-	initThread(originalIndexSpecifier);
+	initThread(indexName + "-IOThread");
 	startThread();
 
 	return indexHeaderPosition;
@@ -551,7 +551,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// end thread
 	if (stopThread() == null) {
 	    System.err.println("Thread is null?");
-	}
+	} 
 
 	return size;
     }
