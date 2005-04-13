@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 
 /**
  * This abstact class has the base methods for objects that 
- * format elapsed timestamps.
+ * format timestamps as elapsed times.
  */
 public abstract class AbstractElapsedFormat implements TimestampFormatting {
 
@@ -35,94 +35,72 @@ public abstract class AbstractElapsedFormat implements TimestampFormatting {
     protected static NumberFormat yearsformat = new DecimalFormat("0000");
     protected static DateFormatter catchAllformat = new DateFormatter("HH:mm:ss");
 
+    /*
+     * Secs Per Minute.
+     */
+    protected final long secsPerMinute = 60;
+    /*
+     * Secs Per Hour.
+     */
+    protected final long secsPerHour = 60 * 60;
+    /*
+     * Secs Per Day.
+     */
+    protected final long secsPerDay = 24 * 60 * 60;
+    /*
+     * Secs Per Year (approximately).
+     */
+    protected final long secsPerYear = 365 * 24 * 60 * 60;
+
     /**
      * Format a Timestamp.
      */
     public String format(Timestamp t) {
-	return format(t.getSeconds(), t.getNanoSeconds());
+	return format((RelativeTimestamp)t);
     }
 
     /**
-     * Format a time as seconds and nanoseconds.
+     * Format a RelativeTimestamp.
      */
-    public String format(long seconds, int nanoseconds) {
-	long secsPerMinute = 60;
-	long secsPerHour = 60 * 60;
-	long secsPerDay = 24 * 60 * 60;
-	long secsPerYear = 365 * 24 * 60 * 60;
+    public String format(RelativeTimestamp t) {
+	long seconds = Math.abs(t.getSeconds());
 
+	// determine the right formatting scale
 	if (seconds < secsPerMinute) {
-	    return secondsFormat(seconds, nanoseconds);
+	    return secondsFormat(t);
 	} else if (seconds < secsPerHour) {
-	    return hourFormat(seconds, nanoseconds);
+	    return hourFormat(t);
 	} else if (seconds < secsPerDay) {
-	    return dayFormat(seconds, nanoseconds);
+	    return dayFormat(t);
 	} else if (seconds < secsPerYear) {
-	    return yearFormat(seconds, nanoseconds);
+	    return yearFormat(t);
 	} else {
-	    return fullFormat(seconds, nanoseconds);
+	    return fullFormat(t);
 	}
     }
 
     /**
      * Format a time using seconds and nanoseconds, given a Timestamp.
      */
-    public String secondsFormat(Timestamp t) {
-	return secondsFormat(t.getSeconds(), t.getNanoSeconds());
-    }
-
-    /**
-     * Format a time using seconds, given seconds and nanoseconds.
-     */
-    public abstract String secondsFormat(long seconds, int nanoseconds);
+    public abstract String secondsFormat(RelativeTimestamp t);
 
     /**
      * Format a time for 1 hour interval, given a Timestamp.
      */
-    public String hourFormat(Timestamp t) {
-	return hourFormat(t.getSeconds(), t.getNanoSeconds());
-    }
-
+    public abstract String hourFormat(RelativeTimestamp t);
 
     /**
-     * Format a time for 1 hour interval, given seconds and nanoseconds.
-     */
-    public abstract String hourFormat(long seconds, int nanoseconds);
-
-     /**
      * Format a time for 1 day interval, given a Timestamp.
      */
-    public String dayFormat(Timestamp t) {
-	return dayFormat(t.getSeconds(), t.getNanoSeconds());
-    }
-
-   /**
-     * Format a time for 1 day interval, given seconds and nanoseconds.
-     */
-    public abstract String dayFormat(long seconds, int nanoseconds);
+    public abstract String dayFormat(RelativeTimestamp t);
 
     /**
      * Format a time for 1 year interval, given a Timestamp.
      */
-    public String yearFormat(Timestamp t) {
-	return yearFormat(t.getSeconds(), t.getNanoSeconds());
-    }
-
-    /**
-     * Format a time for 1 year interval, given seconds and nanoseconds.
-     */
-    public abstract String yearFormat(long seconds, int nanoseconds);
+    public abstract String yearFormat(RelativeTimestamp t);
 
    /**
      * Format a time for any interval, given a Timestamp.
      */
-    public String fullFormat(Timestamp t) {
-	return fullFormat(t.getSeconds(), t.getNanoSeconds());
-    }
-
-    /**
-     * Format a time for any interval, given seconds and nanoseconds.
-     */
-    public abstract String fullFormat(long seconds, int nanoseconds);
-
+    public abstract String fullFormat(RelativeTimestamp t);
 }
