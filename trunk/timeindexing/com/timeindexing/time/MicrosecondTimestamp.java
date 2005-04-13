@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -15,7 +16,7 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
     /*
      * The mask used for before/after epoch
      */
-    public final static long BEFORE_EPOCH = (long)0x01 << 61;
+    public final static long BEFORE_EPOCH = Timestamp.MICROSECOND_SIGN;
 
     /*
      * The value of the timestamp
@@ -43,8 +44,22 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * and a number of nanoseconds.
      */
     public MicrosecondTimestamp(long seconds, int nanoseconds) {
-	value = seconds * 1000000;
+	// check to see if the no of seconds is in the correct range.
+	if (Math.abs(seconds) > (Timestamp.MICROSECOND_SIGN/1000000)) {   // the number is too big
+	    throw new IllegalArgumentException("The number of seconds is out of range. The maximum size is " + (Timestamp.MICROSECOND_SIGN/1000000));
+	}
+	    
+
+	if (seconds < 0) {			// a before epoch time
+	    value = (-seconds) * 1000000;
+	    value |= BEFORE_EPOCH;
+	} else {
+	    value = seconds * 1000000;
+	}
+
+	// add on the nanoseconds
 	value += nanoseconds / 1000;
+	// set mask
 	value |= Timestamp.MICROSECOND;
     }
 
@@ -67,7 +82,14 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return valueT / 1000000;
+	    if (isAfterEpoch()) {
+		return valueT / 1000000;
+	    } else {
+		// the time is before epoch
+		// so throw away the BEFORE_EPOCH bit
+		long valueB = valueT ^ BEFORE_EPOCH;
+		return -(valueB / 1000000);
+	    }
 	}
     }
 
@@ -80,8 +102,22 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return ((int)(valueT % 1000000)) * (int)1000;
+	    if (isAfterEpoch()) {
+		return ((int)(valueT % 1000000)) * (int)1000;
+	    } else {
+		// the time is before epoch
+		// so throw away the BEFORE_EPOCH bit
+		long valueB = valueT ^ BEFORE_EPOCH;
+		return ((int)(valueB % 1000000)) * (int)1000;
+	    }
 	}
+    }
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return MicrosecondScale.SCALE;
     }
 
     /**

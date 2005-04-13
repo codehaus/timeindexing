@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -15,7 +16,7 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
     /*
      * The mask used for before/after epoch
      */
-    public final static long BEFORE_EPOCH = (long)0x01 << 59;
+    public final static long BEFORE_EPOCH = Timestamp.SECOND_SIGN;
 
     /*
      * The value of the timestamp
@@ -44,7 +45,19 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
      * and a number of nanoseconds.
      */
     public SecondTimestamp(long seconds, int nanoseconds) {
-	value = seconds;
+	// check to see if the no of seconds is in the correct range.
+	if (Math.abs(seconds) > (Timestamp.SECOND_SIGN-1)) {   // the number is too big
+	    throw new IllegalArgumentException("The number of seconds is out of range. The maximum size is " + (Timestamp.SECOND_SIGN-1));
+	}
+	    
+	if (seconds < 0) {			// a before epoch time
+	    value = (-seconds);
+	} else {
+	    value = seconds;
+	}
+
+	// add on the nanoseconds
+	value += (nanoseconds / 1000000000);
 	value |= Timestamp.SECOND;
     }
 
@@ -66,17 +79,30 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
 	if (valueT == 0) {
 	    return 0;
 	} else {
-	    return valueT;
+	    if (isAfterEpoch()) {
+		return valueT;
+	    } else {
+		// the time is before epoch
+		// so throw away the BEFORE_EPOCH bit
+		long valueB = valueT ^ BEFORE_EPOCH;
+		return -(valueB);
+	    }
 	}
     }
 
     /**
      * Get the number of nanoseconds for this timestamp
+     * Always zero for SecondTimestamps.
      */
     public int getNanoSeconds() {
-	long valueT = value ^ Timestamp.SECOND;
-
 	return 0;
+    }
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return SecondScale.SCALE;
     }
 
     /**
