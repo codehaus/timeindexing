@@ -113,7 +113,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	    flush();
 
-	    initThread(originalIndexSpecifier);
+	    initThread(indexName + "-IOThread");
 	    startThread();
 	
 	    return position;
@@ -230,7 +230,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	long position = readMetaData();
 
-	initThread(originalIndexSpecifier);
+	initThread(indexName + "-IOThread");
 	startThread();
 
 	return position;
@@ -328,7 +328,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	IndexItem item = null;
 
-	System.err.println("InlineIndexIO: getItem " + position);
+	//System.err.println("InlineIndexIO: getItem " + position);
 
 	gotoFirstPosition();
 
@@ -535,13 +535,13 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    // sync the IO header with the index
 	    headerInteractor.syncWithIndex();
 
-	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+	    //System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
 
 	    // now copy it to the end of the indexChannel
 	    long headerSize = headerInteractor.writeToChannel(indexChannel);
 
 	    // now add the trailer which points to the header
-	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+	    //System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
 
 	    ByteBuffer trailerBuffer = ByteBuffer.allocate(24);
 	    trailerBuffer.putLong(FileType.TRAILER);
@@ -550,7 +550,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	    trailerBuffer.flip();
 	    indexChannel.write(trailerBuffer);
 
-	    System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
+	    //System.err.println("InlineIndexIO: size at close = " + channelSize + ". Position = " + indexChannel.position());
 	}
 
 	// really close the channel
@@ -567,7 +567,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	// end thread
 	if (stopThread() == null) {
-	    System.err.println("Thread is null?");
+	    System.err.println("InlineIndexIO: " + indexName + " Thread is null?");
 	}
 
 	return channelSize;
