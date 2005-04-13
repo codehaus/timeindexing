@@ -101,7 +101,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// set the ID, the startTime, first offset, last offset
 	ID indexID = new UID();
 	header.setID(indexID);
-	header.setStartTime(Clock.time.asMicros());
+	header.setStartTime(Clock.time.time());
 	header.setFirstOffset(new Offset(0));
 	header.setLastOffset(new Offset(0));
 
@@ -211,7 +211,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// as it's unique
 	long id = getLength();
 	// the record Timestamp is now (as microseconds)
-	Timestamp recordTS = Clock.time.asMicros();
+	Timestamp recordTS = Clock.time.time();
 	// the actual data Timestamp is the record Timestamp
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
@@ -277,7 +277,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// as it's unique
 	long id = getLength();
 	// the record Timestamp is now (as microseconds)
-	Timestamp recordTS = Clock.time.asMicros();
+	Timestamp recordTS = Clock.time.time();
 	// the actual data Timestamp is the record Timestamp
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
@@ -296,6 +296,22 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
     }
 
 
+    /**
+     * Get an Index Item from the Index.
+     */
+    public IndexItem getItem(long n) throws GetItemException {
+	setLastAccessTime();
+
+	// all items are in the cache for INCORE indexes
+	IndexItem item = indexCache.getItem(n);
+
+	// tell all the listeners that an item has been accessed
+	eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+
+	return item;
+    }
+
+
 
    /**
      * Close this index.
@@ -304,7 +320,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
-	    header.setEndTime(Clock.time.asMicros());
+	    header.setEndTime(Clock.time.time());
 	}
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
