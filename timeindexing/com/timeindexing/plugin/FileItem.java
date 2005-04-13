@@ -45,8 +45,8 @@ public class FileItem implements ReaderPlugin {
 
 	    // now memory map the file in
 	    buffer = inputChannel.map(FileChannel.MapMode.READ_ONLY, 0, inputChannel.size());
-	    System.err.println("FileItem: size = " + buffer.capacity() + 
-			       " is loaded = " + buffer.isLoaded());
+	    //System.err.println("FileItem: size = " + buffer.capacity() + 
+	    //	                 " is loaded = " + buffer.isLoaded());
 
 	    // hit EOF
 	    setEOF();
