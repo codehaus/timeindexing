@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -55,12 +56,19 @@ public class ElapsedSecondTimestamp implements RelativeTimestamp, SecondScale, S
        }
 	
     /**
+     * Construct a ElapsedSecondTimestamp from a Second TimeSpecifier.
+     */
+    public ElapsedSecondTimestamp(Second timeSpecifier) {
+	this((long)timeSpecifier.value(), (int)0);
+    }
+
+    /**
      * Construct a ElapsedSecondTimestamp from a number of seconds.
      */
     public ElapsedSecondTimestamp(long seconds, int nanoseconds) {
 	long ts = 0;
 
-	ts  = seconds;
+	ts  = seconds + (nanoseconds / 1000000000);
 
 	if (ts >= 0) {
 	    value = ts | Timestamp.ELAPSED_SECOND;
@@ -95,10 +103,17 @@ public class ElapsedSecondTimestamp implements RelativeTimestamp, SecondScale, S
     }
 
     /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return SecondScale.SCALE;
+    }
+
+    /**
      * Get the toString() version of a SecondTimestamp.
      */
     public String toString() {
-	return ("(" + (isNegative ? "-" : "") + new SecondElapsedFormat().format(this) + ")");
+	return ("(" + new SecondElapsedFormat().format(this) + ")");
     }
 
     /**
@@ -107,6 +122,13 @@ public class ElapsedSecondTimestamp implements RelativeTimestamp, SecondScale, S
      */
     public long value() {
 	return value;
+    }
+
+    /**
+     * Is the Timestamp negative.
+     */
+    public boolean isNegative() {
+	return isNegative;
     }
 
     /** 

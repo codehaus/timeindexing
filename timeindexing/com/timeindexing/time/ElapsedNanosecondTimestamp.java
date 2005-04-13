@@ -2,6 +2,7 @@
 
 package com.timeindexing.time;
 
+import com.timeindexing.basic.Scale;
 import java.util.Date;
 import java.io.Serializable;
 import java.io.IOException;
@@ -55,6 +56,13 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
     }
 	
    /**
+     * Construct a ElapsedNanosecondTimestamp from a Nanosecond TimeSpecifier.
+     */
+    public ElapsedNanosecondTimestamp(Nanosecond timeSpecifier) {
+	this((long)0, (int)(timeSpecifier.value()));
+    }
+
+   /**
      * Construct a ElapsedNanosecondTimestamp from a number of seconds
      * and a number of  nanoseconds.
      */
@@ -100,6 +108,13 @@ public class ElapsedNanosecondTimestamp implements RelativeTimestamp, Nanosecond
 		return ((int)(valueT % 1000000000)) * (int)1;
 	    }
 	}
+    }
+
+    /**
+     * Get the Scale.
+     */
+    public Scale getScale() {
+	return NanosecondScale.SCALE;
     }
 
     /**
