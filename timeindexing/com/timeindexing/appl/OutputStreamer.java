@@ -10,6 +10,7 @@ import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.plugin.OutputPlugin;
 import com.timeindexing.plugin.DefaultOutputPlugin;
+import com.timeindexing.plugin.DefaultWriter;
 
 
 import java.io.OutputStream;
@@ -32,7 +33,17 @@ public class OutputStreamer {
     public OutputStreamer(Index anIndex, OutputStream output) {
 	index = anIndex;
 	out = output;
-	outputPlugin = new DefaultOutputPlugin(index,out);
+	setOutputPlugin(new DefaultOutputPlugin(new DefaultWriter()));
+    }
+
+    /**
+     * Construct an OutputStreamer object given
+     * an index and an output stream and an OutputPlugin.
+     */
+    public OutputStreamer(Index anIndex, OutputStream output, OutputPlugin plugin) {
+	index = anIndex;
+	out = output;
+	setOutputPlugin(plugin);
     }
 
 
@@ -42,6 +53,8 @@ public class OutputStreamer {
      */
     public long doOutput(IndexProperties properties) throws IOException, TimeIndexException {
 	outputProperties = properties;
+
+	outputPlugin.setContext(index, out);
 
 	outputPlugin.begin();
 	writeCount = processTimeIndex((IndexView)index);
@@ -74,6 +87,20 @@ public class OutputStreamer {
 	return writeCount;
     }
 
+    /**
+     * Set an output plugin, to write to output.
+     */
+    public OutputStreamer setOutputPlugin(OutputPlugin plugin) {
+	outputPlugin = plugin;
+	return this;
+    }
+
+    /**
+     * Get the output plugin.
+     */
+    public OutputPlugin getOutputPlugin() {
+	return outputPlugin;
+    }
 
 
  }
