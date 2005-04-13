@@ -25,6 +25,16 @@ public class DefaultOutputPlugin implements OutputPlugin {
 
     /**
      * Construct an DefaultOutputPlugin object given
+     * just a WriterPlugin.
+     * The Index and the OutputStream will be set later using
+     * the setContext() method.
+     */
+    public DefaultOutputPlugin(WriterPlugin aPlugin) {
+	plugin = aPlugin;
+    }
+
+    /**
+     * Construct an DefaultOutputPlugin object given
      * an index and an output stream.
      * Uses the DefaultWriter plugin.
      */
@@ -36,12 +46,25 @@ public class DefaultOutputPlugin implements OutputPlugin {
 
     /**
      * Construct an DefaultOutputPlugin object given
-     * an index and an output stream.
+     * an index and an output stream and a WriterPlugin.
      */
     public DefaultOutputPlugin(Index anIndex, OutputStream output, WriterPlugin aPlugin) {
 	index = anIndex;
 	out = output;
 	setWriterPlugin(aPlugin);
+    }
+
+    /**
+     * Set the context for the OutputPlugin, which is
+     * the Index we are going output for, and the OutputStream
+     * that is being written to.
+     */
+    public OutputPlugin setContext(Index anIndex, OutputStream outStream) {
+	index = anIndex;
+	out = outStream;
+	setWriterPlugin(plugin);
+
+	return this;
     }
 
     /**
@@ -56,6 +79,23 @@ public class DefaultOutputPlugin implements OutputPlugin {
      */
     public OutputStream getOutputStream() {
 	return out;
+    }
+
+   
+    /**
+     * Set a writer plugin, to read input from the InputStream.
+     */
+    public OutputPlugin setWriterPlugin(WriterPlugin writer) {
+	plugin = writer;
+	plugin.setOutputStream(this.getOutputStream());
+	return this;
+    }
+
+    /**
+     * Get the writer plugin.
+     */
+    public WriterPlugin getWriterPlugin() {
+	return plugin;
     }
 
     /**
@@ -81,22 +121,5 @@ public class DefaultOutputPlugin implements OutputPlugin {
 	out.close();
 	return null;
     }
-   
-    /**
-     * Set a writer plugin, to read input from the InputStream.
-     */
-    public OutputPlugin setWriterPlugin(WriterPlugin writer) {
-	plugin = writer;
-	plugin.setOutputStream(this.getOutputStream());
-	return this;
-    }
-
-    /**
-     * Get the writer plugin.
-     */
-    public WriterPlugin getWriterPlugin() {
-	return plugin;
-    }
-
 
  }
