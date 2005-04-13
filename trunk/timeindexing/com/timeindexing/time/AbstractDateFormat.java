@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 
 /**
  * This abstact class has the base methods for objects that 
- * format absolute timestamps as dates.
+ * format timestamps as absolute dates.
  */
 public abstract class AbstractDateFormat implements TimestampFormatting {
     /*
@@ -21,12 +21,11 @@ public abstract class AbstractDateFormat implements TimestampFormatting {
      * Format a Timestamp.
      */
     public String format(Timestamp t) {
-	return format(t.getSeconds(), t.getNanoSeconds());
+	return format((AbsoluteTimestamp)t);
     }
 
     /**
-     * Format a time as seconds and nanoseconds.
+     * Format a AbsoluteTimestamp.
      */
-    public abstract String format(long seconds, int nanoseconds);
-
+    public abstract String format(AbsoluteTimestamp t);
 }
