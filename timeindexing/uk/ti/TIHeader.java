@@ -7,6 +7,7 @@ import com.timeindexing.index.ManagedIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.ManagedFileIndexItem;
+import com.timeindexing.index.TimeIndexFactory;
 import com.timeindexing.index.TimeIndexException;
 import java.io.File;
 import java.io.OutputStream;
@@ -21,7 +22,7 @@ import java.net.URI;
  * Header of a timeindex file to stdout.
  */
 public class TIHeader extends TIAbstractRestore {
-    IndexOpener factory = null;
+    TimeIndexFactory factory = null;
 
     Properties properties = null;
 
@@ -59,6 +60,7 @@ public class TIHeader extends TIAbstractRestore {
      */
     public boolean header(String filename, OutputStream output) throws TimeIndexException {
 	properties.setProperty("loadstyle", "none");
+	properties.setProperty("readonly", "true");
 	return doit(filename, output);
     }
 
@@ -107,10 +109,19 @@ public class TIHeader extends TIAbstractRestore {
 	buf.append("Terminated: " + (terminated ? "true" : "false"));
 	buf.append("\t");
 
+	boolean readonly = index.isReadOnly();
+	buf.append("ReadOnly: " + (readonly ? "true" : "false"));
+	buf.append("\t");
+
+	boolean locked = index.isWriteLocked();
+	buf.append("WriteLocked: " + (locked ? "true" : "false"));
+	buf.append("\t");
+
 	long dataSize = index.getDataSize();
 	buf.append("DataSize: " + (dataSize == 0 ? "variable" : ""+dataSize));
 	buf.append("\n");
 
+	/*
 	ManagedIndex mIndex = (ManagedIndex)index;
 
 	IndexProperties options = mIndex.getHeader().getAllOptions();
@@ -126,6 +137,7 @@ public class TIHeader extends TIAbstractRestore {
 	    buf.append("\n");
 	}
 
+	*/
 	try {
 	    out.write(buf.toString().getBytes());
 	} catch (java.io.IOException ioe) {
@@ -141,7 +153,7 @@ public class TIHeader extends TIAbstractRestore {
      * Initialise.
      */
     public boolean init() {
-	factory = new IndexOpener();
+	factory = new TimeIndexFactory();
 
 	properties = new Properties();
 
@@ -181,7 +193,7 @@ public class TIHeader extends TIAbstractRestore {
     /**
      * Close 
      */
-    public void close() {
+    public void close() throws TimeIndexException {
 	// close the index
 	boolean doClose = Boolean.valueOf(properties.getProperty("close")).booleanValue();
 	if (doClose) {
