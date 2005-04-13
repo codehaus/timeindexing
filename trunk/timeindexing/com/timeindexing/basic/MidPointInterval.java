@@ -7,6 +7,7 @@ import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.RelativeTimestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.time.TimestampMapping;
+import com.timeindexing.time.TimeSpecifier;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
@@ -14,46 +15,28 @@ import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.index.GetItemException;
 
 /**
- * A mid-point interval is an interval where the arguments
- * are a mid-point plus 2 offsets from that mid-point.  The interval
- * can be resolved into two positions into an Index.  Neither
+ * A better interval is an interval where the arguments
+ * are a mid-point plus 2 values from that mid-point. Neither
  * of the specifiers can be adjusted.
- *  * <ul>
- * <li> AbsoluteTimestamp, - Count, + Count
- * <li> AbsoluteTimestamp, - RelativeTimestamp, + RelativeTimestamp
- * <li> Position, - Count, + Count
- * <li> Position, - RelativeTimestamp, + RelativeTimestamp
+ *
+ * <ul>
+ * <li> AbsoluteTimestamp, Value, Value
+ * <li> Position, Value , Value
+ * </ul>
+ * where the values  are:
+ * <ul>
+ * <li> Count
+ * <li> Position
+ * <li> AbsoluteTimestamp
+ * <li> RelativeTimestamp
+ * <li> TimeSpecifier
  * </ul>
  */
 public class MidPointInterval extends AbsoluteInterval implements Interval, Cloneable {
     /*
-     * Definitions for each style of the Interval specifiers.
-     */
-
-    /**
-     * A Timestamp to 2 Count specifiers.
-     */
-    public final static int ABSOLUTETIMESTAMP_COUNT_COUNT = 10;
-
-    /**
-     * A Timestamp to 2 Timestamp specifiers.
-     */
-    public final static int ABSOLUTETIMESTAMP_RELATIVETIMESTAMP_RELATIVETIMESTAMP = 11;
-
-    /**
-     * A Position plus 2 Count specifiers.
-     */
-    public final static int POSITION_COUNT_COUNT = 12;
-
-    /**
-     * A Position plus 2 Timestamp specifiers.
-     */
-    public final static int POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP = 13;
-
-    /*
      * The mid Position.
      */
-    Position midPosition = null;
+    AbsolutePosition midPosition = null;
 
     /*
      * The mid Timestamp.
@@ -61,95 +44,162 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
     AbsoluteTimestamp midTimestamp  = null;
 
     /*
-     * A Count object.
+     * Start value
      */
-    Count count1 = null;
+    Value startValue = null;
 
     /*
-     * A Count object.
+     * End value
      */
-    Count count2 = null;
+    Value endValue = null;
 
     /*
-     * A relative Timestamp.
+     * Is the mid point an AbsoluteTimestamp\
      */
-    RelativeTimestamp offset1 = null;
-
-    /*
-     * A relative Timestamp.
-     */
-    RelativeTimestamp offset2 = null;
-
-    /*
-     * What style was the Interval specified as.
-     */
-    int style = -1;  // start with an illegal value
-
+    boolean midPointIsTimestamp = false;
 
     /**
-     * Construct an MidPointInterval from a Timestamp and 2 Counts.
+     * The resolved mid point.
      */
-    public MidPointInterval(AbsoluteTimestamp t0, Count c1, Count c2) {
-	checkNulls(t0, c1, c2);
+    TimestampMapping midPoint = null;
+
+    /**
+     * Construct an MidPointInterval from a Timestamp and 2 Values
+     */
+    public MidPointInterval(AbsoluteTimestamp t0, Value v1, Value v2) {
+	checkNulls(t0, v1, v2);
 	
 	midTimestamp = t0;
-	count1 = c1;
-	count2 = c2;
+	startValue = v1;
+	endValue = v2;
 
-	style = ABSOLUTETIMESTAMP_COUNT_COUNT;
 	resolved = false;
+	midPointIsTimestamp = true;
     }
 
     /**
-     * Construct an MidPointInterval from a Timestamp and 2 RelativeTimestamps.
+     * Construct an MidPointInterval from a Position and 2 Values
      */
-    public MidPointInterval(AbsoluteTimestamp t0, RelativeTimestamp rt1, RelativeTimestamp rt2) {
-	checkNulls(t0, rt1, rt2);
-	
-	midTimestamp = t0;
-	offset1 = rt1;
-	offset2 = rt2;
-
-	style = ABSOLUTETIMESTAMP_RELATIVETIMESTAMP_RELATIVETIMESTAMP;
-	resolved = false;
-    }
-
-    /**
-     * Construct an MidPointInterval from a Position and 2 Counts.
-     */
-    public MidPointInterval(Position p0, Count c1, Count c2) {
-	checkNulls(p0, c1, c2);
+    public MidPointInterval(AbsolutePosition p0, Value v1, Value v2) {
+	checkNulls(p0, v1, v2);
 	
 	midPosition = p0;
-	count1 = c1;
-	count2 = c2;
+	startValue = v1;
+	endValue = v2;
 
-	AdjustablePosition newStart = new AbsoluteAdjustablePosition(p0);
-	newStart.adjust(c1);
-	AdjustablePosition newEnd = new AbsoluteAdjustablePosition(p0);
-	newEnd.adjust(c2);
-
-	start = new AbsolutePosition(newStart);
-	end = new AbsolutePosition(newEnd);
-
-	style = POSITION_COUNT_COUNT;
-	resolved = true;
+	resolved = false;
+	midPointIsTimestamp = false;
     }
 
     /**
-     * Construct an MidPointInterval from a Timestamp and 2 RelativeTimestamps.
+     * Resolve this interval w.r.t a specified index.
+     * The IndexTimestampSelector determines whether to use Index timestamps or 
+     * Data timestamps.
+     * The Lifetime determines whether timestamps are continuous or discrete.
+     * This only affects start points and midpoints.
+     * Returns a clone with resolved positions.
      */
-    public MidPointInterval(Position p0, RelativeTimestamp rt1, RelativeTimestamp rt2) {
-	checkNulls(p0, rt1, rt2);
-	
-	midPosition = p0;
-	offset1 = rt1;
-	offset2 = rt2;
+    public AbsoluteInterval resolve(Index index, IndexTimestampSelector selector, Lifetime lifetime) {
+	MidPointInterval newInterval = null;
+	Position startPos = null;
+	Position endPos = null;
 
-	style = POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP;
-	resolved = false;
+	try {
+	    // allocate a new Interval for the result
+	    newInterval = (MidPointInterval)this.clone();
+
+	    if (midPointIsTimestamp) {  // mid point is Timestamp
+		// determine the position of the mid timestamp
+		midPoint = index.locate(midTimestamp, selector, lifetime);
+
+		if (midPoint == null) {
+		    // it couldn't be found
+		    return null;
+		} else {
+		    startPos = resolveValue(index, midPoint, startValue, selector, lifetime);
+		    endPos = resolveValue(index, midPoint, endValue, selector, Lifetime.CONTINUOUS);
+		}
+	    } else {                    // mid point is Position
+		// determine the timestamp of the midpoint
+		midPoint = index.locate(midPosition, selector, lifetime);
+
+
+		if (midPoint == null) {
+		    // it couldn't be found
+		    return null;
+		} else {
+		    startPos = resolveValue(index, midPoint, startValue, selector, lifetime);
+		    endPos = resolveValue(index, midPoint, endValue, selector, Lifetime.CONTINUOUS);
+		}
+
+	    }
+
+	    // now fill in the resulting new interval
+	    if (startPos.value() < endPos.value()) {  // startPos before endPos
+		newInterval.start = startPos;
+		newInterval.end = endPos;
+		newInterval.resolved = true;
+	    } else {
+		newInterval.start = endPos;
+		newInterval.end = startPos;
+		newInterval.resolved = true;
+	    }
+
+	    return newInterval;
+
+	} catch (CloneNotSupportedException cnse) {
+	    return null;
+	}
     }
 
+    /**
+     * Resolve a Value w.r.t a Position.
+     */
+    protected Position resolveValue(Index index, TimestampMapping posMid, Value value, IndexTimestampSelector selector, Lifetime lifetime) {
+	if (value instanceof Count) {
+	    Count count = (Count)value;
+
+	    // calculate the new position given the mid pos and a count
+	    Position result = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posMid).adjust(count));
+
+	    return result;
+
+	} else if (value instanceof RelativeTimestamp) {
+	    RelativeTimestamp offset = (RelativeTimestamp)value;
+
+	    // calculate a new TS given the mid pos and a RelativeTimestamp
+	    Timestamp newTS = TimeCalculator.addTimestamp(posMid.timestamp(), offset);
+
+	    // now locate the position for the new TS
+	    TimestampMapping result = index.locate(newTS, selector, lifetime);
+
+	    return result;
+	} else if (value instanceof AbsoluteTimestamp) {
+	    AbsoluteTimestamp time = (AbsoluteTimestamp)value;
+
+	    // now locate the position for the timestamp
+	    TimestampMapping result = index.locate(time, selector, lifetime);
+
+	    return result;
+	    
+	} else if (value instanceof Position) {
+	    // nothing to do
+	    return (Position)value;
+	} else if (value instanceof TimeSpecifier) {
+	    TimeSpecifier timeSpecifier = (TimeSpecifier)value;
+
+	    // instantiate the time specifier w.r.t the midtime
+	    Timestamp time = timeSpecifier.instantiate(posMid.timestamp());
+
+	    // now locate the position for the timestamp
+	    TimestampMapping result = index.locate(time, selector, lifetime);
+
+	    return result;
+	} else {
+	    throw new Error("resolveValue got argument of type: " + value.getClass().getName() + " which can't be accepted");
+	}
+    }
+	
     /**
      * This used to check for nulls in the constructor.
      * If no exception is thrown things are good.
@@ -166,117 +216,6 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 	}
     }
 
-    /**
-     * Resolve this interval w.r.t a specified index.
-     * The IndexTimestampSelector determines whether to use Index timestamps or 
-     * Data timestamps.
-     * The Lifetime determines whether timestamps are continuous or discrete.
-     * This only affects start points and midpoints.
-     * Returns a clone with resolved positions.
-     */
-    public AbsoluteInterval resolve(Index index, IndexTimestampSelector selector, Lifetime lifetime) {
-	MidPointInterval newInterval = null;
-
-	try {
-	    switch (style) {
-	    case ABSOLUTETIMESTAMP_COUNT_COUNT: {
-		TimestampMapping posMid = index.locate(midTimestamp, selector, lifetime);
-
-
-		if (posMid == null) {
-		    return null;
-		} else {
-		    // resolved start time
-		    newInterval = (MidPointInterval)this.clone();
-
-		    newInterval.start = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posMid).adjust(count1));
-		    newInterval.end = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posMid).adjust(count2));
-
-		    newInterval.resolved = true;
-		    return newInterval;
-		}
-	    }
-
-
-	    case ABSOLUTETIMESTAMP_RELATIVETIMESTAMP_RELATIVETIMESTAMP: {
-		TimestampMapping posMid = index.locate(midTimestamp, selector, lifetime);
-		// calcualte the start timestamp
-		Timestamp startTS = TimeCalculator.addTimestamp(posMid.timestamp(), offset1);
-		// calcualte the end timestamp
-		Timestamp endTS = TimeCalculator.addTimestamp(posMid.timestamp(), offset2);
-
-		TimestampMapping posStart = index.locate(startTS, selector, lifetime);
-		TimestampMapping posEnd = index.locate(endTS, selector, Lifetime.CONTINUOUS);
-
-		if (posStart == null || posEnd == null) {
-		    return null;
-		} else {
-		    // both resolved
-		    newInterval = (MidPointInterval)this.clone();
-
-		    newInterval.start = (Position)posStart;
-		    newInterval.end = (Position)posEnd;
-
-		    newInterval.resolved = true;
-		    return newInterval;
-		}
-	    }
-
-	    case POSITION_COUNT_COUNT: {
-		// nothing to do
-		return newInterval;
-	    }
-
-	    case POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: {
-		IndexItem item = null;
-		Timestamp midTS = null;
-		Timestamp startTS = null;
-		Timestamp endTS = null;
-
-		try {
-		    item = index.getItem(midPosition);
-		} catch (GetItemException gie) {
-		    return null;
-		}
-
-		if (selector == IndexTimestampSelector.DATA) {
-		    midTS = item.getDataTimestamp();
-		    System.err.println("POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP data TS = " + midTS);
-		} else {
-		    midTS = item.getIndexTimestamp();
-		    System.err.println("POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: index TS = " + midTS);
-		}
-
-		// calcualte the start and the end timestamp
-		startTS = TimeCalculator.addTimestamp(midTS, offset1);
-		endTS = TimeCalculator.addTimestamp(midTS, offset2);
-		System.err.println("POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: startTS = " + startTS + " end TS = " + endTS);
-		
-		TimestampMapping posStart = index.locate(startTS, selector, lifetime);
-		TimestampMapping posEnd = index.locate(endTS, selector, Lifetime.CONTINUOUS);
-
-		System.err.println("POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: start = " + posStart + " end = " + posEnd);
-
-		if (posStart == null || posEnd == null) {
-		    return null;
-		} else {
-		    // both resolved
-		    newInterval = (MidPointInterval)this.clone();
-
-		    newInterval.start = (Position)posStart;
-		    newInterval.end = (Position)posEnd;
-
-		    newInterval.resolved = true;
-		    return newInterval;
-		}
-	    }
-	    default:
-		throw new Error("MidPointInterval: Unexpected value for style => " + style);
-	    }
-	} catch (CloneNotSupportedException cnse) {
-	    return null;
-	}
-    }
 
     /**
      * Clone me
@@ -293,33 +232,33 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 
 	buffer.append("Interval (");
 
-	switch (style) {		
-	case ABSOLUTETIMESTAMP_COUNT_COUNT: {
-	    buffer.append( count1 + " , " + midTimestamp + " , " + count2);
-	    break;
+	buffer.append(startValue.toString());
+	buffer.append(" <- ");
+
+	if (midPointIsTimestamp) {
+	    buffer.append(midTimestamp.toString());
+	} else {
+	    buffer.append(midPosition.toString());
 	}
 
-	case ABSOLUTETIMESTAMP_RELATIVETIMESTAMP_RELATIVETIMESTAMP: {
-	    buffer.append( offset1 + " , " + midTimestamp + " , " + offset2);
-	    break;
-	}
-
-	case POSITION_COUNT_COUNT: {
-	    buffer.append( count1 + " , " + midPosition + " , " + count2);
-	    break;
-	}
-
-	case POSITION_RELATIVETIMESTAMP_RELATIVETIMESTAMP: {
-	    buffer.append( offset1 + " , " + midPosition + " , " + offset2);
-	    break;
-	}
-	default:
-	    throw new Error("MidPointInterval: Unexpected value for style => " + style);
-	}
-
+	buffer.append(" -> ");
+	buffer.append(endValue.toString());
 	buffer.append(")");
+
+	if (isResolved()) {
+	    buffer.append(" == ");
+	    buffer.append(" (");
+	    buffer.append(start().toString());
+	    buffer.append(" <- ");
+	    buffer.append(midPoint.toString());
+	    buffer.append(" -> ");
+	    buffer.append(end().toString());
+	    buffer.append(")");
+
+	}
 
 	return buffer.toString();
     }
+
 
 }
