@@ -31,11 +31,15 @@ public class SelectionStreamer extends OutputStreamer  {
     public long doOutput(IndexProperties properties) throws IOException, TimeIndexException {
 	outputProperties = properties;
 
+	outputPlugin.setContext(index, out);
+
 	outputPlugin.begin();
 	SelectionProcessor selector = new SelectionProcessor();
  
 	IndexView selection = selector.select((IndexView)index, properties);
+
 	writeCount = processTimeIndex((IndexView)selection);
+
 	outputPlugin.end();
 
 	return writeCount;
