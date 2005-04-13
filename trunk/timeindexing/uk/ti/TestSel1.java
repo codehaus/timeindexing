@@ -12,10 +12,12 @@ import com.timeindexing.time.Clock;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.*;
 import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.basic.Overlap;
+import com.timeindexing.basic.RelativeCount;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Properties;
@@ -55,7 +57,7 @@ public class TestSel1 {
 	    properties.setProperty("indexpath", args[0]);
 	} else if (args.length == 0) {
 	    // use default from Test5
-	    properties.setProperty("indexpath", "/tmp/test5");
+	    properties.setProperty("indexpath", "/tmp/test5e");
 	} else {
 	    ;
 	}
@@ -73,18 +75,14 @@ public class TestSel1 {
 		System.exit(0);
 	    }
 
-	    Timestamp t1 = Clock.time.asMillis();
-
-	    System.out.print("t0: " + t0 + " ");
-	    System.out.print("t1: " + t1 + " ");
-	    System.out.print("time: " + TimeCalculator.elapsedSince(t0) + " ");
-	    System.out.print("Length: " + index.getLength() + " items, ");
 	    System.out.println();
 	
-	    IndexView narrow1 = index.select(new EndPointInterval(new AbsolutePosition(10),
-								  new AbsolutePosition(40)),
+	    System.out.println("Narrowing. index -> narrow1");
+
+	    IndexView narrow1 = index.select(new EndPointInterval(new AbsolutePosition(55),
+								  new AbsolutePosition(95)),
 					     IndexTimestampSelector.DATA, Overlap.FREE,
-					     Lifetime.CONTINUOUS);
+					     Lifetime.DISCRETE);
 
 
 	    if (narrow1 == null) {
@@ -93,16 +91,116 @@ public class TestSel1 {
 		printIndex(narrow1);
 	    }
 
+	    System.out.println("Narrowing. narrow1 -> narrow2");
+
 	    IndexView narrow2 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
-								    new AbsolutePosition(20)),
+								    new Second(2, TimeDirection.FORWARD_DT)),
 					       IndexTimestampSelector.DATA, Overlap.FREE,
-					       Lifetime.CONTINUOUS);
+					       Lifetime.DISCRETE);
 
 
 	    if (narrow2 == null) {
 		System.err.println("Didn't do selection properly");
 	    } else {
 		printIndex(narrow2);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow3");
+
+	    IndexView narrow3 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
+								    new AbsolutePosition(30)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow3 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow3);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow4");
+
+	    IndexView narrow4 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
+								    new RelativeCount(10)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow4 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow4);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow5");
+
+	    IndexView narrow5 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
+								    new ElapsedSecondTimestamp(2)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow5 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow5);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow6");
+
+	    IndexView narrow6 = narrow1.select(new EndPointInterval(new MillisecondTimestamp(10, 900000000),
+								    new Second(2, TimeDirection.FORWARD_DT)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow6 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow6);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow7");
+
+	    IndexView narrow7 = narrow1.select(new EndPointInterval(new MillisecondTimestamp(10, 900000000),
+								    new AbsolutePosition(30)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow7 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow7);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow8");
+
+	    IndexView narrow8 = narrow1.select(new EndPointInterval(new MillisecondTimestamp(10, 900000000),
+								    new RelativeCount(10)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow8 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow8);
+	    }
+
+	    System.out.println("Narrowing. narrow1 -> narrow9");
+
+	    IndexView narrow9 = narrow1.select(new EndPointInterval(new MillisecondTimestamp(10, 900000000),
+								    new ElapsedSecondTimestamp(2)),
+					       IndexTimestampSelector.DATA, Overlap.FREE,
+					       Lifetime.DISCRETE);
+
+
+	    if (narrow9 == null) {
+		System.err.println("Didn't do selection properly");
+	    } else {
+		printIndex(narrow9);
 	    }
 
 	    factory.close(index);
@@ -114,23 +212,21 @@ public class TestSel1 {
     }
 
     public static void printIndex(IndexView index) throws TimeIndexException {
+	System.out.print("Interval:" + index.getSelectionInterval() + " ");
+	System.out.print("Start: " + index.getStartPosition() + " ");
+	System.out.print("End: " + index.getEndPosition() + "\n");
+
+	System.out.print("Length: " + index.getLength() + " items\n");
+
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("Start: " + index.getStartTime() + " ");
 	System.out.print(" End: " + index.getEndTime() + " ");
-
-	System.out.print("Length: " + index.getLength() + " items, ");
 	System.out.println();
 
 	System.out.print("First: " + index.getFirstTime() + " ");
 	System.out.print("Last: " + index.getLastTime() + " ");
-
-	System.out.print("ID:" + index.getID());
 	System.out.println();
 
-	System.out.print("Start: " + index.getStartPosition() + " ");
-	System.out.print("End: " + index.getEndPosition() + " ");
-
-	System.out.print("Interval:" + index.getSelectionInterval());
 	System.out.println();
 
 	System.out.println();
@@ -150,7 +246,7 @@ public class TestSel1 {
     public static void printIndexItem(IndexItem item) throws TimeIndexException  {
 	StringBuffer out = new StringBuffer(256);
 
-	out.append(item.getDataTimestamp() + "\t");
+	out.append(item.getDataTimestamp() + "  \t");
 
 	out.append(item.getIndexTimestamp() + "\t");
 
@@ -159,9 +255,12 @@ public class TestSel1 {
 	String rawData = null;	
 	String outData = null;
 
+	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
 
-	if (item.getDataSize().value() > 32) {
-	    rawData = new String(itemdata.array()).substring(0,27);
+	out.append(itemM.getPosition() + "\t");
+
+	if (item.getDataSize().value() > 26) {
+	    rawData = new String(itemdata.array()).substring(0,21);
 	    outData = rawData.replace('\n', (char)182);
 	    out.append(outData + ".... ");
 	} else {
@@ -170,25 +269,13 @@ public class TestSel1 {
 
 	    out.append(outData);
 
-            for (int c=rawData.length(); c <= 30; c++) {
+            for (int c=rawData.length(); c <= 24; c++) {
 		out.append('_');
 	    }
 	    out.append(" ");
 	}
 
-	out.append(item.getDataSize() + "\t");
-
-	out.append(item.getItemID() + "\t");
-
-	out.append(item.getAnnotations() + "\t");
-
-	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
-
-	out.append(itemM.getPosition() + "\t");
-
-	out.append(itemM.getIndexOffset() + "\t");
-
-	out.append(itemM.getDataOffset() + "\t");
+	out.append(item.getDataSize());
 
 	out.append("\n");
 
