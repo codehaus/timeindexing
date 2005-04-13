@@ -23,6 +23,18 @@ import com.timeindexing.time.*;
 /**
  * This class is used by applications to do processing
  * of values in order to get selection from an Index.
+ * <p>
+ * The values passed to the SelectionProcessor get passed in 
+ * as an IndexProperties object.
+ * Types of values in the properties are:
+ * <ul>
+ * <li> "startpos" -> value accepted by PositionParser
+ * <li> "starttime" -> value accepted by TimeParser
+ * <li> "endpos" ->  value accepted by PositionParser
+ * <li> "endtime" -> value accepted by TimeParser
+ * <li> "count" -> value accepted by CountParser
+ * <li> "for" -> value accepted by TimeParser
+ * </ul>
  */
 public class SelectionProcessor {
 
@@ -36,9 +48,18 @@ public class SelectionProcessor {
     /**
      * Process a selction given an Index and some index properties.
      * It will ignore properties not relevant to the selection.
+     * It uses a Lifetime enumeration of DISCRETE.
      */
     public IndexView select(IndexView index, IndexProperties properties) {
-	Position startPos = null;
+	return select(index, properties, Lifetime.DISCRETE);
+    }
+
+    /**
+     * Process a selction given an Index and some index properties.
+     * It will ignore properties not relevant to the selection.
+     */
+    public IndexView select(IndexView index, IndexProperties properties, Lifetime lifetime) {
+	AbsolutePosition startPos = null;
 	Position endPos = null;
 	AbsoluteTimestamp startTime = null;
 	boolean useStartPos = false;
@@ -48,6 +69,9 @@ public class SelectionProcessor {
 	CountParser countParser = new CountParser();
 	TimeParser timeParser = new TimeParser();
 
+	/*
+	 * Determine start of selection.
+	 */
 	if (properties.containsKey("startpos")) {
 	    // convert string to position object
 	    startPos = positionParser.parse((String)properties.get("startpos"));
@@ -73,6 +97,10 @@ public class SelectionProcessor {
 	    useStartPos = true;
 	}
 	    
+	/*
+	 * Determine end of selection.
+	 * We already know something about the start of the selection.
+	 */
 	if (properties.containsKey("endpos")) {
 	    // convert string to position object
 	    endPos = positionParser.parse((String)properties.get("endpos"));
@@ -168,7 +196,7 @@ public class SelectionProcessor {
 	System.err.println("Interval = " + interval);
 	
 	// select from the interval
-	selection = index.select(interval, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
+	selection = index.select(interval, IndexTimestampSelector.DATA, Overlap.FREE, lifetime);
 
 	return selection;
     }
