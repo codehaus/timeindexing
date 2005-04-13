@@ -3,16 +3,22 @@
 package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.time.TimeCalculator;
+import com.timeindexing.time.SecondTimestamp;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
 import com.timeindexing.basic.SID;
-import com.timeindexing.basic.Interval;
 import com.timeindexing.basic.AbsolutePosition;
+import com.timeindexing.basic.AbsoluteAdjustablePosition;
 import com.timeindexing.basic.Position;
+import com.timeindexing.basic.Overlap;
+import com.timeindexing.basic.Interval;
+import com.timeindexing.basic.AbsoluteInterval;
+import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.IndexCache;
 import com.timeindexing.cache.CachePolicy;
@@ -417,7 +423,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	if (selector == IndexTimestampSelector.DATA) {
 	    if (TimeCalculator.lessThanEquals(this.getFirstDataTime(), t) &&
 		TimeCalculator.lessThanEquals(t, this.getLastDataTime())) {
-		System.err.println("DataTS = " + t + " is contained in " +
+		System.err.println("Index " + getName() + ": DataTS = " + t + " is contained in " +
 				   this.getFirstDataTime() + " to " +
 				   this.getLastDataTime());
 		return true;
@@ -427,7 +433,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} else {
 	    if (TimeCalculator.lessThanEquals(this.getFirstTime(), t) &&
 		TimeCalculator.lessThanEquals(t, this.getLastTime())) {
-		System.err.println("IndexTS = " + t + " is contained in " +
+		System.err.println("Index " + getName() + ": IndexTS = " + t + " is contained in " +
 				   this.getFirstTime() + " to " +
 				   this.getLastTime());
 		return true;
@@ -445,25 +451,39 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
 	//System.err.println("AbstractIndex: locate: " + "TS = " + t);
 
+	System.err.println("Index " + getName() + ": locating: " + t);
+
 	if (! contains(t, selector)) { // timestamp t is not in this index
 	    // now try and determine if it is too low or too high
 	    if (selector == IndexTimestampSelector.DATA) {
 		if (TimeCalculator.lessThan(t, this.getFirstDataTime())) {
+		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
 		    return new TimestampMapping(t, Position.TOO_LOW);
+
 		} else if (TimeCalculator.greaterThan(t, this.getLastDataTime())) {
+		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
 		    return new TimestampMapping(t, Position.TOO_HIGH);
+
 		} else {
-		    throw new RuntimeException("AbstractIndex: locate failed to process timestamp " + t + ". First Data time = " + this.getFirstDataTime() + ". Last Data time = " + this.getLastDataTime() + ".");
+		    throw new RuntimeException(getName() + ": locate failed to process timestamp " + t + ". First Data time = " + this.getFirstDataTime() + ". Last Data time = " + this.getLastDataTime() + ".");
+
 		}
+
 	    } else {
 		if (TimeCalculator.lessThan(t, this.getFirstTime())) {
+		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
 		    return new TimestampMapping(t, Position.TOO_LOW);
+
 		} else if (TimeCalculator.greaterThan(t, this.getLastTime())) {
+		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
 		    return new TimestampMapping(t, Position.TOO_HIGH);
+
 		} else {
-		    throw new RuntimeException("AbstractIndex: locate failed toprocess  timestamp " + t + ". First Index time = " + this.getFirstTime() + ". Last Index time = " + this.getLastTime() + ".");
+		    throw new RuntimeException(getName() + ": locate failed toprocess  timestamp " + t + ". First Index time = " + this.getFirstTime() + ". Last Index time = " + this.getLastTime() + ".");
+
 		}
 	    }
+
 	} else {
 	    // ensure the searchTree i set up
 	    if (searchTree == null) {
@@ -474,7 +494,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    // and build up a tree cache for later reuse.
 	    try {
 		TimestampMapping mapping = binarySearch(t, 0, getLength()-1, selector, lifetime, 0);
-		System.err.println("AbstractIndex: locate: " + "mapping = " + mapping);
+		System.err.println("Index " + getName() + ": location of " + t +  " => " + mapping);
 		return mapping;
 	    } catch (GetItemException gie) {
 		return null;
@@ -604,6 +624,149 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    return binarySearch(t, halfway, end, selector, lifetime, depth+1);
 	}
     }
+
+
+    /**
+     * Select an Interval.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(Interval interval, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime) {
+	if (interval instanceof AbsoluteInterval) {
+	    AbsoluteInterval absInterval = (AbsoluteInterval)interval;
+	    AbsoluteInterval resolvedInterval = null;
+
+	    System.err.println("Index " + getName() + ": selecting " + interval);
+	
+
+	    if (! absInterval.isResolved()) { // not resolved yet
+		// so resolve the interval w.r.t this index
+		resolvedInterval = absInterval.resolve(this, selector, lifetime);
+	    } else {
+		resolvedInterval = absInterval;
+	    }
+
+	    if (resolvedInterval == null) { // it was not possible to resolved the Interval
+		return null;
+	    } else {
+		// the interval has resolved
+		// so now we try to determine the new selection
+
+		Position intervalStart = ((Position)resolvedInterval.start()).position();
+		Position intervalEnd = ((Position)resolvedInterval.end()).position();
+		long selectionLength = 0;
+
+		System.err.println("Index " + getName() + ": preliminary intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
+
+		if (overlap == Overlap.STRICT) {
+		    // if the Interval must have strict overlap with 
+		    // the index then complain if the start or the end
+		    // position is out of bounds
+
+		    if (intervalStart == Position.TOO_LOW) {
+			throw new PositionOutOfBoundsException("Can't select before the start of an Index");
+		    }
+
+		    if (intervalEnd == Position.TOO_HIGH) {
+			throw new PositionOutOfBoundsException("Can't select beyond the end of an Index");
+		    }
+
+		} else {
+		    // if (overlap == Overlap.FREE)
+
+		    // if the Interval can overlap freely with 
+		    // the index then, if the start or the end
+		    // position is out of bounds, we can
+		    // do some tweaking on the intervalStart and intervalEnd
+		    // to get a valid interval
+
+		    if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_LOW) { // both TOO_LOW
+			selectionLength = 0;
+
+		    } else if (intervalStart == Position.TOO_HIGH && intervalEnd == Position.TOO_HIGH) { // both TOO_HIGH
+			selectionLength = 0;
+
+		    } else if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH) { // start too low, end too high
+			//System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
+			intervalStart =  new AbsolutePosition(0); //getStartPosition(); // new AbsolutePosition(0);
+			intervalEnd = new AbsolutePosition(getLength()-1); //getEndPosition();     // new AbsolutePosition(getLength()-1);
+			selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+		    } else if (intervalStart == Position.TOO_LOW) { // intervalStart TOO_LOW
+			intervalStart =  new AbsolutePosition(0);  //getStartPosition();  // new AbsolutePosition(0);
+
+			// check the end position also
+			if (intervalEnd.value() >= getLength()) {
+			    // if it's too high reset it
+			    intervalEnd =  new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+			} else {
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			}
+
+		    } else if (intervalEnd == Position.TOO_HIGH) {  // intervalEnd TOO_HIGH
+			intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
+
+			// check the start position also
+			if (intervalStart.value() >= getLength()) {
+			    // if it's too high reset it
+			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition();     //new AbsolutePosition(getLength()-1);
+			    selectionLength = 0;
+
+			} else {
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+
+			}
+
+		    } else {
+			// check the start and end position
+			if (intervalStart.value() >= getLength()) {
+			    // intervalEnd.value() MUST BE > getLength() due to the nature of Intervals
+			    // both too high so reset them
+			    intervalStart = new AbsolutePosition(getLength()-1);  // getEndPosition(); // new AbsolutePosition(getLength()-1);
+			    intervalEnd = new AbsolutePosition(getLength()-1);  // getEndPosition(); //new AbsolutePosition(getLength()-1);
+			    selectionLength = 0;
+
+			} else if (intervalEnd.value() >= getLength()) {
+			    // if end is too high reset it
+			    intervalEnd =  new AbsolutePosition(getLength()-1); // getEndPosition(); //new AbsolutePosition(getLength()-1);
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			} else {
+			    // both OK
+			    selectionLength = intervalEnd.value() - intervalStart.value() + 1;
+			}
+		    }
+
+		}
+
+		System.err.println("Index " + getName() + ": resolved intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd + " selectionLength = " + selectionLength);
+
+		// The interval has been determined
+		// so we set up the IndexView with the right values
+		TimeIndex selection = new TimeIndex(this);
+
+		// setup the new selection values
+		selection.selectionInterval = interval;
+		selection.selectionLength = selectionLength;
+		selection.isSelection = true;
+		selection.selectionIndexView = null;
+		selection.isTerminated = true;
+		selection.position = new AbsoluteAdjustablePosition(0);
+		selection.mark = null;
+
+		// setup the start and end values
+
+		selection.start = intervalStart;
+		selection.end = intervalEnd;
+
+		return selection;
+	    }
+
+	} else {	// don't process RelativeIntervals
+	    return null;
+	}
+    }
+
 
     /**
      * Determine if one Position is lessthan another Position.
@@ -767,6 +930,4 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public void removeAccessEventListener(IndexAccessEventListener l) {
 	eventMulticaster.removeAccessEventListener(l);
     }
-
-
 }
