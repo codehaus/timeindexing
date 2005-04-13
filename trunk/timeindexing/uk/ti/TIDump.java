@@ -52,7 +52,7 @@ public class TIDump extends TIAbstractRestore {
 	    }
 
 	} catch (TimeIndexException tie) {
-	    System.err.println("Cannot open index \"" + args[0] + "\"");
+	    System.err.println("Cannot open index \"" + args[0] + "\" because " + tie);
 	}
 
     }
@@ -94,8 +94,6 @@ public class TIDump extends TIAbstractRestore {
      * Print an individual IndexItem to the OutputStream.
      */
     protected void printIndexItem(IndexItem item, OutputStream out) {
-	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
-
 	StringBuffer buf = new StringBuffer(256);
 
 	buf.append(item.getDataTimestamp() + "\t");
@@ -134,9 +132,11 @@ public class TIDump extends TIAbstractRestore {
 	    }
 	}
 
-	buf.append(itemM.getDataType() + "\t");
+	buf.append(item.getDataType() + "\t");
 
-	buf.append(itemM.getPosition() + "\t");
+	buf.append(item.getPosition() + "\t");
+
+	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
 
 	buf.append(itemM.getIndexOffset() + "\t");
 
