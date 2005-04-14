@@ -6,6 +6,9 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.TimeIndexFactory;
 import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.plugin.DefaultOutputPlugin;
+import com.timeindexing.plugin.DefaultWriter;
+import com.timeindexing.plugin.OutputPlugin;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,12 +50,28 @@ public class Displayer {
     /**
      * Display the output.
      */
-    public Displayer display(boolean withNLs) throws IOException, TimeIndexException {
+    public Displayer display(IndexProperties displayProperties) throws IOException, TimeIndexException {
 	// open
 	open();
 
 	// do the output    
-	output(withNLs);
+	output(displayProperties, new DefaultOutputPlugin(new DefaultWriter()));
+
+	// close 
+	close();
+
+	return this;
+    }
+
+    /**
+     * Display the output, using a specified OutputPlugin.
+     */
+    public Displayer display(IndexProperties displayProperties, OutputPlugin outputPlugin) throws IOException, TimeIndexException {
+	// open
+	open();
+
+	// do the output    
+	output(displayProperties, outputPlugin);
 
 	// close 
 	close();
@@ -68,12 +87,14 @@ public class Displayer {
     }
 	
     /**
-     * Do the output
+     * Do the output with a specific OutputPlugin.
      */
-    protected void output(boolean withNLs) throws IOException, TimeIndexException {
-	OutputStreamer streamer = new OutputStreamer(index, output);
+    protected void output(IndexProperties displayProperties, OutputPlugin outputPlugin) throws IOException, TimeIndexException {
+	// Set up an OutputStreamer
+	OutputStreamer streamer = new OutputStreamer(index, output, outputPlugin);
 
-	streamer.doOutput(new IndexProperties().putProperty("newline", Boolean.toString(withNLs)));
+	// now do the output
+	streamer.doOutput(displayProperties);
     }
 
     /**
