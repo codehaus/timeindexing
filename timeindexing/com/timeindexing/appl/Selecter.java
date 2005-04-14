@@ -81,7 +81,8 @@ public class Selecter {
     /**
      * Close 
      */
-    protected void close() throws TimeIndexException {
+    public void close() throws TimeIndexException {
 	factory.close(index);
+	index = null;
     }
 }
