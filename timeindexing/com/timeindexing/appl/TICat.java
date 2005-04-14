@@ -63,7 +63,13 @@ public class TICat {
 	 * Go for it
 	 */
 	try {
-	    display.display(withNLs);
+
+	    IndexProperties displayProps = new IndexProperties();
+	    // do we want the OutputPlugin to put out a \n after each item
+	    displayProps.putProperty("newline", Boolean.toString(withNLs));
+
+	    display.display(displayProps);
+
 	} catch (TimeIndexException tie) {
 	    System.err.println("TICat: error " + tie.getMessage());
 	} catch (IOException ioe) {
