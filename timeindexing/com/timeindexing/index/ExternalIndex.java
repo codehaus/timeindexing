@@ -20,6 +20,7 @@ import com.timeindexing.event.*;
 
 import java.util.Properties;
 import java.nio.ByteBuffer;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -231,13 +232,21 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 
 	if (indexProperties.containsKey("indexpath")) {
 	    headerPathName = indexProperties.getProperty("indexpath");
+
 	} else {
 	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
 	}
 
 
 	if (indexProperties.containsKey("datapath")) {
-	    dataPathName = indexProperties.getProperty("datapath");
+	    try {
+		File dataFile = new File(indexProperties.getProperty("datapath"));
+		dataPathName = dataFile.getCanonicalPath();
+	    } catch (IOException ioe) {
+		// there was an I/O error detemrining the canonical path
+		// thorw an exception
+		throw new IndexSpecificationException("Bad filename for 'datapath' in ExternalIndex: " + indexProperties.getProperty("datapath"));
+	    }
 	} else {
 	    // cant; find a datapath property
 	    // assume they are the same
