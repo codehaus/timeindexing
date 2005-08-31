@@ -19,6 +19,8 @@ public class MP3StreamServlet extends SelectServlet {
     public void doPlayBack(HttpServletRequest request, HttpServletResponse response)
     throws IOException {
 	ServletOutputStream out = response.getOutputStream();
+	String contextName = request.getContextPath();
+
 
 	String ua = request.getHeader("User-Agent").toLowerCase();
 
@@ -33,7 +35,7 @@ public class MP3StreamServlet extends SelectServlet {
 
 	int port = request.getServerPort();
 
-	out.println("http://" + request.getServerName() + (port==80? "" : ":"+port) + "/timeindexing/MP3DownloadServlet?" + encode(request.getQueryString()) + "&style=stream");
+	out.println("http://" + request.getServerName() + (port==80? "" : ":"+port) + contextName + "/MP3DownloadServlet?" + encode(request.getQueryString()) + "&style=stream");
 
     }
 
