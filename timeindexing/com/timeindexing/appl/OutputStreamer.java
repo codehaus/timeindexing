@@ -67,19 +67,13 @@ public class OutputStreamer {
     /**
      * Process the TimeIndex
      */
-    public long processTimeIndex(IndexView selection) throws IOException, TimeIndexException {
+    public long processTimeIndex(IndexView index) throws IOException, TimeIndexException {
 	// output the selection
 	long writeCount = 0;
-	long length = selection.getLength();
+	long length = index.getLength();
 
 	for (long i=0; i<length; i++) {
-	    IndexItem itemN = selection.getItem(i);
-
-	    // check for refererences
-	    // follow all references until we find the real data
-	    while (itemN.isReference()) {
-		itemN = itemN.follow();
-	    }
+	    IndexItem itemN = fetchIndexItem(i, index);
 
 	    writeCount += outputPlugin.write(itemN, outputProperties);
 	}
@@ -102,5 +96,21 @@ public class OutputStreamer {
 	return outputPlugin;
     }
 
+    /**
+     * Fetch a single item from an Index, ready for outputting.
+     * This will follow all references to get to the data.
+     */
+    protected IndexItem fetchIndexItem(long pos, Index index) throws IOException, TimeIndexException {
+	IndexItem itemN = index.getItem(pos);
+
+	// check for refererences
+	// follow all references until we find the real data
+	while (itemN.isReference()) {
+	    itemN = itemN.follow();
+	}
+
+
+	return itemN;
+    }
 
  }
