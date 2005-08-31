@@ -346,34 +346,40 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      * Close this index.
      */
     public synchronized boolean close() throws IndexCloseException {
-	// commit the contents
-	try {
-	    commit();
-	} catch (IndexCommitException ice) {
-	    throw new IndexCloseException("Couldn't commit index " + getURI().toString() + " when attemting to close");
-	}
-
-	// close any Indexes that have been opened due
-	// to following a reference
-	Collection tracked = listTrackedIndexes();
-
-	Iterator trackedI = tracked.iterator();
-	while (trackedI.hasNext()) {
-	    Index otherIndex = (Index)trackedI.next();
-	    otherIndex.close();
-	}
-
-	// now go on to close this index
-
-	long refCount = TimeIndexDirectory.removeHandle(this);
-
-	if (refCount == 0) {
-	    //System.err.println("About to really close " + getURI());
-	    boolean closeValue = reallyClose();
-
-	    return closeValue;
-	} else {
+	if (isClosed()) {
+	    // already closed so nothing to do
 	    return false;
+
+	} else {
+	    // commit the contents
+	    try {
+		commit();
+	    } catch (IndexCommitException ice) {
+		throw new IndexCloseException("Couldn't commit index " + getURI().toString() + " when attemting to close");
+	    }
+
+	    // close any Indexes that have been opened due
+	    // to following a reference
+	    Collection tracked = listTrackedIndexes();
+
+	    Iterator trackedI = tracked.iterator();
+	    while (trackedI.hasNext()) {
+		Index otherIndex = (Index)trackedI.next();
+		otherIndex.close();
+	    }
+
+	    // now go on to close this index
+
+	    long refCount = TimeIndexDirectory.removeHandle(this);
+
+	    if (refCount == 0) {
+		//System.err.println("About to really close " + getURI());
+		boolean closeValue = reallyClose();
+
+		return closeValue;
+	    } else {
+		return false;
+	    }
 	}
     }
     
@@ -381,7 +387,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
    /**
      * Really close this index.
      */
-    public boolean reallyClose()  throws IndexCloseException {
+    public synchronized boolean reallyClose()  throws IndexCloseException {
 	closed = true;
 	activated = false;
 
