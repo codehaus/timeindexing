@@ -27,7 +27,7 @@ public class DateFormatter {
     /**
      * Construct a DateFormatter.
      */
-    protected DateFormatter(String pattern) {
+    public DateFormatter(String pattern) {
 	synchronized (TimeZone.class) {
 	    TimeZone current = TimeZone.getDefault();
 	    TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
