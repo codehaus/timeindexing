@@ -15,7 +15,26 @@ public abstract class AbstractDateFormat implements TimestampFormatting {
     /*
      * A format for whole seconds
      */
-    protected static DateFormatter formatter = new DateFormatter("yyyy/MM/dd HH:mm:ss");
+    protected static DateFormatter defaultFormatter = new DateFormatter("yyyy/MM/dd HH:mm:ss");
+
+    /*
+     * The DateFormatter
+     */
+    DateFormatter formatter = null;
+
+    /**
+     * The default constructor.
+     */
+    public AbstractDateFormat() {
+	formatter = defaultFormatter;
+    }
+	
+    /**
+     * A constructor which takes a new DateFormatter.
+     */
+    public AbstractDateFormat(DateFormatter aFormatter) {
+	formatter = aFormatter;
+    }
 
     /**
      * Format a Timestamp.
@@ -29,6 +48,14 @@ public abstract class AbstractDateFormat implements TimestampFormatting {
 	} else {
 	    return format((AbsoluteTimestamp)t);
 	}
+    }
+
+    /**
+     * Format a date.
+     * This calls on the DateFormatter to do some formatting.
+     */
+    protected final String format(Date date) {
+	return formatter.format(date);
     }
 
     /**
