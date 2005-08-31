@@ -121,15 +121,17 @@ public class SelectServlet extends HttpServlet {
 	properties.clear();
 
 	// indexpath
-	String indexpath = request.getParameter("file");
+	String indexName = request.getParameter("file");
 
-	if (empty(indexpath)) {
+	if (empty(indexName)) {
 	    status = NO_INDEX;
+	} else {
+	    properties.putProperty("file", indexName);
 	}
 	
 
-	if (!empty(repositioryName) && !empty(indexpath)) {
-	    properties.putProperty("indexpath", repositioryName + "/" + indexpath);
+	if (!empty(repositioryName) && !empty(indexName)) {
+	    properties.putProperty("indexpath", repositioryName + "/" + indexName);
 	}
 
 	// start position
@@ -204,7 +206,7 @@ public class SelectServlet extends HttpServlet {
 	    // if style is NOT stream, then download
 
 	    // set the filename for the download
-	    setFilename();
+	    setFilename(response, properties);
 	} else {
 	    // style is stream
 	}
@@ -215,7 +217,7 @@ public class SelectServlet extends HttpServlet {
 	 * Check if enough parameters
 	 */
 	
-	if (!empty(repositioryName) && !empty(indexpath)) {	// have indexpath and repositioryName
+	if (!empty(repositioryName) && !empty(indexName)) {	// have indexName and repositioryName
 	    allFine = true;
 
 	    // check start of interval
@@ -306,7 +308,7 @@ public class SelectServlet extends HttpServlet {
 
 	OutputStream out = null;
 
-	setContentType();
+	setContentType(response, properties);
 
 	// if the output needs newlines
 	// then assume we are writing to some text stream
@@ -328,7 +330,7 @@ public class SelectServlet extends HttpServlet {
 
 	try {
 	    String filename = (String)properties.get("indexpath");
-	    selecter = new Selecter(filename, out);
+	    selecter = allocateSelecter(filename, out);
 	    selecter.select(properties);
 
 	} catch (Exception ex) {
@@ -549,9 +551,16 @@ public class SelectServlet extends HttpServlet {
     }
 
     /**
+     * allocate a Selecter
+     */
+    protected Selecter allocateSelecter(String filename,  OutputStream out) {
+	return new Selecter(filename, out);
+    }
+
+    /**
      * Set the content type.
      */
-    protected void setContentType() {
+    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
 	// an example is: setContentType("application/octet-stream");
     }
 
@@ -565,7 +574,7 @@ public class SelectServlet extends HttpServlet {
     /**
      * Set the filename for downloads.
      */
-    protected void setFilename() {
+    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
 	// an example is: setFilename("download.data");
     }
 
@@ -576,6 +585,69 @@ public class SelectServlet extends HttpServlet {
 	response.setHeader("Content-Disposition", "attachment; filename=" + filename);
     }
 
+    /**
+     * This filename generator, takes the arguments and generates a useful filename.
+     * Returns filename-0:10-to-1:23.
+     */
+    protected String fileNameGenerator(IndexProperties properties) {
+	StringBuffer generatedName = new StringBuffer(128);
+
+	// add name
+	generatedName.append((String)properties.get("file"));
+	
+
+	/*
+	 * Determine start of selection.
+	 */
+	if (properties.containsKey("startpos")) {
+	    // get the start position
+	    generatedName.append("-");
+	    generatedName.append((String)properties.get("startpos"));
+
+	} else if (properties.containsKey("starttime")) {
+	    // get the start time
+	    generatedName.append("-");
+	    generatedName.append((String)properties.get("starttime"));
+
+	} else {
+	    // the start
+	    ;
+	}
+	    
+	/*
+	 * Determine end of selection.
+	 * We already know something about the start of the selection.
+	 */
+	if (properties.containsKey("endpos")) {
+	    // get the end position
+	    generatedName.append("-to-");
+	    generatedName.append((String)properties.get("endpos"));
+
+	} else if (properties.containsKey("endtime")) {
+	    // get the end time
+	    generatedName.append("-to-");
+	    generatedName.append((String)properties.get("endtime"));
+
+	} else if (properties.containsKey("count")) {
+	    // get a count
+	    generatedName.append("+");
+	    generatedName.append((String)properties.get("count"));
+
+	} else if (properties.containsKey("for")) {
+	    // get the elapsed time
+	    generatedName.append("+");
+	    generatedName.append((String)properties.get("for"));
+
+	} else {
+	    //the end
+	}
+
+	return generatedName.toString();
+
+
+    }
+
+     
     /**
      * Wrap a Writer as an Output Stream.
      */
