@@ -41,7 +41,7 @@ public interface  TimeDirection {
      */
     public final static TimeDirection BACKWARD_DT = new TimeDirection() {
 	    public int value() {
-		return FORWARD;
+		return BACKWARD;
 	    }
 
 	    public String toString() {
