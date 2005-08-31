@@ -6,6 +6,8 @@ import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
+import com.timeindexing.index.IndexProperties;
+
 /**
  * This servlet returns downloads FlashStream data.
  * <p>
@@ -39,7 +41,7 @@ public class FlashStreamDownloadServlet extends SelectServlet {
     /**
      * Set the content type.
      */
-    protected void setContentType() {
+    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
 	if (browserIsIE) {	// do special IE processing
 	    setContentType("audio/mp3");
 	    response.setContentLength(100000000);
@@ -51,7 +53,9 @@ public class FlashStreamDownloadServlet extends SelectServlet {
     /**
      * Set the filename for downloads.
      */
-    protected void setFilename() {
-	setFilename("download.mp3");
+    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
+	String generatedName = fileNameGenerator(properties);
+	
+	setFilename(generatedName + ".mp3");
     }
 }

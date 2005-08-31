@@ -6,6 +6,8 @@ import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
+import com.timeindexing.index.IndexProperties;
+
 /**
  * This servlet returns downloads OctetStream data.
  * <p>
@@ -17,14 +19,16 @@ public class OctetStreamDownloadServlet extends SelectServlet {
     /**
      * Set the content type.
      */
-    protected void setContentType() {
+    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
 	setContentType("application/octet-stream");
     }
 
     /**
      * Set the filename for downloads.
      */
-    protected void setFilename() {
-	setFilename("download.bin");
+    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
+	String generatedName = fileNameGenerator(properties);
+	
+	setFilename(generatedName + ".bin");
     }
 }

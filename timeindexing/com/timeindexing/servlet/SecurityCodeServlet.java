@@ -4,6 +4,7 @@ package com.timeindexing.servlet;
 
 import com.timeindexing.appl.SelectionCodeEvaluator;
 import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.index.IndexProperties;
 
 import java.io.*;
 import javax.servlet.*;
@@ -88,7 +89,7 @@ public class SecurityCodeServlet extends SelectServlet {
     /**
      * Set the content type.
      */
-    protected void setContentType() {
+    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
 	setContentType("text/html");
     }
 
