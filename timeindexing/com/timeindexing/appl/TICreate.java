@@ -253,22 +253,39 @@ public class TICreate {
 	} else if (pluginname != null) {
 	    // we got given a plugin name
 	    if (pluginname.equals("line")) {
-		plugin = new Line(input);
+		className  = "com.timeindexing.plugin.Line";
 	    } else 	if (pluginname.equals("web")) {
-		plugin = new  WebServerLogLine(input);
+		className = "com.timeindexing.module.logging.WebServerLogLine";
 	    } else 	if (pluginname.equals("mail")) {
-		plugin = new  MailServerLogLine(input);
+		className = "com.timeindexing.module.logging.MailServerLogLine";
 	    } else 	if (pluginname.equals("ftp")) {
-		plugin = new  FtpServerLogLine(input);
+		className = "com.timeindexing.module.logging.FtpServerLogLine";
 	    } else if (pluginname.equals("file")) {
-		plugin = new FileItem((FileInputStream)input);
+		className  = "com.timeindexing.plugin.FileItem";
 	    } else 	if (pluginname.equals("block")) {
-		plugin = new  Block(input);
-		((Block)plugin).setBlockSize(16);
+		className  = "com.timeindexing.plugin.Block";
+		//((Block)plugin).setBlockSize(16);
 	    } else {
 		System.err.println("Got unknown pluginname " + pluginname);
 		return false;
 	    }
+
+
+	    try {
+		Class aClass = Class.forName(className);
+		//System.err.println("Class = " + aClass.getName());
+
+		Class[] types = { InputStream.class };
+		Constructor constructor = aClass.getConstructor(types);
+		//System.err.println("Constructor = " + constructor.getName());
+
+		Object[] args = { input };
+		plugin = (ReaderPlugin)constructor.newInstance(args);
+	    } catch (Exception e) {
+		System.err.println(e.getMessage());	
+		return false;
+	    }
+
 
 	    return true;
 
