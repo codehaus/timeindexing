@@ -297,14 +297,14 @@ public class TICreate {
 		Class aClass = Class.forName(className);
 		//System.err.println("Class = " + aClass.getName());
 
-		Class[] types = { InputStream.class };
+		Class[] types = { FileInputStream.class };
 		Constructor constructor = aClass.getConstructor(types);
 		//System.err.println("Constructor = " + constructor.getName());
 
 		Object[] args = { input };
 		plugin = (ReaderPlugin)constructor.newInstance(args);
 	    } catch (Exception e) {
-		System.err.println(e.getMessage());	
+		System.err.println(e.getClass().getName() + " => " + e.getMessage());	
 		return false;
 	    }
 
