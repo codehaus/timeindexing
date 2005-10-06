@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 
 
 /**
@@ -24,6 +25,13 @@ public class FileItem implements ReaderPlugin {
     MappedByteBuffer buffer = null;
     String line = null;
     boolean eof = false;
+
+    /**
+     * Construct a FileItem plugin from a file name
+     */
+    public FileItem(String filename) throws FileNotFoundException {
+	input = new FileInputStream(filename);
+    }
 
     /**
      * Construct a FileItem plugin from an InputStream.
