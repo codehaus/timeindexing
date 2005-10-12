@@ -159,6 +159,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    // now we're open
 	    closed = false;
 
+	    // and some things have changed.
+	    changed = true;
 
 	    // register myself in the TimeIndex directory
 	    TimeIndexDirectory.addHandle(this);
