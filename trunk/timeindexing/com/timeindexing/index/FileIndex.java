@@ -78,6 +78,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// set the end time in the header
 	if (this.isActivated()) {
 	    header.setEndTime(Clock.time.time());
+	    changed = true;
 	}
 
 	try {
