@@ -116,9 +116,6 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    ;
 	}
 
-	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
-	closed = false;
-
 	// activate the index
 	try {
 	    activate();
@@ -128,6 +125,14 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    throw new IndexCreateException(ioe);
 	}
 
+	// pass an event to the listeners
+	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CREATED, this));
+
+	// now we're open
+	closed = false;
+	
+	// and some things have changed.
+	changed = true;
 
 	// register myself in the TimeIndex directory
 	TimeIndexDirectory.addHandle(this);
