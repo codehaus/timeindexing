@@ -225,7 +225,7 @@ public class TIAppend {
 		Class aClass = Class.forName(className);
 		//System.err.println("Class = " + aClass.getName());
 
-		Class[] types = { InputStream.class };
+		Class[] types = { FileInputStream.class };
 		Constructor constructor = aClass.getConstructor(types);
 		//System.err.println("Constructor = " + constructor.getName());
 
@@ -246,7 +246,7 @@ public class TIAppend {
 		Class aClass = Class.forName(className);
 		//System.err.println("Class = " + aClass.getName());
 
-		Class[] types = { InputStream.class };
+		Class[] types = { FileInputStream.class };
 		Constructor constructor = aClass.getConstructor(types);
 		//System.err.println("Constructor = " + constructor.getName());
 
