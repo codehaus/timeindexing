@@ -423,9 +423,11 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	if (selector == IndexTimestampSelector.DATA) {
 	    if (TimeCalculator.lessThanEquals(this.getFirstDataTime(), t) &&
 		TimeCalculator.lessThanEquals(t, this.getLastDataTime())) {
+		/*
 		System.err.println("Index " + getName() + ": DataTS = " + t + " is contained in " +
 				   this.getFirstDataTime() + " to " +
 				   this.getLastDataTime());
+		*/
 		return true;
 	    } else {
 		return false;
@@ -433,9 +435,11 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} else {
 	    if (TimeCalculator.lessThanEquals(this.getFirstTime(), t) &&
 		TimeCalculator.lessThanEquals(t, this.getLastTime())) {
+		/*
 		System.err.println("Index " + getName() + ": IndexTS = " + t + " is contained in " +
 				   this.getFirstTime() + " to " +
 				   this.getLastTime());
+		*/
 		return true;
 	    } else {
 		return false;
@@ -451,32 +455,46 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
 	//System.err.println("AbstractIndex: locate: " + "TS = " + t);
 
-	System.err.println("Index " + getName() + ": locating: " + t);
+	//System.err.println("Index " + getName() + ": locating: " + t);
 
 	if (! contains(t, selector)) { // timestamp t is not in this index
 	    // now try and determine if it is too low or too high
 	    if (selector == IndexTimestampSelector.DATA) {
 		if (TimeCalculator.lessThan(t, this.getFirstDataTime())) {
-		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
+		    //System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
 		    return new TimestampMapping(t, Position.TOO_LOW);
 
 		} else if (TimeCalculator.greaterThan(t, this.getLastDataTime())) {
-		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
-		    return new TimestampMapping(t, Position.TOO_HIGH);
+		    if (lifetime == Lifetime.CONTINUOUS) {
+			// The location is off the end of the index
+			// but we are doing CONTINUOUS lifetime
+			// so we actually choose the last item
+			return new TimestampMapping(t, new AbsolutePosition(getLength()-1));
+		    } else {
+			//System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
+			return new TimestampMapping(t, Position.TOO_HIGH);
+		    }
 
 		} else {
 		    throw new RuntimeException(getName() + ": locate failed to process timestamp " + t + ". First Data time = " + this.getFirstDataTime() + ". Last Data time = " + this.getLastDataTime() + ".");
 
 		}
 
-	    } else {
+	    } else {  // selector == IndexTimestampSelector.INDEX
 		if (TimeCalculator.lessThan(t, this.getFirstTime())) {
-		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
+		    //System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_LOW);
 		    return new TimestampMapping(t, Position.TOO_LOW);
 
 		} else if (TimeCalculator.greaterThan(t, this.getLastTime())) {
-		    System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
-		    return new TimestampMapping(t, Position.TOO_HIGH);
+		    if (lifetime == Lifetime.CONTINUOUS) {
+			// The location is  off the end of the index
+			// but we are doing CONTINUOUS lifetime
+			// so we actually choose the last item
+			return new TimestampMapping(t, new AbsolutePosition(getLength()-1));
+		    } else {
+			//System.err.println("Index " + getName() + ": location of " + t +  " => " + Position.TOO_HIGH);
+			return new TimestampMapping(t, Position.TOO_HIGH);
+		    }
 
 		} else {
 		    throw new RuntimeException(getName() + ": locate failed toprocess  timestamp " + t + ". First Index time = " + this.getFirstTime() + ". Last Index time = " + this.getLastTime() + ".");
@@ -494,9 +512,10 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    // and build up a tree cache for later reuse.
 	    try {
 		TimestampMapping mapping = binarySearch(t, 0, getLength()-1, selector, lifetime, 0);
-		System.err.println("Index " + getName() + ": location of " + t +  " => " + mapping);
+		//System.err.println("Index " + getName() + ": location of " + t +  " => " + mapping);
 		return mapping;
 	    } catch (GetItemException gie) {
+		System.err.println("Index " + getName() + ": location of " + t +  " threw " + gie.getMessage());
 		return null;
 	    }
 	}	
@@ -543,85 +562,103 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	Timestamp itemTSN = null;
 	
 
-	long halfway = (start + end) / 2;
-	long halfwayN = halfway+1;
-	AbsolutePosition halfwayPos = new AbsolutePosition(halfway);
-	AbsolutePosition halfwayPosNext = new AbsolutePosition(halfway+1);
-	
 	//System.err.print("binarySearch " + depth + ": " + t + "\t" + start + "\t" + end + "\t");
 
-	// try and find index item in search tree, if not found
-	// go and get it from list
-	if (searchTree.get(halfwayPos) == null) {
-	    // position not in the tree
-	    // so get it from the index and put it in the tree
-	    item = getItem(halfway);
-	    searchTree.put(halfwayPos, halfwayPos);
-	    //System.err.print("GET " + halfway + "\t");
+	// if there is only 1 item in the index
+	// there is nothing to search for
+	if (getLength() == 1) {
+	    item = getItem(0);
+	    // get the relevant timestamps out of the IndexItem
+	    if (selector == IndexTimestampSelector.DATA) {
+		itemTS = item.getDataTimestamp();
+	    } else {
+		itemTS = item.getIndexTimestamp();
+	    }
+
+	    return new TimestampMapping(itemTS,  item.getPosition());
 	} else {
-	    item = getItem(halfway);
-	    //System.err.print("TREE " + halfway + "\t");
-	}
 
-	// try and find index item in search tree, if not found
-	// go and get it from list
-	if (searchTree.get(halfwayPosNext) == null) {
-	    // position not in the tree
-	    // so get it from the index and put it in the tree
-	    itemN = getItem(halfwayN);
-	    searchTree.put(halfwayPosNext, halfwayPosNext);
-	    //System.err.print("GET " + halfwayN + "\t");
-	} else {
-	    itemN = getItem(halfwayN);
-	    //System.err.print("TREE " + halfwayN + "\t");
-	}
+	/*
+	 * We need to do some searching using binary chop.
+	 */
+	    long halfway = (start + end) / 2;
+	    long halfwayN = halfway+1;
+	    AbsolutePosition halfwayPos = new AbsolutePosition(halfway);
+	    AbsolutePosition halfwayPosNext = new AbsolutePosition(halfway+1);
+	
+	    // try and find index item in search tree, if not found
+	    // go and get it from list
+	    if (searchTree.get(halfwayPos) == null) {
+		// position not in the tree
+		// so get it from the index and put it in the tree
+		item = getItem(halfway);
+		searchTree.put(halfwayPos, halfwayPos);
+		//System.err.print("GET " + halfway + "\t");
+	    } else {
+		item = getItem(halfway);
+		//System.err.print("TREE " + halfway + "\t");
+	    }
 
-	// get the relevant timestamps out of rge Index Items
-	if (selector == IndexTimestampSelector.DATA) {
-	    itemTS = item.getDataTimestamp();
-	    itemTSN =itemN.getDataTimestamp();
-	} else {
-	    itemTS = item.getIndexTimestamp();
-	    itemTSN = itemN.getIndexTimestamp();
-	}
+	    // try and find index item in search tree, if not found
+	    // go and get it from list
+	    if (searchTree.get(halfwayPosNext) == null) {
+		// position not in the tree
+		// so get it from the index and put it in the tree
+		itemN = getItem(halfwayN);
+		searchTree.put(halfwayPosNext, halfwayPosNext);
+		//System.err.print("GET " + halfwayN + "\t");
+	    } else {
+		itemN = getItem(halfwayN);
+		//System.err.print("TREE " + halfwayN + "\t");
+	    }
+
+	    // get the relevant timestamps out of rge Index Items
+	    if (selector == IndexTimestampSelector.DATA) {
+		itemTS = item.getDataTimestamp();
+		itemTSN =itemN.getDataTimestamp();
+	    } else {
+		itemTS = item.getIndexTimestamp();
+		itemTSN = itemN.getIndexTimestamp();
+	    }
 
 
-	//System.err.print(itemTS + "\t" + itemTSN);
-	//System.err.println();
+	    //System.err.print(itemTS + "\t" + itemTSN);
+	    //System.err.println();
 	    
 
-	if (TimeCalculator.equals(t, itemTS)) {
-	    // if the timestamp equals  itemTS
-	    // we are there
-	    return new TimestampMapping(itemTS,  item.getPosition());
-	} else if (TimeCalculator.greaterThan(t, itemTS) &&
-	    TimeCalculator.lessThan(t, itemTSN)) {
+	    if (TimeCalculator.equals(t, itemTS)) {
+		// if the timestamp equals  itemTS
+		// we are there
+		return new TimestampMapping(itemTS,  item.getPosition());
+	    } else if (TimeCalculator.greaterThan(t, itemTS) &&
+		       TimeCalculator.lessThan(t, itemTSN)) {
 
-	    // if the timestamp is between itemTS and itemTSN
-	    // then we are close
+		// if the timestamp is between itemTS and itemTSN
+		// then we are close
 
-	    // the time is between two timestamps
-	    if (lifetime == Lifetime.CONTINUOUS) {
-		// if lifetimes are continuous then item has a lifetime
-		// from its own timestamp upto itemN's timestamp
-		// which means that item is the IndexItem to return
-		return new TimestampMapping(itemTS, item.getPosition());
-	    } else {
-		// if lifetimes are discrete then item's lifetime
-		// is a point in time and Timestamp t is after item,
-		// which means that itemN is the IndexItem to return
+		// the time is between two timestamps
+		if (lifetime == Lifetime.CONTINUOUS) {
+		    // if lifetimes are continuous then item has a lifetime
+		    // from its own timestamp upto itemN's timestamp
+		    // which means that item is the IndexItem to return
+		    return new TimestampMapping(itemTS, item.getPosition());
+		} else {
+		    // if lifetimes are discrete then item's lifetime
+		    // is a point in time and Timestamp t is after item,
+		    // which means that itemN is the IndexItem to return
+		    return new TimestampMapping(itemTSN,  itemN.getPosition());
+		}
+	    } else if (TimeCalculator.equals(t, itemTSN)) {
+		// if the timestamp equals  itemTSN
+		// we are there
 		return new TimestampMapping(itemTSN,  itemN.getPosition());
+	    } else if (TimeCalculator.lessThan(t, itemTS)) {
+		// the timestamp is in first half, so search that half
+		return binarySearch(t, start, halfway, selector, lifetime, depth+1);
+	    } else {
+		// the timestamp is in second half, so search that half
+		return binarySearch(t, halfway, end, selector, lifetime, depth+1);
 	    }
-	} else if (TimeCalculator.equals(t, itemTSN)) {
-	    // if the timestamp equals  itemTSN
-	    // we are there
-	    return new TimestampMapping(itemTSN,  itemN.getPosition());
-	} else if (TimeCalculator.lessThan(t, itemTS)) {
-	    // the timestamp is in first half, so search that half
-	    return binarySearch(t, start, halfway, selector, lifetime, depth+1);
-	} else {
-	    // the timestamp is in second half, so search that half
-	    return binarySearch(t, halfway, end, selector, lifetime, depth+1);
 	}
     }
 
@@ -635,7 +672,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    AbsoluteInterval absInterval = (AbsoluteInterval)interval;
 	    AbsoluteInterval resolvedInterval = null;
 
-	    System.err.println("Index " + getName() + ": selecting " + interval);
+	    //System.err.println("Index " + getName() + ": selecting " + interval);
 	
 
 	    if (! absInterval.isResolved()) { // not resolved yet
@@ -655,7 +692,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 		Position intervalEnd = ((Position)resolvedInterval.end()).position();
 		long selectionLength = 0;
 
-		System.err.println("Index " + getName() + ": preliminary intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
+		//System.err.println("Index " + getName() + ": preliminary intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd);
 
 		if (overlap == Overlap.STRICT) {
 		    // if the Interval must have strict overlap with 
@@ -739,7 +776,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
 		}
 
-		System.err.println("Index " + getName() + ": resolved intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd + " selectionLength = " + selectionLength);
+		//System.err.println("Index " + getName() + ": resolved intervalStart = " + intervalStart + " intervalEnd = " + intervalEnd + " selectionLength = " + selectionLength);
 
 		// The interval has been determined
 		// so we set up the IndexView with the right values
