@@ -1079,6 +1079,8 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    }
 	} catch (InterruptedException ie) {
 	    System.err.println("sleep interrupted");
+	    // a timeout didn;t happen, it was an interrupt
+	    timeoutHappened = false;
 	    return false;
 	}
     }
@@ -1089,7 +1091,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
 	if (timeoutHappened) {
 	    // there was a timeout, i.e. no work
-	    //System.err.println("Sleep finished");
+	    //System.err.println("Sleep finished. No work");
 	    return false;
 	} else {
 	    // we got some work
@@ -1101,9 +1103,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * The Thread run method.
      */
     public synchronized void run() {
-	while (true) {
+	try {
+	    while (isRunning()) {
 
-	    try {
 		if (awaitWork() == true) {
 		    drainWriteQueue();
 		} else {
@@ -1113,9 +1115,13 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 			headerInteractor.flush();
 		    }
 		}
-	    } catch (IOException ioe) {
-		System.err.println("Got IOException: " + ioe);
 	    }
+
+	} catch (IOException ioe) {
+	    System.err.println("Run Got IOException: " + ioe);
+	    ioe.printStackTrace();
 	}
+	//System.err.println("Thread run end " + myThread);
+
     }
 }
