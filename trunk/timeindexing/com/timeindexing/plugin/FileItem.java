@@ -27,6 +27,13 @@ public class FileItem implements ReaderPlugin {
     boolean eof = false;
 
     /**
+     * Construct a FileItem plugin.
+     * The input will be set by the InputPlugin.
+     */
+    public FileItem() {
+    }
+
+    /**
      * Construct a FileItem plugin from a file name
      */
     public FileItem(String filename) throws FileNotFoundException {
