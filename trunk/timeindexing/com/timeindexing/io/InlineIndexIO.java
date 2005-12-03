@@ -503,6 +503,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 
 	// flush out any reaming data
 	ByteBuffer indexBuffer = indexFlushBuffers.current();
+	indexFlushBuffers.lock();
 	written += flushBuffer(indexChannel, indexBuffer, indexFlushBuffers);
 
 	// flush the header
@@ -521,9 +522,11 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 	// flush out any reaming data
 	long lastWrite = flush();
 
-	//System.err.println("InlineIndexIO: at close wrote = " + lastWrite);
-	
+	drainWriteQueue();
+
 	long channelSize = indexChannel.size();
+	
+	//System.err.println("InlineIndexIO: at close wrote = " + lastWrite + ". " +  channelSize + ". Position = " + indexChannel.position());
 	
 	/*
 	 * Now we need to get the header at the end of the index.
