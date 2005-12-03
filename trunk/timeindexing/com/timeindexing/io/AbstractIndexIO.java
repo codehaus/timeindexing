@@ -21,6 +21,9 @@ public abstract class AbstractIndexIO implements IndexInteractor,  Runnable {
     // The Thread for this I/O
     Thread myThread = null;
 
+    // Should the thread be running
+    boolean threadRunning = false;
+
     // A work queue for read requests
     LinkedList readQueue = null;
 
@@ -60,6 +63,7 @@ public abstract class AbstractIndexIO implements IndexInteractor,  Runnable {
     public Thread startThread() {
 	if (myThread != null) {
 	    myThread.start();
+	    threadRunning = true;
 	    //System.err.println("Started Thread " + myThread);
 	    return myThread;
 	} else {
@@ -72,7 +76,13 @@ public abstract class AbstractIndexIO implements IndexInteractor,  Runnable {
      */
     public Thread stopThread() {
 	if (myThread != null) {
-	    myThread.stop();
+	    //myThread.stop();
+
+	    threadRunning = false;
+
+	    // interrupt any methods waiting for work or IO
+	    myThread.interrupt();
+
 	    //System.err.println("Stopped Thread " + myThread);
 
 	    Thread retVal = myThread;
@@ -81,6 +91,13 @@ public abstract class AbstractIndexIO implements IndexInteractor,  Runnable {
 	} else {
 	    return null;
 	}
+    }
+
+    /**
+     * Is the thread still running.
+     */
+    public boolean isRunning() {
+	return threadRunning;
     }
 
 }
