@@ -32,7 +32,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long pos) {
+    public synchronized IndexItem getItem(long pos) {
 	ManagedFileIndexItem fileItem = null;
 
 	if (indexItems == null) {
@@ -104,7 +104,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
      * Hollow the IndexItem at the position.
      * This sets the data to be a data reference.
      */
-    public boolean hollowItem(long pos) {
+    public synchronized boolean hollowItem(long pos) {
 	ManagedFileIndexItem fileItem = null;
 
 	if (indexItems == null) {
@@ -122,7 +122,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		return false;
 	    } else {
 		if (fileItem.hasData()) {
-		    //System.err.println("HollowItem " + fileItem.getPosition() + " hollowing");
+		    //System.err.println("HollowItem " + fileItem.getPosition() + " hollowing.  Offset=" + fileItem.getDataOffset() + " Size=" + fileItem.getDataSize());
 
 		    // get the data object for this index item
 		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
@@ -152,7 +152,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
     /**
      * Remove the IndexItem at the speicifed position.
      */
-    public boolean removeItem(long pos) {
+    public synchronized boolean removeItem(long pos) {
 	if (indexItems == null || loadedMask == null) {
 	    return false;
 	} else if (pos < 0) {
