@@ -344,6 +344,20 @@ public class DoubleLinkedList {
     // Search Operations
 
     /**
+     * Does the list containt the specified Object.
+     */
+    public boolean contains(Object o) {
+ 	long index = indexOf(o);
+ 
+ 	if (index == -1) {
+ 	    // the object is not in the list
+ 	    return false;
+ 	} else {
+ 	    return true;
+ 	}
+    }
+ 
+    /**
      * Returns the index in this list of the first occurrence of the
      * specified element, or -1 if the List does not contain this
      * element.  More formally, returns the lowest index i such that
