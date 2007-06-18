@@ -14,7 +14,6 @@ import com.timeindexing.index.FileIndexItem;
 import com.timeindexing.index.DataAbstraction;
 import com.timeindexing.index.DataHolderObject;
 import com.timeindexing.index.DataReference;
-import com.timeindexing.index.DataReferenceObject;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.HeaderOption;
 import com.timeindexing.index.IndexOpenException;
@@ -84,13 +83,13 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
     public long create(IndexProperties indexProperties) throws IOException, IndexCreateException {
 	creating = true;
 
-	originalIndexSpecifier = (String)indexProperties.get("indexpath");
+	originalIndexSpecifier = (String)indexProperties.get("canonicalpath");
 
 	headerInteractor = new IndexHeaderIO(this);
 
 	// use the original specifier as a first cut for the idnex file name
 	headerFileName = originalIndexSpecifier;
-	indexFileName = originalIndexSpecifier;
+	indexFileName = (String)indexProperties.get("indexpath");
 
 	dataFileName = (String)indexProperties.get("datapath");
 	indexName = (String)indexProperties.get("name");
@@ -147,7 +146,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	    flush();
 
 	    // get a output thread going
-	    initThread(indexName + "-IOThread");
+	    initThread(indexName + hashCode() + "-IOThread");
 	    startThread();
 	
 	    return indexAppendPosition;
@@ -206,7 +205,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// read the headers
 	long indexHeaderPosition = readMetaData();
 
-	initThread(indexName + "-IOThread");
+	initThread(indexName + "-" + hashCode() + "-IOThread");
 	startThread();
 
 	return indexHeaderPosition;
@@ -240,10 +239,12 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 		// so we have to resolve filenames
 
 		if (! file.isAbsolute()) {
+		    // use the header file name to get the right File
 		    File headerFile = new File(headerFileName);
 
 		    file = new File(headerFile.getParent(), indexFileName);
-		    indexFileName = file.getAbsolutePath();
+		    indexFileName = file.getName(); // getCanonicalPath(); //getAbsolutePath();
+
 		}
 
 		if (file.canWrite()) {          // we have write permission
@@ -253,6 +254,14 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 		}
 
 	    } else {                            // we ARE creating
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    indexFileName = new File(indexFileName).getName();
+		}
+
+		// can;t create anything without writing
 		openMode = "rw";
 	    }
 
@@ -356,7 +365,7 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
     /**
      * Get the item at index position Position.
      */
-    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
+    public synchronized ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
 	// calculate the position to load from
 	long start = indexFirstPosition;
 	long determined = start + (position * INDEX_ITEM_SIZE);
@@ -434,7 +443,8 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
 	// read the data of index item
 	if ((readCount = dataChannel.read(buffer)) != size) {
 	    throw new IOException("Index Item Data too short: position = " +
-				  dataChannel.position() + " read count = " + readCount);
+				  dataChannel.position() + " expected " +
+				  size + " got read count = " + readCount);
 	}
 	dataChannelPosition += readCount;
 
@@ -453,10 +463,17 @@ public class ExternalIndexIO extends AbstractFileIO implements IndexFileInteract
      * Read some data, given a DataReference
      * and return it as a DataHolderObject.
      */
-    public DataHolderObject convertDataReference(DataReference dataReference) {
+    public synchronized DataHolderObject convertDataReference(DataReference dataReference) {
 	try { 
 	    ByteBuffer rawData = readData(dataReference);
+
+	    //if (rawData.limit() != dataReference.getSize().value()) {
+	    //	System.err.println("ExternalIndexIO: convertDataReference failed " + dataReference.getSize() + " != " + rawData.limit());
+	    //}
+
 	    return new DataHolderObject(rawData, dataReference.getSize());
+
+	    
 
  	} catch (IOException ioe) {
 	    ioe.printStackTrace();
