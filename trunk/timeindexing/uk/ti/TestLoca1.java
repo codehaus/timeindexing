@@ -147,7 +147,7 @@ public class TestLoca1 {
 	    // add 1 minute
 	    Interval interval3 = new EndPointInterval(new AbsolutePosition(foundP),
 						    //new ElapsedSecondTimestamp(1 * 60));
-						    new Second(60, TimeDirection.FORWARD_DT));
+						    new Second(60, TimeDirection.FORWARD));
 	    Index narrow3 = index.select(interval3, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 
 	    if (narrow3 == null) {
@@ -161,8 +161,8 @@ public class TestLoca1 {
 	    Interval interval4 = new MidPointInterval(new AbsolutePosition(foundP),
 						    //new ElapsedSecondTimestamp(-1 * 60),
 						    //new ElapsedSecondTimestamp(1 * 60));
-						    new Second(60, TimeDirection.FORWARD_DT),
-						    new Second(60, TimeDirection.BACKWARD_DT)
+						    new Second(60, TimeDirection.FORWARD),
+						    new Second(60, TimeDirection.BACKWARD)
 						    );
 	    Index narrow4 = index.select(interval4, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.DISCRETE);
 

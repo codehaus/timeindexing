@@ -94,7 +94,7 @@ public class TestSel2 {
 	    System.out.println("Narrowing. narrow1 -> narrow2");
 
 	    IndexView narrow2 = narrow1.select(new MidPointInterval(new AbsolutePosition(10), new AbsolutePosition(10),
-								    new Second(2, TimeDirection.FORWARD_DT)),
+								    new Second(2, TimeDirection.FORWARD)),
 					       IndexTimestampSelector.DATA, Overlap.FREE,
 					       Lifetime.DISCRETE);
 
@@ -150,7 +150,7 @@ public class TestSel2 {
 	    System.out.println("Narrowing. narrow1 -> narrow6");
 
 	    IndexView narrow6 = narrow1.select(new MidPointInterval(new MillisecondTimestamp(10, 900000000), new MillisecondTimestamp(10, 900000000),
-								    new Second(2, TimeDirection.FORWARD_DT)),
+								    new Second(2, TimeDirection.FORWARD)),
 					       IndexTimestampSelector.DATA, Overlap.FREE,
 					       Lifetime.DISCRETE);
 
