@@ -286,7 +286,9 @@ public class TIAppend {
 		dataTS = result.getDataTimestamp();
 		item = new ReaderResultItem(result);
 
-		indexSize = index.addItem(item, dataTS);
+		index.addItem(item, dataTS);
+
+		indexSize = index.getLength();
 	    }
 
 	    // wind it up
