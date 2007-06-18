@@ -20,6 +20,8 @@ import com.timeindexing.plugin.ReaderPlugin;
 import com.timeindexing.plugin.ReaderResult;
 import com.timeindexing.plugin.*;
 import com.timeindexing.module.audio.MP3Indexer;
+import com.timeindexing.module.audio.MP3IndexerDisplay;
+import com.timeindexing.cache.RemoveAfterUsePolicy;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -108,14 +110,14 @@ public class MP3Index {
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE_DT;
+	    indexType = IndexType.INLINE;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL_DT;
+	    indexType = IndexType.EXTERNAL;
 	} else if (type.equals("shadow")) {
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW_DT;
+		indexType = IndexType.SHADOW;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
@@ -135,12 +137,17 @@ public class MP3Index {
 	// set up the Index based on system property
 	type = System.getProperty("indextype");
 
+	if (type == null) {
+	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
+	}	    
+
 	// allocate local objs
 	//BufferedReader buffered = new BufferedReader (new InputStreamReader(input));
 
 	Properties indexProperties = new Properties();
 
 	indexProperties.setProperty("indexpath", tiFileName);
+
 	if (inputFileName != null && type.equals("shadow")) {
 	    indexProperties.setProperty("datapath", inputFileName);
 	} else {
@@ -151,11 +158,21 @@ public class MP3Index {
 
 	try {
 	    IndexView index = allocate(indexProperties);
+	    index.setCachePolicy(new RemoveAfterUsePolicy());
+
 
 	    MP3Indexer mp3Indexer = new MP3Indexer(index, input);
 
+	    // get a message every 100ms
+	    //MP3IndexerDisplay display = new MP3IndexerDisplay(100);
+	    //mp3Indexer.addAddEventListener(display);
+
+	    //display.start();
+
 	    // do the input, don;t pass any IndexProperties
 	    mp3Indexer.doInput(null);
+
+	    //display.stop();
 
 	    try {
 		input.close();
