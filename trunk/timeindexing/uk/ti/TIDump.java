@@ -52,7 +52,7 @@ public class TIDump extends TIAbstractRestore {
 	    }
 
 	} catch (TimeIndexException tie) {
-	    System.err.println("Cannot open index \"" + args[0] + "\" because " + tie);
+	    System.err.println("Error for \"" + args[0] + "\" because " + tie);
 	}
 
     }
@@ -135,6 +135,8 @@ public class TIDump extends TIAbstractRestore {
 	buf.append(item.getDataType() + "\t");
 
 	buf.append(item.getPosition() + "\t");
+
+	buf.append(item.getAnnotationMetaData() + "\t");
 
 	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
 
