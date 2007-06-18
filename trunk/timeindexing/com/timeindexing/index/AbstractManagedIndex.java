@@ -3,6 +3,7 @@
 package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.Clock;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.event.IndexPrimaryEvent;
@@ -21,7 +22,7 @@ import java.net.URI;
  * to the application layer.
  * This is to be extended by classes that are implementations of indexes.
  */
-public abstract class AbstractManagedIndex extends AbstractIndex implements ManagedIndex, ManagedIndexHeader  {
+abstract class AbstractManagedIndex extends AbstractIndex implements ManagedIndex, ManagedIndexHeader  {
     // this is a map of other Indexes that have been opened by
     // refererences associated with this Index
     Map trackedIndexMap = null;
@@ -338,7 +339,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      * Syncrhronize the values in this index header 
      * from values in a specified IndexHeader object.
      */
-    public boolean syncHeader(ManagedIndexHeader indexHeader) {
+    public synchronized boolean syncHeader(ManagedIndexHeader indexHeader) {
 	return header.syncHeader(indexHeader);
     }
 
@@ -346,6 +347,9 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
      * Close this index.
      */
     public synchronized boolean close() throws IndexCloseException {
+	// This method is defined here as it calls 
+	// methods that are only available in AbstractManagedIndex
+
 	if (isClosed()) {
 	    // already closed so nothing to do
 	    return false;
@@ -370,16 +374,33 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
 
 	    // now go on to close this index
 
-	    long refCount = TimeIndexDirectory.removeHandle(this);
+	    // lock the index
+	    boolean indexLocked = TimeIndexDirectory.indexGate(getURI());
 
+
+	    //System.err.println("AbstractManagedIndex: close " + getURI() + " Thread " + Thread.currentThread().getName()) ;
+	    long refCount = removeView();
+
+	    // if we get to here and the ref coount is 0
+	    // then we close it
+
+	    boolean closeValue = false;
+	    
 	    if (refCount == 0) {
 		//System.err.println("About to really close " + getURI());
-		boolean closeValue = reallyClose();
-
-		return closeValue;
+		closeValue = reallyClose();
 	    } else {
-		return false;
+		closeValue = false;
 	    }
+
+	    // now we unlock it
+	    if (indexLocked) {
+		TimeIndexDirectory.unlockI(getURI());
+	    }
+
+	    // return the closeValue
+	    return closeValue;
+	    
 	}
     }
     
@@ -391,7 +412,9 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
 	closed = true;
 	activated = false;
 
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
+	if (eventMulticaster.hasPrimaryEventListeners()) {
+	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
+	}
 
 	return true;
     }
@@ -399,7 +422,7 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     /**
      * Try and determine if this index is alreay open
      */
-    protected boolean isOpen(String name) {
+    protected synchronized boolean isOpen(String name) {
 	if (TimeIndexDirectory.find(name) == null) {
 	    return false;
 	} else {
@@ -410,13 +433,57 @@ public abstract class AbstractManagedIndex extends AbstractIndex implements Mana
     /**
      * Get a view onto the Index.
      */
-    public IndexView asView() {
+    public synchronized IndexView asView() {
+	//System.err.println(Clock.time.time() + "" + getURI() + " NEW VIEW" + ". Thread " + Thread.currentThread().getName() );
+
+	// lock the index
+	boolean indexLocked = TimeIndexDirectory.indexGate(getURI());
+
+	IndexView view = addView();
+
+	// now we unlock it
+	if (indexLocked) {
+	    TimeIndexDirectory.unlockI(getURI());
+	}
+
+	return view ;
+    }
+
+    /**
+     * Add a view to this index.
+     * @return the IndexView itself
+     */
+    public IndexView addView() {
 	// tell the tinme idnex directory there is another handle to this index
 	TimeIndexDirectory.addHandle(this);
 
-	return new TimeIndex(this);
+	IndexView view = new TimeIndex(this);
+
+	if (eventMulticaster.hasPrimaryEventListeners()) {
+	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.ADD_VIEW, this));
+	}
+
+	//System.err.println(Clock.time.time() + " " + getURI() + ". ADD_VIEW" + ". Thread " + Thread.currentThread().getName() );
+
+	return view;
+    }
+
+    /**
+     * Remove a view from this index.
+     * @return How many views are still left on the Index
+     */
+    public long removeView() {
+	long refCount = TimeIndexDirectory.removeHandle(this);
+
+	if (eventMulticaster.hasPrimaryEventListeners()) {
+	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.REMOVE_VIEW, this));
+	}
+
+	//System.err.println(Clock.time.time() + " " + getURI() + ". REMOVE_VIEW" + ". Thread " + Thread.currentThread().getName() );
+
+	return refCount;
     }
 
 
-
+	 
 }
