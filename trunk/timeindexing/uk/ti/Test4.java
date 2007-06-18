@@ -16,6 +16,7 @@ import com.timeindexing.time.ElapsedMillisecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.data.StringItem;
+import com.timeindexing.plugin.DefaultWriter;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -38,7 +39,7 @@ public class Test4 {
 
 	try {
 
-	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
 	    /* Item 0 */
 
@@ -100,9 +101,9 @@ public class Test4 {
 
 	    delay(50);
 
-	    index.close();
-
 	    printIndex(index);
+
+	    index.close();
 
 	} catch (TimeIndexException ice) {
 	    System.err.println("Test4: " + ice.getMessage());
@@ -135,11 +136,13 @@ public class Test4 {
 
 	System.out.print(item.getIndexTimestamp() + "\t");
 
-	ByteBuffer itemdata = item.getData();
 	if (item.getDataSize().value() > 16) {
+	    ByteBuffer itemdata = item.getData();
 	    System.out.print(new String(itemdata.array()).substring(0,11) + "....\t");
 	} else {
-	    System.out.print(new String(itemdata.array()) + "\t");
+	    DefaultWriter writer = new DefaultWriter(System.out);
+	    writer.write(item, null);
+	    System.out.print("\t");
 	}
 
 	System.out.print(item.getDataSize() + "\t");
