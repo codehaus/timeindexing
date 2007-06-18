@@ -3,7 +3,8 @@
 package com.timeindexing.plugin;
 
 import com.timeindexing.time.Timestamp;
-import com.timeindexing.index.DataType;import java.nio.ByteBuffer;
+import com.timeindexing.index.DataType;
+import java.nio.ByteBuffer;
 
 /**
  * A default implementation for the value returned by a reader plugin.
@@ -13,15 +14,8 @@ public class DefaultReaderResult implements ReaderResult {
     Timestamp dataTS = null;
     DataType dataType = null;
 
-    /**
-     * Construct a DefaultReaderResult.
-     * The type will be DataType.NOTSET_DT
-     */
-    /*    public DefaultReaderResult(ByteBuffer bb, Timestamp dTS) {
-	data = bb;
-	dataTS = dTS;
-    }
-    */
+    DefaultReaderResult() {}
+
     /**
      * Construct a DefaultReaderResult
      */
