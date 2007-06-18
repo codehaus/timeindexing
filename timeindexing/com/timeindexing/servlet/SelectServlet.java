@@ -3,6 +3,7 @@
 package com.timeindexing.servlet;
 
 import java.io.*;
+import java.net.SocketException;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
@@ -10,7 +11,11 @@ import java.util.Enumeration;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.appl.Selecter;
 import com.timeindexing.appl.SelectionCodeEvaluator;
+import com.timeindexing.appl.IndexPropertiesProcessor;
 import com.timeindexing.index.TimeIndexException;
+import com.timeindexing.time.Clock;
+import com.timeindexing.event.IndexPrimaryEvent;
+import com.timeindexing.event.IndexPrimaryEventListener;
 
 /**
  * This servlet selects data from an index.
@@ -36,7 +41,7 @@ import com.timeindexing.index.TimeIndexException;
  * <br>
  * The response is presented through <tt>/error/select_exception.jsp</tt>.
  */
-public class SelectServlet extends HttpServlet {
+public class SelectServlet extends HttpServlet implements IndexPrimaryEventListener {
     private final static int GOOD = 0;
 
     private final static int NO_REPOSIORY = 1;
@@ -48,36 +53,35 @@ public class SelectServlet extends HttpServlet {
 
     private final static int SELECT_EXCEPTION = 201;
 
-    int status = GOOD;
-
-    IndexProperties properties = new IndexProperties();
-    HttpServletResponse response = null;
+    String repositioryName = null;
+    String downloadLimitString = null;
+    String securityCodeString = null;
     boolean securityCodeOn = false;
-    
-
     String noRepositoryPage = null;
     String noIndexSpecifiedPage = null;
     String noSecurityCodePage = null;
     String badSecurityCodePage = null;
     String selectExceptionPage = null;
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response)
-	throws IOException, ServletException
-    {
-	boolean allFine = false;
-	long evaluatedCode = 0;
-
-	// get a handle on the repsonse for other methods.
-	this.response = response;
-
+    /**
+     * Init the servlet.
+     */
+    public void init(ServletConfig config) throws ServletException {
+	super.init(config);
 	/*
 	 * Get the initialisation stuff
 	 */
 	ServletContext context = getServletContext();
 
-	String repositioryName = (String)context.getInitParameter("repository");
-	String securityCodeString = (String)context.getInitParameter("security");
-	String downloadLimitString = (String)context.getInitParameter("downloadlimit");
+	repositioryName = (String)context.getInitParameter("repository");
+
+	if (empty(repositioryName)) {
+	    throw new ServletException("SelectServlet: parameter \"repositiory\" not defined");
+	}
+
+
+	securityCodeString = (String)context.getInitParameter("security");
+	downloadLimitString = (String)context.getInitParameter("downloadlimit");
 
 	// get names of pages to forward to if an error occurs
 	noRepositoryPage = (String)context.getInitParameter("norepositorypage");
@@ -110,15 +114,21 @@ public class SelectServlet extends HttpServlet {
 	}
 
 
-	if (empty(repositioryName)) {
-	    status = NO_REPOSIORY;
-	}
+    }
+
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+	throws IOException, ServletException
+    {
+	//System.err.println(Clock.time.time() + " SelectServlet: request = " + request + " response = " + response + ". Thread " + Thread.currentThread().getName());
+
+	int status = GOOD;
+	boolean allFine = false;
+	long evaluatedCode = 0;
 
 	/*
 	 * Process the request
 	 */
-
-	properties.clear();
+	IndexProperties properties = new IndexProperties();
 
 	// indexpath
 	String indexName = request.getParameter("file");
@@ -206,7 +216,7 @@ public class SelectServlet extends HttpServlet {
 	    // if style is NOT stream, then download
 
 	    // set the filename for the download
-	    setFilename(response, properties);
+	    setFilename(request, response, properties);
 	} else {
 	    // style is stream
 	}
@@ -282,33 +292,45 @@ public class SelectServlet extends HttpServlet {
 	    }
 	}
 
+
 	// done all the checks
 	// final stage
 	if (! allFine) {
 	    // everything was not all fine
 	    // so call prePlaybackError()
-	    prePlaybackError(request, response);
+	    prePlaybackError(request, response, status);
 	} else {
 	    // everything was fine, so
 	    // do the playback
 
-	    doPlayBack(request, response);
- 	}
+	    status = doPlayBack(request, response, properties, status);
 
-	properties.clear();
-	response = null;
+	    // when we get here check to see the status
+	    // we hope it is still GOOD;
+	    if (status != GOOD) {
+		// something went wrong, so
+		// call postPlaybackError()
+		postPlaybackError(request, response, status);
+	    }
+	}
+
+
     }
 
     /**
      * Playback the data.
+     * @returns the status of doing the playback
      */
-    protected void doPlayBack(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected int doPlayBack(HttpServletRequest request, HttpServletResponse response, IndexProperties properties, int passedInStatus) throws IOException {
+	int status = passedInStatus;
+
 	// newline
 	String newline =  request.getParameter("newline");
 
 	OutputStream out = null;
 
-	setContentType(response, properties);
+	
+	setContentType(request, response, getContentType());
 
 	// if the output needs newlines
 	// then assume we are writing to some text stream
@@ -325,18 +347,60 @@ public class SelectServlet extends HttpServlet {
 	// Lets open the index and select the relevant interval
 	//
 	// GO
+	System.err.println(Clock.time.time() + " index://" + (String)properties.get("indexpath") + ". IP: " + request.getRemoteAddr() + " User-Agent: " + request.getHeader("User-Agent")  + ". Thread " + Thread.currentThread().getName() );
+
 
 	Selecter selecter = null;
 
 	try {
 	    String filename = (String)properties.get("indexpath");
+
+	    // get a Selecter
 	    selecter = allocateSelecter(filename, out);
+
+	    // add the servlet as an event listener
+	    selecter.addPrimaryEventListener(this);
+
+	    // select the data
 	    selecter.select(properties);
 
-	} catch (Exception ex) {
-	    System.err.println("SelectServlet: Selecter failed selection for " + 
+	} catch (SocketException sex) {
+	    // SocketException, client probably disconnected
+
+	    // the selection failed
+	    status = SELECT_EXCEPTION;
+	    request.setAttribute("exception", sex);
+
+	    System.err.println(Clock.time.time() + " index://" + (String)properties.get("indexpath") + ". Client disconnect: Message = " + sex.getMessage() + " after " + selecter.getBytesOutput() + " bytes"+ ". Thread " + Thread.currentThread().getName() );
+
+	    try {
+		selecter.removePrimaryEventListener(this);
+
+		selecter.close();
+	    } catch (TimeIndexException tie) {
+		System.err.println("SelectServlet:close failed for " + 
 			       (String)properties.get("indexpath") );
-	    System.err.println("Reason: " + ex.getMessage());
+	    }
+	} catch (IOException ioe) {
+	    // IOException, client probably disconnected
+
+	    // the selection failed
+	    status = SELECT_EXCEPTION;
+	    request.setAttribute("exception", ioe);
+
+	    System.err.println(Clock.time.time() + " index://" + (String)properties.get("indexpath") + ". Client disconnect: Message = " + ioe.getMessage() + " after " + selecter.getBytesOutput() + " bytes"+ ". Thread " + Thread.currentThread().getName() );
+
+	    try {
+		selecter.close();
+	    } catch (TimeIndexException tie) {
+		System.err.println("SelectServlet:close failed for " + 
+			       (String)properties.get("indexpath") );
+	    }
+	} catch (Exception ex) {
+
+	    System.err.println(Clock.time.time() + " index://" + (String)properties.get("indexpath") + ". Failure: Message = " + ex.getMessage() + " after " + selecter.getBytesOutput() + " bytes"+ ". Thread " + Thread.currentThread().getName() );
+
+	    ex.printStackTrace(System.err);
 
 	    // the selection failed
 	    status = SELECT_EXCEPTION;
@@ -345,27 +409,18 @@ public class SelectServlet extends HttpServlet {
 	    try {
 		selecter.close();
 	    } catch (TimeIndexException tie) {
-		System.err.println("SelectServlet:clsoe failed for " + 
+		System.err.println("SelectServlet:close failed for " + 
 			       (String)properties.get("indexpath") );
 	    }
-	} finally {
-	    selecter = null;
-	}
+	} 
 
-	// when we get here check to see the status
-	// we hope it is still GOOD;
-	if (status != GOOD) {
-	    // something went wrong, so
-	    // call postPlaybackError()
-	    postPlaybackError(request, response);
-	}
-
+	return status;
     }
 
     /**
      * This is called if there is an error prior to playback.
      */
-    protected void prePlaybackError(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void prePlaybackError(HttpServletRequest request, HttpServletResponse response, int status) throws IOException {
 
 	PrintWriter out = new PrintWriter(response.getWriter());
 
@@ -391,8 +446,7 @@ public class SelectServlet extends HttpServlet {
 		response.sendError(response.SC_NOT_FOUND, "Missing parameters");
 	    }
 	} else {
-
-	    setContentType("text/html");
+	    setContentType(request, response, "text/html");
 
 	    ServletContext context = getServletContext();
 	    RequestDispatcher dispatcher = null;
@@ -472,7 +526,7 @@ public class SelectServlet extends HttpServlet {
      * This is called if there is an error during to playback.
      * 
      */
-    protected void postPlaybackError(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void postPlaybackError(HttpServletRequest request, HttpServletResponse response, int status) throws IOException {
 
 	PrintWriter out = new PrintWriter(response.getWriter());
 
@@ -491,7 +545,7 @@ public class SelectServlet extends HttpServlet {
 	    }
 
 	} else {
-	    setContentType("text/html");
+	    setContentType(request, response, "text/html");
 
 	    if (status == SELECT_EXCEPTION) {
 		dispatcher = context.getRequestDispatcher(selectExceptionPage);
@@ -512,7 +566,6 @@ public class SelectServlet extends HttpServlet {
 	    }
 	}
     }
-
 
     /**
      * Is a value empty.
@@ -560,29 +613,22 @@ public class SelectServlet extends HttpServlet {
     /**
      * Set the content type.
      */
-    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
-	// an example is: setContentType("application/octet-stream");
+    protected void setContentType(HttpServletRequest request, HttpServletResponse response, String type) {
+	response.setContentType(type);
     }
 
     /**
-     * Set the content type.
+     * Get the content type for this response.
      */
-    protected void setContentType(String mimeType) {
-	response.setContentType(mimeType);
-    }
-
-    /**
-     * Set the filename for downloads.
-     */
-    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
-	// an example is: setFilename("download.data");
+    protected String getContentType() {
+	return "application/octet-stream";
     }
 
     /**
      * Set the filename for downloads.
      */
-    protected void setFilename(String filename) {
-	response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+    protected void setFilename(HttpServletRequest request, HttpServletResponse response, IndexProperties properties) {
+	response.setHeader("Content-Disposition", "attachment; filename=" + fileNameGenerator(properties));;
     }
 
     /**
@@ -590,65 +636,53 @@ public class SelectServlet extends HttpServlet {
      * Returns filename-0:10-to-1:23.
      */
     protected String fileNameGenerator(IndexProperties properties) {
-	StringBuffer generatedName = new StringBuffer(128);
-
-	// add name
-	generatedName.append((String)properties.get("file"));
-	
-
-	/*
-	 * Determine start of selection.
-	 */
-	if (properties.containsKey("startpos")) {
-	    // get the start position
-	    generatedName.append("-");
-	    generatedName.append((String)properties.get("startpos"));
-
-	} else if (properties.containsKey("starttime")) {
-	    // get the start time
-	    generatedName.append("-");
-	    generatedName.append((String)properties.get("starttime"));
-
-	} else {
-	    // the start
-	    ;
-	}
-	    
-	/*
-	 * Determine end of selection.
-	 * We already know something about the start of the selection.
-	 */
-	if (properties.containsKey("endpos")) {
-	    // get the end position
-	    generatedName.append("-to-");
-	    generatedName.append((String)properties.get("endpos"));
-
-	} else if (properties.containsKey("endtime")) {
-	    // get the end time
-	    generatedName.append("-to-");
-	    generatedName.append((String)properties.get("endtime"));
-
-	} else if (properties.containsKey("count")) {
-	    // get a count
-	    generatedName.append("+");
-	    generatedName.append((String)properties.get("count"));
-
-	} else if (properties.containsKey("for")) {
-	    // get the elapsed time
-	    generatedName.append("+");
-	    generatedName.append((String)properties.get("for"));
-
-	} else {
-	    //the end
-	}
-
-	return generatedName.toString();
-
+	return new IndexPropertiesProcessor().fileNameGenerator((String)properties.get("file"), properties);
 
     }
 
-     
     /**
+     * A notification that an Index has been opened.
+     */
+    public  void opened(IndexPrimaryEvent ipe) {
+	System.err.println(Clock.time.time() + " " + ipe.getName() + ". OPENED" + ". Thread " + Thread.currentThread().getName() );
+    }
+
+    /**
+     * A notification that an Index has been closed.
+     */
+    public  void closed(IndexPrimaryEvent ipe) {
+	System.err.println(Clock.time.time() + " " + ipe.getName() + ". CLOSED" + ". Thread " + Thread.currentThread().getName() );
+    }
+
+    /**
+     * A notification that an Index has been committed.
+     */
+    public  void committed(IndexPrimaryEvent ipe) {
+	;
+    }
+
+    /**
+     * A notification that an Index has been created.
+     */
+    public  void created(IndexPrimaryEvent ipe) {
+	;
+    }
+
+    /**
+     * A notification that a view has been added to an Index.
+     */
+    public void viewAdded(IndexPrimaryEvent ipe) {
+	System.err.println(Clock.time.time() + " " + ipe.getName() + ". ADD_VIEW" + ". Thread " + Thread.currentThread().getName() );
+    }
+
+    /**
+     * A notification that a view has been removed to an Index.
+     */
+    public void viewRemoved(IndexPrimaryEvent ipe) {
+	System.err.println(Clock.time.time() + " " + ipe.getName() + ". REMOVE_VIEW" + ". Thread " + Thread.currentThread().getName() );
+    }
+
+   /**
      * Wrap a Writer as an Output Stream.
      */
     public class WriterOutputStream extends OutputStream {
