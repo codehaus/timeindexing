@@ -4,6 +4,7 @@ package com.timeindexing.cache;
 
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.LinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -20,7 +21,7 @@ public class RemoveAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public RemoveAtDataVolumePolicy() {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	// 100k
 	volumeThreshold = 100 * 1024;
     }
@@ -29,9 +30,32 @@ public class RemoveAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public RemoveAtDataVolumePolicy(long volume) {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	volumeThreshold = volume;
     }
+
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemBegin(IndexItem item,long pos) {
+	//System.err.print("notifyAddItemBegin: ");
+	notifyGetItemBegin(item, pos);
+	return null;
+    }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemEnd(IndexItem item, long pos) {
+	//System.err.print("notifyAddItemEnd: ");
+	notifyGetItemEnd(item, pos);
+	return null;
+    }    
 
     /**
      * Called at the beginning of cache.getItem()
@@ -39,25 +63,31 @@ public class RemoveAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (monitorList.contains(item)) {
-	    monitorList.remove(item);
-	    //System.err.println("DeQueue " + item.getPosition() + ".Remove list size = " + monitorList.size());
-	}
+	monitorList.remove(item);
 
 	// if the first item in the monitorList
 	// was last accessed with an elapsed time greater
 	// than the timeout, then remove it
 	// remove one item
-	if (monitorList.size() > 0) {
-	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
+	//if (monitorList.size() > 0) {
 
-	    if (cache.getDataVolume() > volumeThreshold) {
-		//System.err.print("Removeing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime());
-		monitorList.remove(first);
+ 	    while (cache.getDataVolume() > volumeThreshold) {
+
+		if (monitorList.size() == 0) {
+		    System.err.print("RemoveAtDataVolumePolicy: size == 0 volume = " + cache.getDataVolume() + " volumeThreshold = " + volumeThreshold);
+		}
+
+		ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
+
+		//if (cache.getDataVolume() > volumeThreshold) {
+		    //System.err.print("Removeing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime());
+		    monitorList.remove(first);
     
-		cache.removeItem(first.getPosition());
+		    cache.removeItem(first.getPosition());
+		    //}
 	    }
-	}
+
+	    //}
 
 	return null;
     }

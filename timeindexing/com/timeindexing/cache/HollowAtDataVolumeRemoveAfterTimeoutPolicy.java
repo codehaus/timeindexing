@@ -9,7 +9,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.RelativeTimestamp;
 import com.timeindexing.time.ElapsedMillisecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -21,17 +21,9 @@ import java.util.Iterator;
  */
 public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePolicy implements CachePolicy {
     // The list of items to remove
-    LinkedList removeList = null;
+    DoubleLinkedList removeList = null;
 
-    // The pre-queue that hold a few IndexItems.
-    // These are fed into the monitorList slowly
-    // to avoid the problem of when there is a quick
-    // addItem() then a getItem().
-    // This causes the policy to go awry.
-    // The preQueue avoid most of the problems
-    LinkedList preQueue = null;
-
-    // how long an IndexItem can queue before removeing
+    // how long an IndexItem can queued before removeing
     RelativeTimestamp timeout = null;
 
     // The volume to hold before removing
@@ -41,9 +33,8 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      * Construct this policy object
      */
     public HollowAtDataVolumeRemoveAfterTimeoutPolicy() {
-	monitorList = new LinkedList();
-	removeList = new LinkedList();
-	preQueue = new LinkedList();
+	monitorList = new DoubleLinkedList();
+	removeList = new DoubleLinkedList();
 	// 50
 	volumeThreshold = 50 * 1024;
 	// 0.5 second
@@ -54,7 +45,9 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      * Construct this policy object
      */
     public HollowAtDataVolumeRemoveAfterTimeoutPolicy(long volume, RelativeTimestamp elapsed) {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
+	removeList = new DoubleLinkedList();
+
 	volumeThreshold = volume;
  	timeout = elapsed;
    }
@@ -89,37 +82,40 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (isInFirst(30, monitorList, item)) {
-	    monitorList.remove(item);
-	    //System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
-	}
+	monitorList.remove(item);
 
 	// if the item is in the removeList remove it.
-	if (isInFirst(30, removeList, item)) {
-	    removeList.remove(item);
-	    //System.err.println("Dont remove " + item.getPosition() + ".Remove list size = " + removeList.size());
-	}
+	removeList.remove(item);
 
 	// if the first item in the monitorList
 	// was last accessed with an elapsed time greater
 	// than the timeout, then remove it
 	// remove one item
 	if (monitorList.size() > 0) {
-	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 
-	    if (cache.getDataVolume() > volumeThreshold) {
+	    //System.err.print("Hollowing " + ". Volume = " + cache.getDataVolume());
+
+ 	    while (cache.getDataVolume() > volumeThreshold) {
+		ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
+
 		//System.err.println("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ". Volume = " + cache.getDataVolume() + " Hollow list size = " + monitorList.size());
+
 		monitorList.remove(first);
     
 		cache.hollowItem(first.getPosition());
-
+		
 		// add the item to the remove list for later removal
 		removeList.add(first);
 	    }
+
+	    //System.err.println(". Volume = " + cache.getDataVolume()  + ". Thread " + Thread.currentThread().getName() );
+
 	}
 
 	// now check to see if we need to remove something as well
-	if (removeList.size() > 0) {
+	while (removeList.size() > 0) {
+
+	    // loop until we break out
 	    ManagedIndexItem first = (ManagedIndexItem)removeList.getFirst();
 
 	    Timestamp firstTimeout = TimeCalculator.elapsedSince(first.getLastAccessTime());
@@ -128,19 +124,14 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
 
 	    if (TimeCalculator.greaterThan(firstTimeout, timeout)) {
 		// the first element has a big enough timeout
-		//System.err.println("Removing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Timeout = " + firstTimeout + ". Remove list size = " + removeList.size());
+		// System.err.println("Removing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Timeout = " + firstTimeout + ". Remove list size = " + removeList.size());
+		    
+		//System.err.println("Removing " + first.getPosition() + ". Thread " + Thread.currentThread().getName() );		removeList.remove(first);
 		removeList.remove(first);
-	    
 		cache.removeItem(first.getPosition());
+	    } else {
+		break;
 	    }
-	}
-
-	// now move an element fro the preque to the monitorList
-	if (preQueue.size() > 2) {
-	    ManagedIndexItem first = (ManagedIndexItem)preQueue.getFirst();
-
-	    preQueue.remove(first);
-	    monitorList.add(first);
 	}
 
 	return null;
@@ -151,11 +142,8 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      * @param item the item being returned
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
-	// if this item is not in the monitorList, then add it
-	if (! preQueue.contains(item) && ! isInFirst(30, monitorList, item)) {
-	    preQueue.add(item);
-	    //System.err.println("PreQueuing " + item.getPosition() + ". Prequeue size = " + preQueue.size());
-	}
+	// add this item to the monitorList
+	monitorList.add(item);
 
 	return null;
     }
