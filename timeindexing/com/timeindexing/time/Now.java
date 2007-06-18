@@ -17,7 +17,7 @@ public class Now extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public Now() {
 	setHowMany(1);
-	setDirection(null);
+	setDirection(TimeDirection.NOTHING);
     }
 
     /**
@@ -25,7 +25,7 @@ public class Now extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public Now(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(null);
+	setDirection(TimeDirection.NOTHING);
 	afterDoing(modifier);
     }
 
