@@ -4,7 +4,7 @@ package com.timeindexing.cache;
 
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -20,7 +20,7 @@ public class HollowAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public HollowAtDataVolumePolicy() {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	// 50k
 	volumeThreshold = 50 * 1024;
     }
@@ -29,7 +29,7 @@ public class HollowAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public HollowAtDataVolumePolicy(long volume) {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	volumeThreshold = volume;
     }
 
@@ -61,23 +61,23 @@ public class HollowAtDataVolumePolicy extends AbstractCachePolicy implements Cac
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (monitorList.contains(item)) {
-	    monitorList.remove(item);
-	    //System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
-	}
+	monitorList.remove(item);
 
 	// if the first item in the monitorList
 	// was last accessed with an elapsed time greater
 	// than the timeout, then remove it
 	// remove one item
 	if (monitorList.size() > 0) {
-	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 
-	    if (cache.getDataVolume() > volumeThreshold) {
-		//System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime());
-		monitorList.remove(first);
+ 	    while (cache.getDataVolume() > volumeThreshold) {
+		ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
+
+		if (cache.getDataVolume() > volumeThreshold) {
+		    //System.err.print("Hollowing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime());
+		    monitorList.remove(first);
     
-		cache.hollowItem(first.getPosition());
+		    cache.hollowItem(first.getPosition());
+		}
 	    }
 	}
 
