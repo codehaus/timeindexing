@@ -4,8 +4,9 @@ package com.timeindexing.time;
 
 
 /**
- * An interface for constants that specify the direction in time of a Time.
- * Namely, forward or backward in time.
+ * An interface for constants that specify the direction in time
+ * of a TimeSpecifier.
+ * Namely, forward, backward, or nothing in time.
  */
 public interface  TimeDirection {
     /**
@@ -14,16 +15,16 @@ public interface  TimeDirection {
     public int value();
 
     /**
-     * The modification is forward in time.
+     * The direction is forward in time.
      */
-    public final static int FORWARD = 1;
+    public final static int FORWARD_VALUE = 1;
 
     /**
-     * The modification is forward in time.
+     * The direction is forward in time.
      */
-    public final static TimeDirection FORWARD_DT = new TimeDirection() {
+    public final static TimeDirection FORWARD = new TimeDirection() {
 	    public int value() {
-		return FORWARD;
+		return FORWARD_VALUE;
 	    }
 
 	    public String toString() {
@@ -32,20 +33,38 @@ public interface  TimeDirection {
 	};
 
     /**
-     * The modification is backward in time.
+     * The direction is backward in time.
      */
-    public final static int BACKWARD = 2;
+    public final static int BACKWARD_VALUE = 2;
 
     /**
-     * The modification is backward in time.
+     * The direction is backward in time.
      */
-    public final static TimeDirection BACKWARD_DT = new TimeDirection() {
+    public final static TimeDirection BACKWARD = new TimeDirection() {
 	    public int value() {
-		return BACKWARD;
+		return BACKWARD_VALUE;
 	    }
 
 	    public String toString() {
 		return "backward";
+	    }
+	};
+
+    /**
+     * The direction is nothing.
+     */
+    public final static int NOTHING_VALUE = 3;
+
+    /**
+     * The direction is nothing.
+     */
+    public final static TimeDirection NOTHING = new TimeDirection() {
+	    public int value() {
+		return NOTHING_VALUE;
+	    }
+
+	    public String toString() {
+		return "nothing";
 	    }
 	};
 
