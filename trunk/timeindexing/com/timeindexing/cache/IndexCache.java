@@ -84,6 +84,19 @@ public interface IndexCache {
     public long getDataVolume();
 
     /**
+     * Increase the data volume
+     * @return the new data volume
+     */
+    public long increaseDataVolume(long v);
+
+
+     /**
+     * Decrease the data volume
+     * @return the new data volume
+     */
+    public long decreaseDataVolume(long v);
+
+   /**
      * Get the time the first IndexItem was put into the Index.
      */
     public Timestamp getFirstIndexTime();
