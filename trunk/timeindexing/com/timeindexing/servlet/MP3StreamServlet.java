@@ -2,6 +2,8 @@
 
 package com.timeindexing.servlet;
 
+import com.timeindexing.index.IndexProperties;
+import com.timeindexing.time.Clock;
 import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -16,7 +18,7 @@ import javax.servlet.http.*;
  */
 public class MP3StreamServlet extends SelectServlet {
 
-    public void doPlayBack(HttpServletRequest request, HttpServletResponse response)
+    public int doPlayBack(HttpServletRequest request, HttpServletResponse response, IndexProperties properties, int passedInStatus)
     throws IOException {
 	ServletOutputStream out = response.getOutputStream();
 	String contextName = request.getContextPath();
@@ -24,19 +26,30 @@ public class MP3StreamServlet extends SelectServlet {
 
 	String ua = request.getHeader("User-Agent").toLowerCase();
 
-	System.err.println(this.getClass().getName() + " User-Agent: " + request.getHeader("User-Agent"));
+	setContentType(request, response, "audio/x-mpegurl");
 
-	response.setContentType("audio/x-mpegurl");
-
-	response.setHeader("Content-Disposition", "inline; filename=" + "download.m3u");
-
-	// Was this.  Changes to fix a bug in IE.
-	//response.setHeader("Content-Disposition", "attachment; filename=" + "download.m3u" );
+	setFilename(request, response, properties);
 
 	int port = request.getServerPort();
 
-	out.println("http://" + request.getServerName() + (port==80? "" : ":"+port) + contextName + "/MP3DownloadServlet?" + encode(request.getQueryString()) + "&style=stream");
+	out.println("http://" + request.getServerName() + (port==80? "" : ":"+port) + contextName + "/MP3DownloadServlet?" + encode(request.getQueryString()) + "&style=download");
 
+	return passedInStatus;
+    }
+
+    /**
+     * Set the filename for downloads.
+     */
+    protected void setFilename(HttpServletRequest request, HttpServletResponse response, IndexProperties properties) {
+	response.setHeader("Content-Disposition", "inline; filename=" + fileNameGenerator(properties));;
+    }
+
+    /**
+     * This filename generator, takes the arguments and generates a useful filename.
+     * Returns filename-0:10-to-1:23.
+     */
+    protected String fileNameGenerator(IndexProperties properties) {
+	return "download.m3u";
     }
 
     /**
