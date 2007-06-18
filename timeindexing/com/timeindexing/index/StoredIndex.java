@@ -11,6 +11,7 @@ package com.timeindexing.index;
 public interface StoredIndex extends ManagedIndex  {
     /**
      * Retrieve an Index Item into the Index.
+     * This is a callback for the IOInteractor.
      * @param item the IndexItem to add
      * @param position the position to add the item at
      * @return the no of items in the cache
@@ -19,8 +20,7 @@ public interface StoredIndex extends ManagedIndex  {
 
     /**
      * Read data for an index item
-     * given a DataReference.
+     * given an index position and a DataReference.
      */
-    public DataHolderObject readData(DataReference dataReference);
-
+    public DataHolderObject readData(long pos, DataReference dataReference);
 }
