@@ -11,7 +11,7 @@ public class StartOfDay extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public StartOfDay() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class StartOfDay extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public StartOfDay(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 

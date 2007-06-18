@@ -11,7 +11,7 @@ public class EndOfMinute extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public EndOfMinute() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class EndOfMinute extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public EndOfMinute(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

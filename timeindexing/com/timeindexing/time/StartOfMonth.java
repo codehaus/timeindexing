@@ -14,7 +14,7 @@ public class StartOfMonth extends AbstractTimeSpecifier implements TimeSpecifier
      */
     public StartOfMonth() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -22,7 +22,7 @@ public class StartOfMonth extends AbstractTimeSpecifier implements TimeSpecifier
      */
     public StartOfMonth(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 
