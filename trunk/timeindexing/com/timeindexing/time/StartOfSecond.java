@@ -11,7 +11,7 @@ public class StartOfSecond extends AbstractTimeSpecifier implements TimeSpecifie
      */
     public StartOfSecond() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class StartOfSecond extends AbstractTimeSpecifier implements TimeSpecifie
      */
     public StartOfSecond(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 

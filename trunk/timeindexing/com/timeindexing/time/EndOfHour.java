@@ -11,7 +11,7 @@ public class EndOfHour extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfHour() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class EndOfHour extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfHour(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

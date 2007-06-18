@@ -11,7 +11,7 @@ public class EndOfSecond extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public EndOfSecond() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class EndOfSecond extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public EndOfSecond(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

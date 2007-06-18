@@ -11,7 +11,7 @@ public class EndOfDay extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfDay() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class EndOfDay extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfDay(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

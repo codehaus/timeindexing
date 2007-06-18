@@ -14,7 +14,7 @@ public class EndOfWeek extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfWeek() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -22,7 +22,7 @@ public class EndOfWeek extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfWeek(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

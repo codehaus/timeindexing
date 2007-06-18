@@ -32,8 +32,8 @@ public interface  TimeSpecifier extends Cloneable, Value {
 
     /**
      * Get the value.
-     * When TimeDirection is FORWARD_DT, then the value is positive,
-     * and when TimeDirection is BACKWARD_DT, then the value is negative.
+     * When TimeDirection is FORWARD, then the value is positive,
+     * and when TimeDirection is BACKWARD, then the value is negative.
      */
     public long value();
 }

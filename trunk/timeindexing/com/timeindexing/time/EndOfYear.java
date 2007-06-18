@@ -14,7 +14,7 @@ public class EndOfYear extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfYear() {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
     }
 
     /**
@@ -22,7 +22,7 @@ public class EndOfYear extends AbstractTimeSpecifier implements TimeSpecifier {
      */
     public EndOfYear(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.FORWARD_DT);
+	setDirection(TimeDirection.FORWARD);
 	afterDoing(modifier);
     }
 

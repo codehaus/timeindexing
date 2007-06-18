@@ -11,7 +11,7 @@ public class StartOfMinute extends AbstractTimeSpecifier implements TimeSpecifie
      */
     public StartOfMinute() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -19,7 +19,7 @@ public class StartOfMinute extends AbstractTimeSpecifier implements TimeSpecifie
      */
     public StartOfMinute(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 

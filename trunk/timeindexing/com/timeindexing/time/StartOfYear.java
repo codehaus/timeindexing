@@ -14,7 +14,7 @@ public class StartOfYear extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public StartOfYear() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -22,7 +22,7 @@ public class StartOfYear extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public StartOfYear(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 

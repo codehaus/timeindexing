@@ -14,7 +14,7 @@ public class StartOfWeek extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public StartOfWeek() {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
     }
 
     /**
@@ -22,7 +22,7 @@ public class StartOfWeek extends AbstractTimeSpecifier implements TimeSpecifier 
      */
     public StartOfWeek(TimeSpecifier modifier) {
 	setHowMany(1);
-	setDirection(TimeDirection.BACKWARD_DT);
+	setDirection(TimeDirection.BACKWARD);
 	afterDoing(modifier);
     }
 
