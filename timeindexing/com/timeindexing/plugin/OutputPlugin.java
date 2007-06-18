@@ -48,6 +48,12 @@ public interface OutputPlugin {
     
 
     /**
+     * Flush out any remainig data.
+     */
+    public long flush() throws IOException;
+
+
+    /**
      * Called as the first thing of doOutput().
      * Useful for doing any processing before output starts.
      */
