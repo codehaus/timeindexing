@@ -72,14 +72,14 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
     public long create(IndexProperties indexProperties) throws IOException, IndexCreateException{
 	creating = true;
 
-	originalIndexSpecifier = (String)indexProperties.get("indexpath");
+	originalIndexSpecifier = (String)indexProperties.get("canonicalpath");
 
 	headerInteractor = new IndexHeaderIO(this);
 
 	// use the original specifier as a first cut for the header file name
 	// and the index file name
 	headerFileName = originalIndexSpecifier;
-	indexFileName = originalIndexSpecifier;
+	indexFileName = (String)indexProperties.get("indexpath");
 
 	indexName = (String)indexProperties.get("name");
 	indexID = (ID)indexProperties.get("indexid");
@@ -263,7 +263,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 		    File headerFile = new File(headerFileName);
 
 		    file = new File(headerFile.getParent(), indexFileName);
-		    indexFileName = file.getAbsolutePath();
+		    indexFileName = file.getName(); // getAbsolutePath();
 		}
 
 		if (file.canWrite()) {
@@ -273,6 +273,15 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
 		}
 
 	    } else {                            // we ARE creating
+		// file names can be be realtive
+		// so we have to resolve filenames
+
+		if (! file.isAbsolute()) {
+		    indexFileName = new File(indexFileName).getName();
+		    System.err.println("InlineIndexIO: pathched indexFileName = " + indexFileName);
+		}
+
+		// can;t create anything without writing
 		openMode = "rw";
 	    }
 
@@ -323,7 +332,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Get the item at index position Position.
      * This will load upto position position.
      */
-    public ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
+    public synchronized ManagedIndexItem getItem(long position, boolean doLoadData) throws IOException  {
 	// this requires a linear scan down the index
 
 	IndexItem item = null;
@@ -498,7 +507,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Operation on flush.
      * Returns how many bytes were written.
      */
-    public long flush() throws IOException {
+    public synchronized long flush() throws IOException {
 	long written = 0;
 
 	// flush out any reaming data
@@ -518,7 +527,7 @@ public class InlineIndexIO extends AbstractFileIO implements IndexFileInteractor
      * Operation on close
      * @return the size of the index
      */
-    public long close() throws IOException {
+    public synchronized long close() throws IOException {
 	// flush out any reaming data
 	long lastWrite = flush();
 
