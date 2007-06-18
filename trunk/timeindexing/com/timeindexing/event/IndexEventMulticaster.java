@@ -60,6 +60,16 @@ public class IndexEventMulticaster implements IndexEventGenerator {
 	return listenerListPrimaryEvent.getListenerList();
     }
 
+    /**
+     * Are there any Primary Event Listeners
+     */
+    public boolean hasPrimaryEventListeners() {
+	if (listenerListPrimaryEvent.getListenerCount() == 0) {
+	    return false;
+	} else {
+	    return true;
+	}
+    }
 
     /**
      * Notify all listeners that have registered interest for
@@ -89,6 +99,12 @@ public class IndexEventMulticaster implements IndexEventGenerator {
 
 		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.CREATED) {
 		    ipeL.created(ipE);
+
+		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.ADD_VIEW) {
+		    ipeL.viewAdded(ipE);
+
+		} else if (ipE.getEventSpecifier() == IndexPrimaryEvent.REMOVE_VIEW) {
+		    ipeL.viewRemoved(ipE);
 		} else {
 		    throw new Error("IndexEventMulticaster: cant fire event when IndexPrimaryEvent specifier == " + ipE.getEventSpecifier());
 		}
@@ -118,6 +134,17 @@ public class IndexEventMulticaster implements IndexEventGenerator {
 	return listenerListAddEvent.getListenerList();
     }
 
+
+    /**
+     * Are there any Add Event Listeners
+     */
+    public boolean hasAddEventListeners() {
+	if (listenerListAddEvent.getListenerCount() == 0) {
+	    return false;
+	} else {
+	    return true;
+	}
+    }
 
     /**
      * Notify all listeners that have registered interest for
@@ -161,6 +188,17 @@ public class IndexEventMulticaster implements IndexEventGenerator {
 	return listenerListAccessEvent.getListenerList();
     }
 
+
+    /**
+     * Are there any Access Event Listeners
+     */
+    public boolean hasAccessEventListeners() {
+	if (listenerListAccessEvent.getListenerCount() == 0) {
+	    return false;
+	} else {
+	    return true;
+	}
+    }
 
     /**
      * Notify all listeners that have registered interest for
