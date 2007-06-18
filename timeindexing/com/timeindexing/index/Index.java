@@ -8,7 +8,9 @@ import com.timeindexing.basic.Position;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.IntervalSpecifier;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.CachePolicy;
 
@@ -63,39 +65,65 @@ public interface Index extends IndexHeader {
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
+    public IndexItem addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+    public IndexItem addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
+     * Add a Data Item to the Index with a speicifed Data Timestamp and some annotation data
+     */
+    public IndexItem addItem(DataItem item, Timestamp dataTime, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Add a Reference to an IndexItem in a Index.
      * The Data Timestamp of the IndexItem is passed into this Index.
      */
-    public long addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
+    public IndexItem addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
 
     /**
      * Add a Reference to an IndexItem in a Index.
      * The Data Timestamp of the IndexItem is the one specified.
      */
-    public long addReference(IndexItem item, Index other, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+    public IndexItem addReference(IndexItem item, Index other, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is the one specified, as is the annotation value.
+     */
+    public IndexItem addReference(IndexItem item, Index other, Timestamp dataTime, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) throws GetItemException;
+    public IndexItem getItem(long n) throws GetItemException, IndexClosedException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p) throws GetItemException;
+    public IndexItem getItem(Position p) throws GetItemException, IndexClosedException;
+
+    /**
+     * Get an Index Item from the Index.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     */
+    public IndexItem getItem(Timestamp t) throws GetItemException, IndexClosedException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException;
+    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException, IndexClosedException;
+
+
+    /**
+     * Does a timestamp fall within the bounds of the Index.
+     * Uses IndexTimestampSelector.DATA as a default.
+     * The bounds are the first time data is put in and the last
+     * time data is put in the Index.
+     */
+    public boolean contains(Timestamp t);
 
     /**
      * Does a timestamp fall within the bounds of the Index.
@@ -105,12 +133,28 @@ public interface Index extends IndexHeader {
     public boolean contains(Timestamp t, IndexTimestampSelector sel);
 
     /**
+     * Try and determine the position associated with the speicifed Timestamp.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original time
+     * and the found position.
+     */
+    public TimestampMapping locate(Timestamp t);
+
+    /**
      * Try and determine the position associated
      * with the speicifed Timestamp.
      * Returns a TimestampMapping which contains the original time
      * and the found position.
      */
     public TimestampMapping locate(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime);
+
+    /**
+     * Try and determine the Timestamp associated with the speicifed Position.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     */
+    public TimestampMapping locate(Position p);
 
     /**
      * Try and determine the Timestamp associated
@@ -122,10 +166,31 @@ public interface Index extends IndexHeader {
 
 
     /**
-     * Select an Interval.
+     * Select an Interval given an Interval object.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(Interval interval);
+
+    /**
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier);
+
+   /**
+     * Select an Interval given an Interval object.
      * Returns null if it cant be done.
      */
     public IndexView select(Interval interval, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime);
+
+    /**
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime);
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
@@ -200,9 +265,32 @@ public interface Index extends IndexHeader {
     public IndexView asView();
 
     /**
-     * Set a CachePolicy in order to manage the cache.
+     * Get the CachePolicy 
      */
-    public boolean setCachePolicy(CachePolicy policy); 
+    public CachePolicy getCachePolicy(); 
+
+
+    /**
+     * Set a CachePolicy in order to manage the cache.
+     * Setting a new CachePolicy in the middle of operation
+     * can lose some timing information held by the existing CachePolicy,
+     * so use with care.
+     * @return the old policy if the policy was set
+      */
+    public CachePolicy setCachePolicy(CachePolicy policy); 
+
+    /**
+     * Does the index load data automatically when doing a get item. 
+     */
+    public boolean getLoadDataAutomatically();
+
+    /**
+     * Load data automatically when doing a get item.
+     * @return the previous value of this status
+     */
+    public boolean setLoadDataAutomatically(boolean load);
+
+
 }
 
 
