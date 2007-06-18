@@ -67,7 +67,7 @@ public class Line extends DefaultReader implements ReaderPlugin {
 	ByteBuffer lineBuffer = ByteBuffer.allocate(lineBytes.length + 1);
 	lineBuffer.put(lineBytes);
 	lineBuffer.put(System.getProperty("line.separator").getBytes());
-	return new DefaultReaderResult(lineBuffer, null, DataType.TEXT_DT);
+	return new DefaultReaderResult(lineBuffer, null, DataType.TEXT);
     }
 
     /**

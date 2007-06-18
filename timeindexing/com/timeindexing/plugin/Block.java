@@ -94,7 +94,7 @@ public class Block extends DefaultReader implements ReaderPlugin {
 			   " B(C) = " + block.capacity());
 
 	*/
-	return new DefaultReaderResult(block, null, DataType.ANY_DT);
+	return new DefaultReaderResult(block, null, DataType.ANY);
     }
 
     /**
