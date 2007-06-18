@@ -6,6 +6,8 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexProperties;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -15,8 +17,12 @@ import java.io.IOException;
  */
 public class DefaultWriter implements WriterPlugin {
     OutputStream out = null;
+    WritableByteChannel channel = null;
 
     private final static int BUFSIZE = 1024;
+
+    // thr output buffer
+    private byte [] outbuf = new byte[BUFSIZE];
 
     /*
      * The EOL mark ¶
@@ -58,8 +64,8 @@ public class DefaultWriter implements WriterPlugin {
      */
     public long write(IndexItem item, IndexProperties outputProperties) throws IOException {
 	ByteBuffer itemdata = item.getData();
-	byte [] outbuf = new byte[BUFSIZE];
 	long writeCount = 0;
+	long writeTotal = 0;
 
 	boolean doEOL = false;
 	byte [] eolBytes = null;
@@ -71,20 +77,31 @@ public class DefaultWriter implements WriterPlugin {
 
 	// pump out the data
 
-	while (itemdata.remaining() >= BUFSIZE) {
-	    itemdata.get(outbuf, 0, BUFSIZE);
-	    out.write(outbuf);
-	    writeCount += BUFSIZE;
-	}
-	int remaining = itemdata.remaining();
-	itemdata.get(outbuf, 0, remaining);
-	out.write(outbuf, 0, remaining);
-	writeCount += remaining;
+	writeTotal = channel.write(itemdata);
 
 	if (doEOL) {
-	    out.write(eolBytes);
-	    writeCount += eolBytes.length;
+	    ByteBuffer eolBuf = ByteBuffer.wrap(eolBytes);
+	    writeCount = channel.write(eolBuf);
+	    writeTotal += writeCount;
 	}
+
+	return writeTotal;
+    }
+
+    /**
+     * Flush out any remainig data.
+     */
+    public long flush() throws IOException {
+	return 0;
+    }
+
+    /**
+     * Actually write the bytes out.
+     */
+    private long write(byte[] outbuf, int from, int to) throws IOException {
+	long writeCount = to - from;
+
+	out.write(outbuf, from, to);
 
 	return writeCount;
     }
@@ -101,7 +118,24 @@ public class DefaultWriter implements WriterPlugin {
      */
     public WriterPlugin setOutputStream(OutputStream outStream) {
 	out = outStream;
+	channel = Channels.newChannel(out);
 	return this;
     }
   
+    /**
+     * Called as the first thing.
+     * Useful for doing any processing before output starts.
+     */
+    public Object begin() throws IOException {
+	return null;
+    }
+
+    /**
+     * Called as the last thing.
+     * Useful for doing any processing after output has finished.
+     */
+    public Object end() throws IOException {
+	return null;
+    }
+
  }
