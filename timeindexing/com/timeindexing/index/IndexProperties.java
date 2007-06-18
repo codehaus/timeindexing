@@ -4,6 +4,7 @@ package com.timeindexing.index;
 
 import com.timeindexing.util.CascadingMap;
 import java.util.Properties;
+import java.util.Map;
 
 /**
  * The index properties are a map of names to objects.
@@ -21,6 +22,13 @@ public class IndexProperties extends CascadingMap {
      */
     public IndexProperties(Properties properties) {
 	super(properties);
+    }
+
+   /**
+     * Construct some IndexProperties using a Map object.
+     */
+    public IndexProperties(Map map) {
+	super(map);
     }
 
     /**
