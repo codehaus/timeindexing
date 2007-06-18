@@ -29,6 +29,9 @@ import java.net.URISyntaxException;
  * It represents the index header, the index stream and the data stream.
  */
 public class InlineIndex extends FileIndex implements ManagedIndex  {
+    // The file name of the index file
+    String indexPathName = null;
+
     /**
      * Create an InlineIndex
      */
@@ -52,7 +55,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 	setCachePolicy(new HollowAtDataVolumePolicy());  // (new HollowAfterTimeoutPolicy());
 
-	setIndexType(IndexType.INLINE_DT);
+	setIndexType(IndexType.INLINE);
 
 	indexInteractor = new InlineIndexIO(this);
     }
@@ -81,7 +84,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	try {
 	    IndexProperties indexProperties = new IndexProperties();
 
-	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("indexpath", indexPathName);
 	    indexProperties.put("readonly", readOnly);
 
 	    // open the index 
@@ -98,7 +101,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.addHandle(this);
+	    //TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -145,7 +148,8 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    IndexProperties indexProperties = new IndexProperties();
 	    indexProperties.put("name", indexName);
 	    indexProperties.put("indexid", indexID);
-	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("indexpath", indexPathName);
+	    indexProperties.put("canonicalpath", headerPathName);
 
 	    // create the relevant objects
 	    indexInteractor.create(indexProperties);
@@ -163,7 +167,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	    changed = true;
 
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.addHandle(this);
+	    //TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -181,6 +185,7 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
     protected void checkOpenProperties(Properties indexProperties) throws IndexSpecificationException {
 	if (indexProperties.containsKey("indexpath")) {
 	    headerPathName = indexProperties.getProperty("indexpath");
+	    indexPathName = indexProperties.getProperty("indexpath");
 	} else {
 	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
 	}
@@ -225,9 +230,16 @@ public class InlineIndex extends FileIndex implements ManagedIndex  {
 	}
 
 	if (indexProperties.containsKey("indexpath")) {
-	    headerPathName = indexProperties.getProperty("indexpath");
+	    indexPathName = indexProperties.getProperty("indexpath");
 	} else {
 	    throw new IndexSpecificationException("No 'indexpath' specified for InlineIndex");
+	}
+
+	if (indexProperties.containsKey("canonicalpath")) {
+	    headerPathName = indexProperties.getProperty("canonicalpath");
+
+	} else {
+	    throw new IndexSpecificationException("No 'canonicalpath' specified for InlineIndex");
 	}
 
 	if (indexProperties.containsKey("datatype")) {
