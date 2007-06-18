@@ -67,7 +67,7 @@ public class FileItem implements ReaderPlugin {
 	    setEOF();
 
 	    // return the buffer
-	    return new DefaultReaderResult(buffer, null, DataType.ANY_DT);
+	    return new DefaultReaderResult(buffer, null, DataType.ANY);
 	}
     }
 
