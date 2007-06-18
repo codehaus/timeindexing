@@ -148,11 +148,16 @@ public class EndPointInterval extends AbsoluteInterval implements Interval, Clon
     protected Position resolveValue(Index index, TimestampMapping posStart, Value value, IndexTimestampSelector selector, Lifetime lifetime) {
 	if (value instanceof Count) {
 	    Count count = (Count)value;
+	    //Count count = (Count)new RelativeAdjustableCount((Count)value).adjust(-1);
 
 	    // calculate the new position given the start pos and a count
-	    Position result = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posStart).adjust(count));
+	    if (posStart.position().value() < 0) {
+		return Position.TOO_LOW;
+	    } else {
+		Position result = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posStart).adjust(count));
 
-	    return result;
+		return result;
+	    }
 
 	} else if (value instanceof RelativeTimestamp) {
 	    RelativeTimestamp offset = (RelativeTimestamp)value;
