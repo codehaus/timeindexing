@@ -3,6 +3,7 @@
 package com.timeindexing.index;
 
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.ElapsedMillisecondTimestamp;
 import com.timeindexing.time.Clock;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
@@ -30,6 +31,8 @@ import java.net.URISyntaxException;
  * It represents the index header, the index stream and the data stream.
  */
 public class ExternalIndex extends FileIndex implements ManagedIndex  {
+    // The file name of the index file
+    String indexPathName = null;
     // The file name of the data file
     String dataPathName = null;
     
@@ -46,9 +49,13 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	setCachePolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy()); // new HollowAfterTimeoutPolicy()); 
+	setCachePolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy(1024*1024, new ElapsedMillisecondTimestamp(200))); 
+	//new HollowAtDataVolumeRemoveAfterTimeoutPolicy(1024*1024, new ElapsedMillisecondTimestamp(8000))); 
+	//new HollowAfterTimeoutPolicy(new ElapsedMillisecondTimestamp(2000)));
+	//new HollowAtDataVolumeRemoveAfterTimeoutPolicy());
+	//new HollowAfterTimeoutPolicy());
 
-	setIndexType(IndexType.EXTERNAL_DT);
+	setIndexType(IndexType.EXTERNAL);
 
 	indexInteractor = new ExternalIndexIO(this);
 
@@ -57,7 +64,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     /**
      * Called when an ExternalIndex needs to be opend.
      */
-    public synchronized boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
+    public boolean open(Properties properties) throws IndexSpecificationException, IndexOpenException {
 	// check the passed in properties
 	checkOpenProperties(properties);
 
@@ -65,9 +72,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	try {
 	    String uri = generateURI(headerPathName).toString();
 
-	    if (isOpen(uri)) {
-		throw new IndexOpenException("Index is already created and is open");
-	    }
+	    //if (isOpen(uri)) {
+	    //	throw new IndexOpenException("Index is already created and is open");
+	    //}
 	} catch (URISyntaxException use) {
 	    throw new IndexSpecificationException("Index badly specified as " + headerPathName);
 	}
@@ -78,7 +85,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	try {
 	    IndexProperties indexProperties = new IndexProperties();
 
-	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("indexpath", indexPathName);
 	    indexProperties.put("readonly", readOnly);
 	    
 	    // open the index and the data
@@ -92,9 +99,10 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    // now we're open
 	    closed = false;
 
-	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.addHandle(this);
+	    //System.err.println("ExternalIndex: " + " open for " + headerPathName + " Thread " + Thread.currentThread().getName());
 
+	    // register myself in the TimeIndex directory
+	    //TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -144,8 +152,9 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    IndexProperties indexProperties = new IndexProperties();
 	    indexProperties.put("name", indexName);
 	    indexProperties.put("indexid", indexID);
-	    indexProperties.put("indexpath", headerPathName);
+	    indexProperties.put("indexpath", indexPathName);
 	    indexProperties.put("datapath", dataPathName);
+	    indexProperties.put("canonicalpath", headerPathName);
 
 	    // process optional properties
 
@@ -172,8 +181,10 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	    // and some things have changed.
 	    changed = true;
 
+	    //System.err.println("ExternalIndex: " + " create for " + headerPathName + " Thread " + Thread.currentThread().getName());
+
 	    // register myself in the TimeIndex directory
-	    TimeIndexDirectory.addHandle(this);
+	    //TimeIndexDirectory.addHandle(this);
 
 	    return true;
 	} catch (IOException ioe) {
@@ -189,6 +200,7 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
     protected void checkOpenProperties(Properties indexProperties) throws IndexSpecificationException {
 	if (indexProperties.containsKey("indexpath")) {
 	    headerPathName = indexProperties.getProperty("indexpath");
+	    indexPathName = indexProperties.getProperty("indexpath");
 	} else {
 	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
 	}
@@ -233,10 +245,17 @@ public class ExternalIndex extends FileIndex implements ManagedIndex  {
 	}
 
 	if (indexProperties.containsKey("indexpath")) {
-	    headerPathName = indexProperties.getProperty("indexpath");
+	    indexPathName = indexProperties.getProperty("indexpath");
 
 	} else {
 	    throw new IndexSpecificationException("No 'indexpath' specified for ExternalIndex");
+	}
+
+	if (indexProperties.containsKey("canonicalpath")) {
+	    headerPathName = indexProperties.getProperty("canonicalpath");
+
+	} else {
+	    throw new IndexSpecificationException("No 'canonicalpath' specified for ExternalIndex");
 	}
 
 
