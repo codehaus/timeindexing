@@ -32,12 +32,12 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @param data some data as a Item
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID an ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataItem dataitem,
-			DataType type, ID id, ID annotationID) {
+			DataType type, ID id, long annotationValue) {
 	this(dataTS, indexTS,  new DataHolderObject(dataitem.getBytes(),  dataitem.getSize()),
-	     type, id, annotationID);
+	     type, id, annotationValue);
     }
 	
     /**
@@ -47,11 +47,11 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @param data some data as a DataAbstraction
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID a ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, DataType type,
-			 ID id, ID annotationID) {
-	super(dataTS, indexTS,  data, type, id, annotationID);
+			 ID id, long annotationValue) {
+	super(dataTS, indexTS,  data, type, id, annotationValue);
     }
 	
     /**
@@ -62,23 +62,67 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * @param size the size of the DataAbstraction
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID a ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     public FileIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
-			 Size size, DataType type, ID id, ID annotationID) {
-	super(dataTS, indexTS,  data, size, type, id, annotationID);
+			 Size size, DataType type, ID id, long annotationValue) {
+	super(dataTS, indexTS,  data, size, type, id, annotationValue);
     }
 	
     /**
      * A ByteBuffer of the Data being indexed.
      * @return an empty buffer, if this IndexItem doesn't have the data to hand
      */
-    public ByteBuffer getData() {
+    public synchronized ByteBuffer getData() {
 	setLastAccessTime();
 
-	if (data instanceof DataHolder) { // its a data holding object
-	    return ((DataHolder)data).getBytes();
+	if (data instanceof DataHolder) {
+	    // its a data holding object
+
+	    ByteBuffer buffer =  ((DataHolder)data).getBytes();
+
+	    /*
+	    if (! buffer.isReadOnly()) {
+		throw new RuntimeException("FileIndexItem: getData got a ByteBuffer that is NOT read only " + getPosition() +  " Thread " + Thread.currentThread().getName());
+	    } else {
+		return buffer;
+		}*/
+	    return buffer;
+
+	} else if (data instanceof DataReference) {
+	    // its a data reference object
+
+	    FileIndex index  = (FileIndex)getIndex();
+
+	    // read the data
+	    DataHolderObject dataObj = index.readData(position.value(), (DataReference)data);
+
+	    // if we got the data 
+	    if (dataObj != null) {
+		// then set the data
+		setData(dataObj);
+
+		// calculate the held volume of this Item
+		// and inform the cache of the new data volume
+		index.getCache().increaseDataVolume(getDataSize().value());
+
+		//volumeHeld += fileItem.getDataSize().value(); 
+
+		//System.err.println("Volume + = " + volumeHeld);
+
+
+	    }
+
+
+	    // get the buffer to return
+	    ByteBuffer buffer =  ((DataHolder)dataObj).getBytes();
+
+	    return buffer;
+
+	    //throw new RuntimeException("FileIndexItem: DateReference " +  getPosition() + " " + data + " Thread " + Thread.currentThread().getName());
+
 	} else {
+	    System.err.println("FileIndexItem: returning EMPTY_BUFFER  data class " + data.getClass().getName() +  " Thread " + Thread.currentThread().getName());
 	    return EMPTY_BUFFER;
 	}
     }
@@ -109,7 +153,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     /**
      * Set the data to be a new DataAbstraction.
      */
-    public ManagedFileIndexItem setData(DataAbstraction data) {
+    public synchronized ManagedFileIndexItem setData(DataAbstraction data) {
 	setLastAccessTime();
 	this.data = data;
 	return this;
