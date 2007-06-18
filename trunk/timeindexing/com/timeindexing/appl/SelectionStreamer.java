@@ -8,6 +8,7 @@ import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexProperties;
 import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.appl.SelectionProcessor;
+import com.timeindexing.time.Clock;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -34,6 +35,7 @@ public class SelectionStreamer extends OutputStreamer  {
 	outputPlugin.setContext(index, out);
 
 	outputPlugin.begin();
+
 	SelectionProcessor selector = new SelectionProcessor();
  
 	IndexView selection = selector.select((IndexView)index, properties);
@@ -41,6 +43,8 @@ public class SelectionStreamer extends OutputStreamer  {
 	writeCount = processTimeIndex((IndexView)selection);
 
 	outputPlugin.end();
+
+	System.err.println(Clock.time.time() + " " + index.getURI() + ". output bytes = " + writeCount + ". Thread " + Thread.currentThread().getName() );
 
 	return writeCount;
     }
