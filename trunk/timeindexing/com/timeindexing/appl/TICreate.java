@@ -333,7 +333,9 @@ public class TICreate {
 		dataTS = result.getDataTimestamp();
 		item = new ReaderResultItem(result);
 
-		indexSize = index.addItem(item, dataTS);
+		index.addItem(item, dataTS);
+
+		indexSize = index.getLength();
 	    }
 
 	    // wind it up
@@ -374,11 +376,11 @@ public class TICreate {
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE_DT;
+	    indexType = IndexType.INLINE;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL_DT;
+	    indexType = IndexType.EXTERNAL;
 	} else if (type.equals("shadow")) {
-	    indexType = IndexType.SHADOW_DT;
+	    indexType = IndexType.SHADOW;
 	} else {
 	   throw new Error("Set flag -t [inline|external|shadow]");
 	} 
