@@ -47,7 +47,10 @@ public class IndexIterator implements Iterator {
 	} catch (GetItemException gie) {
 	    // it was not possible to get the item
 	    return null;
-	}
+	} catch (IndexClosedException ice) {
+	    // it was not possible to get the item
+	    return null;
+	} 
     }
 
     /**
