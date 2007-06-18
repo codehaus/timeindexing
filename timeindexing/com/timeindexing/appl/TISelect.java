@@ -26,6 +26,7 @@ public class TISelect {
 	/*
 	 * Handle broken pipes properly
 	 */
+	/*
 	final Signal sigpipe = new Signal("PIPE");
 
 	SignalHandler handler = new SignalHandler () {
@@ -34,6 +35,7 @@ public class TISelect {
 		}
 	    };
 	Signal.handle(sigpipe, handler);
+	*/
 
 	/*
 	 * Process args
