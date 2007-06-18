@@ -1,6 +1,7 @@
 package uk.ti;
 
 import com.timeindexing.index.TimeIndexFactory;
+import com.timeindexing.index.TimeIndexDirectory;
 import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IndexItem;
@@ -72,7 +73,16 @@ public class Test6 {
 	
 	    printIndex(index);
 
+	    TimeIndexDirectory.mem("Test6");
+
 	    factory.close(index);
+
+	    TimeIndexDirectory.mem("Test6");
+
+	    Runtime.getRuntime().gc();
+
+	    TimeIndexDirectory.mem("Test6");
+
 	} catch (TimeIndexException ioe) {
 	    System.err.println("Test6: " + ioe.getMessage());
 	    System.exit(1);
