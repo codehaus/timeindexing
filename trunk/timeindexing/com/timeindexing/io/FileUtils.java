@@ -21,7 +21,7 @@ public class FileUtils {
      * @param extension The extension
      * @return null if a name cant be resolved.
      */
-    public static String resolveFileName(String origFilename, String extension) {
+    public synchronized static String resolveFileName(String origFilename, String extension) {
 	if (origFilename == null) {
 	    return null;
 	} else if (extension == null) {
@@ -72,7 +72,7 @@ public class FileUtils {
      * Strip the extention off of a filename.
      * @param filename The filename
      */
-    public static String removeExtension(String filename) {
+    public synchronized static String removeExtension(String filename) {
 	if (filename == null) {
 	    return null;
 	} else {
