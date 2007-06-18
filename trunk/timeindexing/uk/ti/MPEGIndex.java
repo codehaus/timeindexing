@@ -20,6 +20,7 @@ import com.timeindexing.plugin.ReaderPlugin;
 import com.timeindexing.plugin.ReaderResult;
 import com.timeindexing.plugin.*;
 import com.timeindexing.module.video.MPEGIndexer;
+import com.timeindexing.module.video.MPEGIndexerDisplay;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -63,6 +64,8 @@ public class MPEGIndex {
 	TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
 	this.inputFileName = inputFileName;
+
+	System.err.println("inputFileName = " + inputFileName);
 
 	if (inputFileName.equals("-")) {
 	    input = System.in;
@@ -108,14 +111,17 @@ public class MPEGIndex {
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE_DT;
+	    indexType = IndexType.INLINE;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL_DT;
+	    indexType = IndexType.EXTERNAL;
 	} else if (type.equals("shadow")) {
+	    if (inputFileName == null) {
+		throw new Error("inputFileName == null");
+	    }
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW_DT;
+		indexType = IndexType.SHADOW;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
@@ -159,8 +165,16 @@ public class MPEGIndex {
 
 	    MPEGIndexer mpegVideoIndexer = new MPEGIndexer(index, input);
 
+	    // get a message every 100ms
+	    MPEGIndexerDisplay display = new MPEGIndexerDisplay(100);
+	    mpegVideoIndexer.addAddEventListener(display);
+
+	    display.start();
+
 	    // do the input, don;t pass any IndexProperties
 	    mpegVideoIndexer.doInput(null);
+
+	    display.stop();
 
 	    try {
 		input.close();
