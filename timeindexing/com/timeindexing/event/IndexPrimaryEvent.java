@@ -7,7 +7,7 @@ import com.timeindexing.basic.ID;
 /**
  * An Index Primary Event, which is generated 
  * at primary moments.
- * These include: open , close, committed, create.
+ * These include: open , close, committed, create, add a view, remove a view.
  */
 public class IndexPrimaryEvent extends IndexEvent {
     /**
@@ -29,6 +29,16 @@ public class IndexPrimaryEvent extends IndexEvent {
      * Used when an Index is created.
      */
     public static final int CREATED    = 4;
+
+    /**
+     * Used whe na new view is added.
+     */
+    public static final int ADD_VIEW = 5;
+
+    /**
+     * Used whe na new view is removed.
+     */
+    public static final int REMOVE_VIEW = 6;
 
 
     /*
