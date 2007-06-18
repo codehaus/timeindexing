@@ -29,4 +29,14 @@ public interface IndexPrimaryEventListener extends EventListener {
      * A notification that an Index has been created.
      */
     public  void created(IndexPrimaryEvent ipe);
+
+    /**
+     * A notification that a view has been added to an Index.
+     */
+    public void viewAdded(IndexPrimaryEvent ipe);
+
+    /**
+     * A notification that a view has been removed to an Index.
+     */
+    public void viewRemoved(IndexPrimaryEvent ipe);
 } 
