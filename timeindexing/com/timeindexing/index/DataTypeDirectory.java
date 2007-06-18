@@ -59,33 +59,34 @@ public class DataTypeDirectory implements Serializable {
 
 	// register all the types from DataType
 
-	registerDataType(DataType.NOTSET_DT);
-	registerDataType(DataType.ANY_DT);
-	registerDataType(DataType.INTEGER_DT);
-	registerDataType(DataType.FLOAT_DT);
-	registerDataType(DataType.DOUBLE_DT);
-	registerDataType(DataType.LONG_DT);
-	registerDataType(DataType.SHORT_DT);
-	registerDataType(DataType.BOOLEAN_DT);
-	registerDataType(DataType.BYTE_DT);
-	registerDataType(DataType.CHAR_DT);
-	registerDataType(DataType.STRING_DT);
-	registerDataType(DataType.VOID_DT);
-	registerDataType(DataType.TEXT_DT);
-	registerDataType(DataType.HTML_DT);
-	registerDataType(DataType.XML_DT);
-	registerDataType(DataType.MP3_DT);
-	registerDataType(DataType.M3U_DT);
-	registerDataType(DataType.WAV_DT);
-	registerDataType(DataType.MPEG_DT);
-	registerDataType(DataType.QUICKTIME_DT);
-	registerDataType(DataType.JPEG_DT);
-	registerDataType(DataType.GIF_DT);
-	registerDataType(DataType.PNG_DT);
-	registerDataType(DataType.TIFF_DT);
-	registerDataType(DataType.BMP_DT);
-	registerDataType(DataType.REFERENCE_DT);
-	registerDataType(DataType.REFERENCE_LIST_DT);
+	registerDataType(DataType.NOTSET);
+	registerDataType(DataType.ANY);
+	registerDataType(DataType.INTEGER);
+	registerDataType(DataType.FLOAT);
+	registerDataType(DataType.DOUBLE);
+	registerDataType(DataType.LONG);
+	registerDataType(DataType.SHORT);
+	registerDataType(DataType.BOOLEAN);
+	registerDataType(DataType.BYTE);
+	registerDataType(DataType.CHAR);
+	registerDataType(DataType.STRING);
+	registerDataType(DataType.VOID);
+	registerDataType(DataType.TEXT);
+	registerDataType(DataType.HTML);
+	registerDataType(DataType.XML);
+	registerDataType(DataType.MP3);
+	registerDataType(DataType.M3U);
+	registerDataType(DataType.WAV);
+	registerDataType(DataType.MPEG);
+	registerDataType(DataType.QUICKTIME);
+	registerDataType(DataType.FLV);
+	registerDataType(DataType.JPEG);
+	registerDataType(DataType.GIF);
+	registerDataType(DataType.PNG);
+	registerDataType(DataType.TIFF);
+	registerDataType(DataType.BMP);
+	registerDataType(DataType.REFERENCE);
+	registerDataType(DataType.REFERENCE_LIST);
  
 	// now try and get the saved ID
 	getSavedID();
@@ -161,7 +162,7 @@ public class DataTypeDirectory implements Serializable {
 	    DataType dataType = (DataType)indexByNameDirectory.get(name);
 
 	    if (dataType == null) {
-		return DataType.UNKNOWN_DT;
+		return DataType.UNKNOWN;
 	    } else {
 		return dataType;
 	    }
@@ -208,7 +209,7 @@ public class DataTypeDirectory implements Serializable {
 	    DataType dataType = (DataType)indexByIDDirectory.get(anID);
 
 	    if (dataType == null) {
-		return DataType.UNKNOWN_DT;
+		return DataType.UNKNOWN;
 	    } else {
 		return dataType;
 	    }

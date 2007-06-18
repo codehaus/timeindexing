@@ -50,7 +50,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     //String indexPathName = null;
     //String dataPathName = null;
     //Description description = null;
-    //DataType dataType = DataType.NOTSET_DT;
+    //DataType dataType = DataType.NOTSET;
     //boolean indexIsSorted = true;
 
     // these are not, YET
@@ -58,7 +58,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
     int itemSize = 0;
     long dataSize = 0;
     Map dataTypeMap = null;
-    IndexType indexType = IndexType.INCORE_DT;
+    IndexType indexType = IndexType.INCORE;
     boolean hasAnnotations = false;
     int annotationStyle = AnnotationStyle.NONE;
 

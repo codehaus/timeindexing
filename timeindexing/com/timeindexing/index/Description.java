@@ -15,7 +15,7 @@ public class Description {
     ByteBuffer theData = null;
     
     // the data type.
-    DataType dataType = DataType.NOTSET_DT;
+    DataType dataType = DataType.NOTSET;
     
     /**
      * Construct a description.
@@ -29,7 +29,7 @@ public class Description {
      */
     public Description(String desc) {
 	theData = ByteBuffer.wrap(desc.getBytes());
-	dataType = DataType.STRING_DT;
+	dataType = DataType.STRING;
     }
         
     /**
