@@ -17,18 +17,27 @@ import com.timeindexing.index.IndexProperties;
  */
 public class MP3DownloadServlet extends SelectServlet {
     /**
-     * Set the content type.
+     * Get the content type for this response.
      */
-    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
-	setContentType("audio/x-mpeg");
+    protected String getContentType() {
+	return "audio/mpeg";  // was x-mpeg
+    }
+
+    /**
+     * This filename generator, takes the arguments and generates a useful filename.
+     * Returns filename-0:10-to-1:23.
+     */
+    protected String fileNameGenerator(IndexProperties properties) {
+	String base = super.fileNameGenerator(properties);
+	String modified = base.replace('.', '%');
+	return modified + ".mp3";
     }
 
     /**
      * Set the filename for downloads.
      */
-    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
-	String generatedName = fileNameGenerator(properties);
-	
-	setFilename(generatedName + ".mp3");
+    protected void setFilename(HttpServletRequest request, HttpServletResponse response, IndexProperties properties) {
+	response.setHeader("Content-Disposition", "inline; filename=" + fileNameGenerator(properties));;
     }
+
 }
