@@ -33,7 +33,7 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
      * This version takes an IndexReference and a Data Timestamp.
      * It is used internally when doing a TimeIndexFactory.save().
      */
-    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+    public IndexItem addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Track a Referenced Index.
@@ -58,7 +58,7 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
     /**
      * Close this index.
      */
-     public boolean reallyClose() throws IndexCloseException ;
+    public boolean reallyClose() throws IndexCloseException ;
 
     /**
      * Get the headerfor the index.
@@ -66,4 +66,17 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
     public ManagedIndexHeader getHeader();
 
     
+    /**
+     * Add a view to this index.
+     * @return the IndexView itself
+     */
+    public IndexView addView();
+
+    /**
+     * Remove a view from this index.
+     * @return How many views are still left on the Index
+     */
+    public long removeView();
+
+
 }
