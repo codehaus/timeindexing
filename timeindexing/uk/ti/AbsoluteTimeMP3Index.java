@@ -111,14 +111,14 @@ public class AbsoluteTimeMP3Index {
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE_DT;
+	    indexType = IndexType.INLINE;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL_DT;
+	    indexType = IndexType.EXTERNAL;
 	} else if (type.equals("shadow")) {
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW_DT;
+		indexType = IndexType.SHADOW;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");

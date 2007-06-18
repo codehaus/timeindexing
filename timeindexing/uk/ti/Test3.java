@@ -3,6 +3,7 @@ package uk.ti;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.UID;
 import com.timeindexing.index.Index;
+import com.timeindexing.index.IndexView;
 import com.timeindexing.index.IncoreIndex;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexType;
@@ -31,12 +32,14 @@ public class Test3 {
 	try {
 	    GregorianCalendar calendar = new GregorianCalendar();
 
-	    IncoreIndex index = new IncoreIndex();
+	    IndexView index = null;
 
 	    // needs to be told to create itself
 	    Properties properties = new Properties();
 	    properties.put("name" , "index-Test3");
-	    index.create(properties);
+
+	    TimeIndexFactory factory = new TimeIndexFactory();
+	    index = factory.create(IndexType.INCORE, properties);
 
 	    /* Item 0 */
 
@@ -90,9 +93,10 @@ public class Test3 {
 
 	    index.addItem(data, dTS);
 
+	    printIndex(index);
+
 	    index.close();
 
-	    printIndex(index);
 	} catch (TimeIndexException ice) {
 	    System.err.println("Test3: " + ice.getMessage());
 	    System.exit(1);

@@ -26,7 +26,7 @@ public class TimeIndexLog {
 	indexProperties.setProperty("name", "searchsite-" + name);
 
 	
-	index = (TimeIndex)factory.create(IndexType.INLINE_DT, indexProperties);
+	index = (TimeIndex)factory.create(IndexType.INLINE, indexProperties);
 	factory.close(index);
 
 	return index; 

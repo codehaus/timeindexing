@@ -39,7 +39,7 @@ public class Test5E {
 	properties.setProperty("datapath", "/tmp/test5e");
 
 	try {
-	    IndexView index = factory.create(IndexType.EXTERNAL_DT, properties);
+	    IndexView index = factory.create(IndexType.EXTERNAL, properties);
 
 	    /* Item 0 */
 

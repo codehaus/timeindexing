@@ -42,7 +42,7 @@ public class TestRef3 {
 	    createProperties.setProperty("name", "index-ref3");
 	    createProperties.setProperty("indexpath", "/tmp/testref3");
 
-	    IndexView index = factory.create(IndexType.INLINE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INLINE, createProperties);
 
 	    /* Item 0 */
 
@@ -116,7 +116,7 @@ public class TestRef3 {
 	    createProperties.setProperty("name", "index-Referrer");
 	    createProperties.setProperty("indexpath", "/tmp/testreferrer3");
 
-	    IndexView indexReferrer = factory.create(IndexType.INLINE_DT, createProperties);
+	    IndexView indexReferrer = factory.create(IndexType.INLINE, createProperties);
 
 	    // add a reference to IndexItem 0.
 	    indexReferrer.addReference(index.getItem(0), index);

@@ -38,7 +38,7 @@ public class MultiIndex1 {
 
 	try {
 
-	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
 	    /* Item 0 */
 

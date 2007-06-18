@@ -38,7 +38,7 @@ public class Test4D {
 
 	try {
 
-	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
 	    index.updateDescription(new Description("This is a simple string description"));
 
