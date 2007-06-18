@@ -67,10 +67,10 @@ public class IndexItemView implements IndexItem {
     }
 
     /**
-     * The ID of annotations associated with this IndexItem.
+     * The meta data of annotations associated with this IndexItem.
      */
-    public ID getAnnotations() {
-	return item.getAnnotations();
+    public long getAnnotationMetaData() {
+	return item.getAnnotationMetaData();
     }
 
     /**
@@ -104,7 +104,7 @@ public class IndexItemView implements IndexItem {
     /**
      * Follow the reference, if this IndexItem holds an IndexReference.
      */
-    public IndexItem follow() throws GetItemException {
+    public IndexItem follow() throws GetItemException, IndexClosedException {
 	return item.follow();
     }
 }

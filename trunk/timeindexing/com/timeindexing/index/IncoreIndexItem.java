@@ -30,11 +30,11 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     Timestamp indexTS = null;
     DataAbstraction data = null;
     Size size = null;
-    DataType type = DataType.ANY_DT;
+    DataType type = DataType.ANY;
     ID id = null;
-    ID annotationID = null;
+    long annotationValue = 0;
     transient AbsolutePosition position = null;
-    transient Index myIndex = null;
+    transient Index theIndex = null;
     transient Timestamp lastAccessTime = null;
 
 
@@ -47,12 +47,12 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @param data some data as a Item
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID an ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     public IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataItem dataitem,
-			 DataType type, ID id, ID annotationID) {
+			 DataType type, ID id, long annotationValue) {
 	this(dataTS, indexTS,  new DataHolderObject(dataitem.getBytes(),  dataitem.getSize()),
-	     type, id, annotationID);
+	     type, id, annotationValue);
     }
 	
     /**
@@ -62,11 +62,11 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @param data some data as a Item
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID an ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     protected IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
-			    DataType type, ID id, ID annotationID) {
-	this(dataTS, indexTS,  data, data.getSize(), type, id, annotationID);
+			    DataType type, ID id, long annotationValue) {
+	this(dataTS, indexTS,  data, data.getSize(), type, id, annotationValue);
     }
 	
     /**
@@ -76,17 +76,17 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @param data some data as a Item
      * @param type the type of the data
      * @param id an index ID
-     * @param annotationID an ID for annotations
+     * @param annotationValue the meta data for annotations
      */
     protected IncoreIndexItem(Timestamp dataTS, Timestamp indexTS, DataAbstraction data, 
-			    Size dataSize, DataType type, ID id, ID annotationID) {
+			    Size dataSize, DataType type, ID id, long annotationValue) {
 	this.dataTS = dataTS;
 	this.indexTS = indexTS;
 	this.data = data;
 	this.size = dataSize;
         this.type = type;
 	this.id = id;
-	this.annotationID = annotationID;
+	this.annotationValue = annotationValue;
 	lastAccessTime = Timestamp.ZERO;
     }
 	
@@ -147,11 +147,11 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
     }
 
     /**
-     * The ID of annotations associated with this IndexItem.
+     * The meta data of annotations associated with this IndexItem.
      */
-    public ID getAnnotations() {
+    public long getAnnotationMetaData() {
 	setLastAccessTime();
-	return annotationID;
+	return annotationValue;
     }
 
 
@@ -176,14 +176,14 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      */
     public Index getIndex() {
 	setLastAccessTime();
-	return myIndex;
+	return theIndex;
     }
 
     /**
      * Set the index this IndexItem is in.
      */
     public ManagedIndexItem setIndex(Index index) {
-	myIndex = index;
+	theIndex = index;
 	return this;
     }
 
@@ -208,7 +208,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * Is the data held by the IndexItem, actually an IndexReference.
      */
     public boolean isReference() {
-	if (type.equals(DataType.REFERENCE_DT)) {
+	if (type.equals(DataType.REFERENCE)) {
 	    return true;
 	} else {
 	    return false;
@@ -220,7 +220,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * @return null if the DataAbstraction is not an IndexReference
      * @throws GetItemException if the reference cannot be followed successfully
      */
-    public IndexItem follow() throws GetItemException {
+    public IndexItem follow() throws GetItemException, IndexClosedException {
 	if (! isReference()) {	// this is not a reference
 	    return null;
 	} else {
@@ -329,11 +329,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	out.write(((DataHolder)data).getBytes().array());
 	out.writeInt(type.value());
 	out.writeLong(id.value());
-	if (annotationID == null) {
-	    out.writeLong(0);
-	} else {
-	    ;  // NEVER in this implementation 
-	}
+	out.writeLong(annotationValue);
 	out.flush();
     }
 
@@ -363,12 +359,8 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 
 	id = new SID(in.readLong());
 	
-	long annotationReader = in.readLong();
-	if (annotationReader == 0) {
-	    annotationID = null;
-	} else {
-	    annotationID = new SID(annotationReader);
-	}	
+	annotationValue = in.readLong();
+
     }
 
 }
