@@ -27,5 +27,22 @@ public interface WriterPlugin {
       */
      public long write(IndexItem item, IndexProperties properties) throws IOException;
 
+    /**
+     * Flush out any remainig data.
+     */
+    public long flush() throws IOException;
+
+    /**
+     * Called as the first thing.
+     * Useful for doing any processing before output starts.
+     */
+    public Object begin() throws IOException;
+
+    /**
+     * Called as the last thing.
+     * Useful for doing any processing after output has finished.
+     */
+    public Object end() throws IOException;
+
 
  }
