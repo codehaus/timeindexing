@@ -21,8 +21,6 @@ public class DefaultOutputPlugin implements OutputPlugin {
     long writeCount = 0;
     WriterPlugin plugin = null;
 
-    private final static int BUFSIZE = 1024;
-
     /**
      * Construct an DefaultOutputPlugin object given
      * just a WriterPlugin.
@@ -103,23 +101,41 @@ public class DefaultOutputPlugin implements OutputPlugin {
      * @return the number of byte written
      */
     public long write(IndexItem item, IndexProperties properties) throws IOException {
-	return plugin.write(item, properties);
+	long writeCount =  plugin.write(item, properties);
+
+	/*
+	 * This test is not useful if the OutputWriter does buffering
+	if (item.getDataSize().value() != writeCount) {
+	    throw new IOException("DefaultOutputPlugin: didn't write  " + item.getDataSize().value() + " bytes, wrote only " +  writeCount);
+	} else {
+	    return writeCount;
+	}
+	*/
+
+	return writeCount;
     }
     
+
+
+    /**
+     * Flush out any remainig data.
+     */
+    public long flush() throws IOException {
+	return plugin.flush();
+    }
 
     /**
      * Does nothing.
      */
     public Object begin() throws IOException {
-	return null;
+	return plugin.begin();
     }
 
     /**
      * Close the OutputStream by default.
      */
     public Object end() throws IOException {
-	out.close();
-	return null;
+	return plugin.end();
     }
 
  }
