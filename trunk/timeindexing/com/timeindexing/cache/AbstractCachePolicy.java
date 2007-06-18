@@ -6,7 +6,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -19,7 +19,7 @@ public abstract  class AbstractCachePolicy implements CachePolicy {
     IndexCache cache = null;
 
     // The set of items that are being monitored
-    LinkedList monitorList = null;
+    DoubleLinkedList monitorList = null;
 
     /**
      * Set the IndexCache that this is a policy for.
@@ -98,6 +98,7 @@ public abstract  class AbstractCachePolicy implements CachePolicy {
     /**
      * Show the monitorList.
      */
+    /*
     protected void show() {
 	//System.err.print(monitorList.size() + ": ");
 
@@ -109,4 +110,5 @@ public abstract  class AbstractCachePolicy implements CachePolicy {
 	    //System.err.print(item.getPosition() + " / " + item.getLastAccessTime() + ", ");
 	}
     }
+    */
 }
