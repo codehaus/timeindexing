@@ -107,14 +107,14 @@ public class TICreate {
 	if (type == null) {
 	    throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
 	} else if (type.equals("inline")) {
-	    indexType = IndexType.INLINE_DT;
+	    indexType = IndexType.INLINE;
 	} else if (type.equals("external")) {
-	    indexType = IndexType.EXTERNAL_DT;
+	    indexType = IndexType.EXTERNAL;
 	} else if (type.equals("shadow")) {
 	    if (inputFileName.equals("-")) {
 		throw new Error("Index can;t shadow stdin.  Use a filename");
 	    } else {
-		indexType = IndexType.SHADOW_DT;
+		indexType = IndexType.SHADOW;
 	    }
 	} else {
 	   throw new Error("Set system propery -Dindextype=[inline|external|shadow]");
@@ -176,8 +176,8 @@ public class TICreate {
 		((Block)plugin).setBlockSize(16);
 	    } else if (pluginname.equals("file")) {
 		plugin = new FileItem((FileInputStream)input);
-	    } else if (pluginname.equals("mp3")) {
-		plugin = new MP3(input);
+		//} else if (pluginname.equals("mp3")) {
+		//plugin = new MP3(input);
 	    } else {
 		plugin = new Line(input);
 	    }
@@ -192,7 +192,9 @@ public class TICreate {
 		    dataTS = result.getDataTimestamp();
 		    item = new ReaderResultItem(result);
 
-		    indexSize = index.addItem(item, dataTS);
+		    index.addItem(item, dataTS);
+
+		    indexSize = index.getLength();
 		}
 
 		// wind it up
