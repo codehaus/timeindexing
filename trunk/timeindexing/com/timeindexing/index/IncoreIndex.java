@@ -36,7 +36,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	header = new IncoreIndexHeader(this,indexName);
 	indexCache = new DefaultIndexCache(this);
 
-	setIndexType(IndexType.INCORE_DT);
+	setIndexType(IndexType.INCORE);
 
 	// creating an Incore Index is effectively opening it
 	closed = false;
@@ -68,7 +68,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 
 	// register myself in the TimeIndex directory
-	TimeIndexDirectory.addHandle(this);
+	//TimeIndexDirectory.addHandle(this);
 
 	eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.OPENED, this));
 	return true;
@@ -135,7 +135,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	changed = true;
 
 	// register myself in the TimeIndex directory
-	TimeIndexDirectory.addHandle(this);
+	//TimeIndexDirectory.addHandle(this);
 
 	return true;
     }
@@ -198,7 +198,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
+    public synchronized IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
 	return addItem(dataitem, null);
     }
 
@@ -211,7 +211,20 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addItem(dataitem, dataTS, 0);
+    }
+
+    /**
+     * Add a Data Item to the Index plus a Timestamp from the Data.
+     * The ID will be generated.
+     * There are no annotations.
+     * @param item the IndexItem to add
+     * @param dataTS the Timestamp for the data, null implies that
+     * the data Timestamp is the same as the record Timestamp
+     * @return the no of items in the index.
+     */
+    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();
@@ -221,7 +234,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
 
-	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), new SID(0));
+	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), annotation);
 
 	// mark as being changed
 	changed = true;
@@ -233,14 +246,21 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addReference(item, other, item.getDataTimestamp());
     }
 
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addReference(otherItem, otherIndex, dataTS, 0);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	URI indexURI = otherIndex.getURI();
 	ID indexID = otherIndex.getID();
 
@@ -253,7 +273,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
         IndexReference reference  = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
 
-	return addReference(reference, dataTS);
+	return addReference(reference, dataTS, annotation);
     }
 
     /**
@@ -262,7 +282,17 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * and the IndexItem's data Timestamp.
      * It is used internally when doing a TimeIndexFactory.save().
      */
-    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addReference(reference, dataTS, 0);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     * This version takes the Index URI, the Index ID, the IndexItem's Position,
+     * and the IndexItem's data Timestamp.
+     * It is used internally when doing a TimeIndexFactory.save().
+     */
+    public IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
         IndexReferenceDataHolder dataHolder = null;
 
@@ -287,17 +317,19 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	// if the dataTS param is null, it is the speicifed value otherwise
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
 
-	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE_DT, new SID(id), new SID(0));
+	IncoreIndexItem item = new IncoreIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE, new SID(id), annotation);
 
 	dataHolder.setIndexItem(item);
 
+	// add the item
+	addItem((IndexItem)item);
 
-	long newSize = addItem((IndexItem)item);
+	long newSize = getLength();
 
 	// mark as being changed
 	changed = true;
 
-	return newSize;
+	return item;
     }
 
 
