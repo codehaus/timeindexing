@@ -6,7 +6,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -24,7 +24,7 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
      * Construct this policy object
      */
     public HollowAfterUsePolicy() {
-	monitorList = new LinkedList(); // new TreeSet(new IndexItemComparator()); 
+	monitorList = new DoubleLinkedList(); // new TreeSet(new IndexItemComparator()); 
 	queueWindow = 40;
     }
 
@@ -32,9 +32,32 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
      * Construct this policy object
      */
     public HollowAfterUsePolicy(int winSize) {
-	monitorList = new  LinkedList(); // new TreeSet(new IndexItemComparator()); //
+	monitorList = new  DoubleLinkedList(); // new TreeSet(new IndexItemComparator()); //
 	queueWindow = winSize;
     }
+
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemBegin(IndexItem item,long pos) {
+	//System.err.print("notifyAddItemBegin: ");
+	notifyGetItemBegin(item, pos);
+	return null;
+    }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemEnd(IndexItem item, long pos) {
+	//System.err.print("notifyAddItemEnd: ");
+	notifyGetItemEnd(item, pos);
+	return null;
+    }    
 
     /**
      * Called at the beginning of cache.getItem()
@@ -42,14 +65,12 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (monitorList.contains(item)) {
-	    monitorList.remove(item);
+	monitorList.remove(item);
 	    //System.err.println("DeQueue " + item.getPosition() + ".Hollow list size = " + monitorList.size());
-	}
 
 	// if there's something to delete
 	// remove one item
-	if (monitorList.size() >= queueWindow) {
+	while (monitorList.size() >= queueWindow) {
 	    IndexItem first = (IndexItem)monitorList.getFirst();
 
 
