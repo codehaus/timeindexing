@@ -11,15 +11,18 @@ import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.plugin.OutputPlugin;
 import com.timeindexing.plugin.DefaultOutputPlugin;
 import com.timeindexing.plugin.DefaultWriter;
-
+import com.timeindexing.event.OutputEvent;
+import com.timeindexing.event.OutputEventListener;
+import com.timeindexing.event.OutputEventGenerator;
 
 import java.io.OutputStream;
 import java.io.IOException;
 
+
 /**
  * A class to output any  data
  */
-public class OutputStreamer {
+public class OutputStreamer extends OutputEventGenerator {
     protected Index index = null;
     protected OutputStream out = null;
     protected long writeCount = 0;
@@ -70,15 +73,28 @@ public class OutputStreamer {
     public long processTimeIndex(IndexView index) throws IOException, TimeIndexException {
 	// output the selection
 	long writeCount = 0;
+	long writeTotal = 0;
 	long length = index.getLength();
 
 	for (long i=0; i<length; i++) {
 	    IndexItem itemN = fetchIndexItem(i, index);
 
-	    writeCount += outputPlugin.write(itemN, outputProperties);
+	    writeCount = outputPlugin.write(itemN, outputProperties);
+	    writeTotal += writeCount;
+
+	    if (hasOutputEventListeners()) {
+		fireOutputEvent(new OutputEvent(index.getURI().toString(), index.getID(), writeCount, this));
+	    }
 	}
 
-	return writeCount;
+	writeCount = outputPlugin.flush();
+	writeTotal += writeCount;
+
+	if (hasOutputEventListeners()) {
+	    fireOutputEvent(new OutputEvent(index.getURI().toString(), index.getID(), writeCount, this));
+	}
+
+	return writeTotal;
     }
 
     /**
@@ -112,5 +128,6 @@ public class OutputStreamer {
 
 	return itemN;
     }
+
 
  }
