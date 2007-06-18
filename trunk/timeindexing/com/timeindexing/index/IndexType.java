@@ -15,10 +15,10 @@ public interface IndexType {
     /**
      * A inline based TimeIndex
      */
-    public final int INLINE = 0;
-    public final static IndexType INLINE_DT = new IndexType() {
+    public final int INLINE_VALUE = 0;
+    public final static IndexType INLINE = new IndexType() {
 	 public int value() {
-		return INLINE;
+		return INLINE_VALUE;
 	    }
 
 
@@ -30,10 +30,10 @@ public interface IndexType {
     /**
      * A separate file based TimeIndex
      */
-    public final int EXTERNAL = 1;
-    public final static IndexType EXTERNAL_DT = new IndexType() {
+    public final int EXTERNAL_VALUE = 1;
+    public final static IndexType EXTERNAL = new IndexType() {
 	 public int value() {
-		return EXTERNAL;
+		return EXTERNAL_VALUE;
 	    }
 
 
@@ -46,10 +46,10 @@ public interface IndexType {
     /**
      * A separate file based TimeIndex that writes no data only the idnex.
      */
-    public final int SHADOW = 2;
-    public final static IndexType SHADOW_DT = new IndexType() {
+    public final int SHADOW_VALUE = 2;
+    public final static IndexType SHADOW = new IndexType() {
 	 public int value() {
-		return SHADOW;
+		return SHADOW_VALUE;
 	    }
 
 
@@ -62,10 +62,10 @@ public interface IndexType {
     /**
      * An incore based TimeIndex, which has no storage capabilities.
      */
-    public final int INCORE = 3;
-    public final static IndexType INCORE_DT = new IndexType() {
+    public final int INCORE_VALUE = 3;
+    public final static IndexType INCORE = new IndexType() {
 	 public int value() {
-		return INCORE;
+		return INCORE_VALUE;
 	    }
 
 
