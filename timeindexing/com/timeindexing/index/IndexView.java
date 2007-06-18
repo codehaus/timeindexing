@@ -7,6 +7,7 @@ import com.timeindexing.basic.Interval;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.basic.Position;
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.TimeSpecifier;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.index.IndexTimestampSelector;
@@ -16,12 +17,6 @@ import com.timeindexing.index.IndexTimestampSelector;
  * for view on an Index.
  */
 public interface IndexView extends Index {
-    /**
-     * Select an Interval and return an IndexView
-     * which is a view on the underlying Index.
-     */
-    public IndexView select(Interval interval, IndexTimestampSelector sel, Overlap overlap, Lifetime lifetime);
-
     /**
      * Return the Interval used to get a selection.
      * @return null if the view is not a selection.
@@ -57,6 +52,13 @@ public interface IndexView extends Index {
     public IndexView position(long n);
 
     /**
+     * Sets the current navigation position into the IndexView
+     * specified as a Timestamp.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     */
+    public IndexView position(Timestamp t);
+
+    /**
      * Sets the current navigation position into the IndexView.
      * specified as a Timestamp.
      */
@@ -71,6 +73,21 @@ public interface IndexView extends Index {
      * Get the end position, in the index, of this IndexView.
      */
     public Position getEndPosition();
+
+    /**
+     * Move the current navigation position in the IndexView
+     * using the TimeSpecifier.
+     * e.g. index.move(new Minutes(10, FORWARD));
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     */
+    public IndexView move(TimeSpecifier ts);
+
+    /**
+     * Move the current navigation position in the IndexView
+     * using the TimeSpecifier.
+     * e.g. index.move(new Minutes(10, FORWARD), IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+     */
+    public IndexView move(TimeSpecifier ts, IndexTimestampSelector selector, Lifetime lifetime);
 
     /**
      * Sets the mark into the IndexView, using the current navigation position
@@ -93,12 +110,12 @@ public interface IndexView extends Index {
     /**
      * Get the Index Item from the Index at position position().
      */
-    public IndexItem getItem() throws GetItemException;
+    public IndexItem getItem() throws GetItemException, IndexClosedException;
 
     /**
      * Get the Index Item from the Index at position mark().
      */
-    public IndexItem getItemAtMark() throws GetItemException;
+    public IndexItem getItemAtMark() throws GetItemException, IndexClosedException;
 
     /**
      * What is the region covered by position and mark.
