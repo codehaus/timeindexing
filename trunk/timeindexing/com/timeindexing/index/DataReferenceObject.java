@@ -43,4 +43,11 @@ public class DataReferenceObject implements DataReference  {
     public Size getSize() {
 	return size;
     }
+
+    /**
+     * String version.
+     */
+    public String toString() {
+	return "DataReferenceObject: offset = " + offset + " size = " + size;
+    }
 }
