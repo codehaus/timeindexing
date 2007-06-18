@@ -41,7 +41,8 @@ public class DataHolderObject implements DataHolder {
      */
     public ByteBuffer getBytes() {
 	lastAccessTime = Clock.time.time();
-	return theBuffer;
+	// this returns a new Read Only Buffer
+	return theBuffer.asReadOnlyBuffer();
     }
 
     /**
