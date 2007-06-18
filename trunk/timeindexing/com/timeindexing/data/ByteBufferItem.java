@@ -22,7 +22,7 @@ public class ByteBufferItem implements DataItem {
      */
     public ByteBufferItem(ByteBuffer bb) {
 	data = bb;
-	dataType = DataType.ANY_DT;
+	dataType = DataType.ANY;
     }
 
     /**

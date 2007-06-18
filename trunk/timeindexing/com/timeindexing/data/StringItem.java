@@ -42,6 +42,6 @@ public class StringItem implements DataItem {
      * Get the DataType of the DataItem.
      */
     public DataType getDataType() {
-	return DataType.STRING_DT;
+	return DataType.STRING;
     }
 }
