@@ -7,6 +7,7 @@ import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.Clock;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.IntervalSpecifier;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.time.SecondTimestamp;
 import com.timeindexing.basic.ID;
@@ -39,7 +40,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     String indexName = null;
 
     // data type
-    DataType dataType = DataType.NOTSET_DT;
+    DataType dataType = DataType.NOTSET;
 
     // the value for auto commit
     boolean autoCommitOn = false;
@@ -63,6 +64,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     // a cache of all the index items.
     // it can have various policies for holding IndexItems.
     IndexCache indexCache = null;
+
+    // Should the data for an IndexItem be loaded with the Item itself
+    boolean loadDataAutomatically = true;
 
     // The last time that an index item was accessed from the index.
     Timestamp lastAccessTime = null;
@@ -244,12 +248,17 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Add a Data Item to the Index.
      */
-    public abstract long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+    public abstract IndexItem addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
     /**
      * Add a Data Item to the Index with a speicifed Data Timestamp
      */
-    public abstract long addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+    public abstract IndexItem addItem(DataItem item, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
+     * Add a Data Item to the Index with a speicifed Data Timestamp and some annotation data
+     */
+    public abstract IndexItem addItem(DataItem item, Timestamp dataTime, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
 
 
     /**
@@ -261,7 +270,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      * @throws IndexActivationException if the index has NOT been activated
      * and an attempt is made to add an Item
      */
-    protected synchronized long addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    protected synchronized IndexItem addItem(IndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
 	// can't add anything if the index is terminated
 	// check this first as this can never change.
@@ -282,6 +291,21 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	}
 
 
+	// check if the IndexItem has timestamps that are before
+	// the last timestamps for this Index
+	Timestamp indexLast = header.getLastTime();
+	Timestamp dataLast = header.getLastDataTime();
+
+	// get the time this item was set
+	Timestamp itemIndexTime = item.getIndexTimestamp();
+	Timestamp itemDataTime = item.getDataTimestamp();
+
+	// if (itemDataTime < dataLast ||
+	//     itemIndexTime < indexLast) {
+	//     throw new AddItemException("IndexItem not later than end item");
+	// }
+
+
 	// cast to a ManagedIndexItem so we can setup the item properly
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
 	long indexSize = header.getLength();
@@ -296,44 +320,61 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	// the new size of the cache is returned
 	long cacheSize = indexCache.addItem(item, itemPosition);
 
-	// get the time this item was set
-	Timestamp last = item.getIndexTimestamp();
-
 	long newSize = indexSize+1;
 
 	// tell the header how big the index is now
 	header.setLength(newSize);
 
 	if (newSize == 1) { // this is the first index item
-	    header.setFirstTime(last); // so set the record time of the first item
-	    header.setFirstDataTime(item.getDataTimestamp()); // and set the data time of the first item
+	    header.setFirstTime(itemIndexTime); // so set the record time of the first item
+	    header.setFirstDataTime(itemDataTime); // and set the data time of the first item
 	}
 
 	// now set last and end times in the header
-	header.setLastTime(last);
-	header.setEndTime(last);
+	header.setLastTime(itemIndexTime);
+	header.setEndTime(itemIndexTime);
 	// and the last data time
-	header.setLastDataTime(item.getDataTimestamp());
+	header.setLastDataTime(itemDataTime);
 
 	// mark as being changed
 	changed = true;
 
 	// tell all the listeners that an item has been added
-	eventMulticaster.fireAddEvent(new IndexAddEvent(getURI().toString(), header.getID(), item, this));
+	if (eventMulticaster.hasAddEventListeners()) {
+	    eventMulticaster.fireAddEvent(new IndexAddEvent(getURI().toString(), header.getID(), item, this));
+	}
 
-	return newSize;
+	return item;
     }
 
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is passed into this Index.
+     */
+    public abstract IndexItem addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException ;
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is the one specified.
+     */
+    public abstract IndexItem addReference(IndexItem item, Index other, Timestamp dataTime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is the one specified, as is the annotation value.
+     */
+    public abstract IndexItem addReference(IndexItem item, Index other, Timestamp dataTime, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException;
+
 
     /**
      * Get an Index Item from the Index.
      */
-    public abstract IndexItem getItem(long n) throws GetItemException;
+    public abstract IndexItem getItem(long n) throws GetItemException, IndexClosedException;
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p) throws GetItemException {
+    public IndexItem getItem(Position p) throws GetItemException, IndexClosedException {
         if (p == Position.TOO_LOW) {
 	    throw new PositionOutOfBoundsException("Position TOO_LOW");
 	} else if (p == Position.TOO_HIGH) {
@@ -344,7 +385,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    IndexItem item = getItem(p.value());
 
 	    // tell all the listeners that an item has been accessed
-	    //eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+	    //if (eventMulticaster.hasAccessEventListeners()) {
+	    //    eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+	    //}
 
 	    return item;
 	}
@@ -352,8 +395,16 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
     /**
      * Get an Index Item from the Index.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException {
+    public IndexItem getItem(Timestamp t) throws GetItemException, IndexClosedException {
+	return getItem(t, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Get an Index Item from the Index.
+     */
+    public  IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException, IndexClosedException {
 	TimestampMapping tsm = locate(t, sel, lifetime);
 	return getItem(tsm.position());
     }
@@ -411,7 +462,18 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
 
-     /**
+
+    /**
+     * Does a timestamp fall within the bounds of the Index.
+     * Uses IndexTimestampSelector.DATA as a default.
+     * The bounds are the first time data is put in and the last
+     * time data is put in the Index.
+     */
+    public boolean contains(Timestamp t) {
+	return contains(t, IndexTimestampSelector.DATA);
+    }
+
+    /**
      * Does a timestamp fall within the bounds of the Index.
      * The bounds are the first time data is put in and the last
      * time data is put in the Index.
@@ -445,6 +507,16 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 		return false;
 	    }
 	}
+    }
+
+    /**
+     * Try and determine the position associated with the speicifed Timestamp.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original time
+     * and the found position.
+     */
+    public TimestampMapping locate(Timestamp t) {
+	return locate(t, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
     }
 
     /**
@@ -517,9 +589,23 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	    } catch (GetItemException gie) {
 		System.err.println("Index " + getName() + ": location of " + t +  " threw " + gie.getMessage());
 		return null;
+	    } catch (IndexClosedException ice) {
+		System.err.println("Index " + getName() + ": location of " + t +  " threw " + ice.getMessage());
+		return null;
 	    }
 	}	
     }
+
+    /**
+     * Try and determine the Timestamp associated with the speicifed Position.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     */
+    public TimestampMapping locate(Position p) {
+	return locate(p, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+    }
+
 
     /**
      * Try and determine the Timestamp associated
@@ -538,6 +624,8 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	} catch (GetItemException gie) {
 	    // there was no item at Position p
 	    return null;
+	} catch (IndexClosedException ice) {
+	    return null;
 	}
 
 	// now get the relevant Timestamp
@@ -554,7 +642,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Do a binary search of the list.
      */
-    protected TimestampMapping binarySearch(Timestamp t, long start, long end, IndexTimestampSelector selector, Lifetime lifetime, int depth) throws GetItemException {
+    protected TimestampMapping binarySearch(Timestamp t, long start, long end, IndexTimestampSelector selector, Lifetime lifetime, int depth) throws GetItemException, IndexClosedException {
 	IndexItem item = null;
 	IndexItem itemN = null;
 
@@ -664,7 +752,28 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 
 
     /**
-     * Select an Interval.
+     * Select an Interval given an Interval object.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(Interval interval) {
+	return select(interval, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier) {
+	Interval interval = intervalSpecifier.instantiate(t);
+	return select(interval, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Select an Interval given an Interval object.
      * Returns null if it cant be done.
      */
     public IndexView select(Interval interval, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime) {
@@ -723,7 +832,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 			selectionLength = 0;
 
 		    } else if (intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH) { // start too low, end too high
-			//System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
+		 	//System.err.println("intervalStart == Position.TOO_LOW && intervalEnd == Position.TOO_HIGH");
 			intervalStart =  new AbsolutePosition(0); //getStartPosition(); // new AbsolutePosition(0);
 			intervalEnd = new AbsolutePosition(getLength()-1); //getEndPosition();     // new AbsolutePosition(getLength()-1);
 			selectionLength = intervalEnd.value() - intervalStart.value() + 1;
@@ -805,6 +914,14 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
 
+    /*
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime) {
+ 	Interval interval = intervalSpecifier.instantiate(t);
+	return select(interval, selector, overlap, lifetime);
+    }
+
     /**
      * Determine if one Position is lessthan another Position.
      */
@@ -860,7 +977,9 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
      */
     public boolean commit() throws IndexCommitException {
 
-	eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
+	if (eventMulticaster.hasPrimaryEventListeners()) {
+	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
+	}
 
 	return true;
     }
@@ -908,15 +1027,49 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     }
 
     /**
+     * Get the current Cache.
+     */
+    public IndexCache getCache() {
+	return indexCache;
+    }
+
+    /**
+     * Get the current CachePolicy.
+     */
+    public CachePolicy getCachePolicy() {
+	return indexCache.getPolicy();
+    }
+
+    /**
      * Set a CachePolicy in order to manage the cache.
      * Setting a new CachePolicy in the middle of operation
-     * can lose some timing information held by the existing CachePolicy,
-     * so use with care.
-     * @return true if the policy was set
+     * can lose some timing information held by the existing
+     * CachePolicy, so it has to be used with care.
+     * Consequently, the Policy will only be changed if the 
+     * IndexCache decides it is safe to do so.
+     * @return the old policy if the policy was set
      */
-    public boolean setCachePolicy(CachePolicy policy) {
-	indexCache.setPolicy(policy);
-	return true;
+    public synchronized CachePolicy setCachePolicy(CachePolicy policy) {
+	return indexCache.setPolicy(policy);
+    }
+
+    /**
+     * Does the index load data automatically when doing a get item. 
+     */
+    public boolean getLoadDataAutomatically() {
+	return loadDataAutomatically;
+    }
+
+    /**
+     * Load data automatically when doing a get item.
+     * @return the previous value of this status
+     */
+    public boolean setLoadDataAutomatically(boolean load) {
+	boolean oldLoadValue = loadDataAutomatically;
+
+	loadDataAutomatically = load;
+
+	return oldLoadValue;
     }
 
     /**
