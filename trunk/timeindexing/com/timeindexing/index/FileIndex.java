@@ -39,11 +39,10 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
     // The path name of the header
     String headerPathName = null;
 
-
     /**
      * Commit this index.
      */
-    public boolean commit() throws IndexCommitException  {
+    public synchronized boolean commit() throws IndexCommitException  {
 	// if the index is activated and has changed
 	// then flush out any changes
 	if (this.isActivated() && isChanged()) {
@@ -58,7 +57,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 		// mark as NOT being changed
 		changed = false;
 
-		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
+		if (eventMulticaster.hasPrimaryEventListeners()) {
+		    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.COMMITTED, this));
+		}
 
 		return true;
 	    } catch (IOException ioe) {
@@ -73,7 +74,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
    /**
      * Close this index.
      */
-    public boolean reallyClose() throws IndexCloseException  {
+    public synchronized boolean reallyClose() throws IndexCloseException  {
+	//TimeIndexDirectory.mem("FileIndex reallyClose 1");
+
 	// if the index is activated
 	// set the end time in the header
 	if (this.isActivated()) {
@@ -89,11 +92,15 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    // mark as NOT being changed
 	    changed = false;
 
-	    eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
+	    if (eventMulticaster.hasPrimaryEventListeners()) {
+		eventMulticaster().firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.CLOSED, this));
+	    }
 
 	    closed = true;
 	    activated = false;
-	    indexInteractor = null;
+	    //indexInteractor = null;
+
+	    //TimeIndexDirectory.mem("FileIndex reallyClose 2");
 
 	    return true;
 	} catch (IOException ioe) {
@@ -111,7 +118,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public synchronized IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addItem(dataitem, null);
     }
 
@@ -124,7 +131,21 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized long addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addItem(dataitem, dataTS, 0);
+    }
+
+    /**
+     * Add a Data Item to the Index plus a Timestamp from the Data.
+     * The ID will be generated.
+     * There are no annotations.
+     * @param item the IndexItem to add
+     * @param dataTS the Timestamp for the data, null implies that
+     * the data Timestamp is the same as the record Timestamp
+     * @param annotation the annotation meta data
+     * @return the no of items in the index.
+     */
+    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();
@@ -135,10 +156,12 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
 	
 	// create a FileIndexItem
-	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), new SID(0));
+	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), annotation);
 
-
-	// writeItem calls addItem(IndexItem)
+ 	// add the item to the cache
+ 	addItem(item);
+ 
+ 	// now write it out
 	long newSize = writeItem(item);
 
 	// mark as being changed
@@ -153,21 +176,28 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    }
 	}
 
-	return newSize;
+	return item;
     }
 
    
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem item, Index other) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addReference(item, other, item.getDataTimestamp());
     }
 
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addReference(otherItem, otherIndex, dataTS, 0);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     */
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	URI indexURI = otherIndex.getURI();
 	ID indexID = otherIndex.getID();
 
@@ -180,7 +210,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
         IndexReference reference  = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
 
-	return addReference(reference, dataTS);
+	return addReference(reference, dataTS, annotation);
     }
 
     /**
@@ -189,7 +219,17 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * and the IndexItem's data Timestamp.
      * It is used internally when doing a TimeIndexFactory.save().
      */
-    public long addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexReference reference, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	return addReference(reference, dataTS, 0);
+    }
+
+    /**
+     * Add a Referemnce to an IndexItem in a Index.
+     * This version takes the Index URI, the Index ID, the IndexItem's Position,
+     * and the IndexItem's data Timestamp.
+     * It is used internally when doing a TimeIndexFactory.save().
+     */
+    public IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
         IndexReferenceDataHolder dataHolder = null;
 
@@ -215,25 +255,33 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	Timestamp actualTS = (dataTS == null ? recordTS : dataTS);
 
 	// create a FileIndexItem
-	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE_DT, new SID(id), new SID(0));
+	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataHolder, DataType.REFERENCE, new SID(id), annotation);
 
 	dataHolder.setIndexItem(item);
 
+ 	// add the item to the cache
+ 	addItem(item);
+ 
+ 	// now write it out
 	long newSize = writeItem(item);
 
 	// mark as being changed
 	changed = true;
 
-	return newSize;
+	return item;
     }
 
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) throws GetItemException {
+    public synchronized IndexItem getItem(long n) throws GetItemException, IndexClosedException {
 	setLastAccessTime();
 
 	IndexItem item = null;
+
+	if (isClosed()) {
+	    throw new IndexClosedException("Can't get item " + n + " from a closed index");
+	}
 
 	if (indexCache.containsItem(n)) { 	// if the cache has the item
 	    // get it from the cache
@@ -241,24 +289,32 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	} else {
 	    //System.err.println("FileIndex: " + getName() + " load-on-demand item: " + n);
 	    try {
-		// get the item from the index interactor
-		indexInteractor.getItem(n, false);
-		// get it out of the cache
-		item = indexCache.getItem(n);
+		// get the IndexItem from the index interactor.
+		// This automatically gets placed in the cache
+		item = indexInteractor.getItem(n, getLoadDataAutomatically());
+
+		if (item == null) {
+		    throw new GetItemException("Cant load item " + n);
+		}
+
+		// Get it out of the cache.
+		// This will fill the data if it is hollow
+		//item = indexCache.getItem(n);
 	    } catch (IOException ioe) {
 		throw new GetItemException("Cant load item " + n);
 	    }
 	}
 
 	// tell all the listeners that an item has been accessed
-	eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+	if (eventMulticaster.hasAccessEventListeners()) {
+	    eventMulticaster.fireAccessEvent(new IndexAccessEvent(getURI().toString(), header.getID(), item, this));
+	}
 
 	return item;
     }
 
     protected long writeItem(FileIndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
-	// add the item to the cache
-	long newSize = super.addItem(item);
+	long newSize = getLength();
 
 	// and write it out to the file
 	try {
@@ -291,7 +347,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @param position the position to load the IndexItem at
      * @return the no of items in the cache
      */
-    public long retrieveItem(IndexItem item, long position) {
+    public synchronized long retrieveItem(IndexItem item, long position) {
 	// now set the item's position and
 	// bind it to the index
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
@@ -302,6 +358,9 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// the cache will return the size of the index
 	long cacheSize = indexCache.addItem(item, position);
 
+	//System.err.print("R");
+	//System.err.flush();
+
 
 	return cacheSize;
     }
@@ -311,8 +370,11 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Read data for an index item
      * given a DataReference.
      */
-    public DataHolderObject readData(DataReference dataReference) {
-	//System.err.println("Reading reference: " + dataReference);
+    public synchronized DataHolderObject readData(long pos, DataReference dataReference) {
+	//System.err.println("FileIndex: " + " readData @" +  pos + ". Thread " + Thread.currentThread().getName() );
+	//System.err.print("D");
+	//System.err.flush();
+
 	return indexInteractor.convertDataReference(dataReference);
     }
      
