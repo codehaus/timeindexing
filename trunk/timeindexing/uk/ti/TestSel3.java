@@ -29,9 +29,7 @@ import sun.misc.SignalHandler;
  * First test of index selection.
  */
 public class TestSel3 {
-    int intervalStart = 0;
-
-    int intervalEnd = 0;
+    static IndexView index = null;
 
     public static void main(String [] args) {
 	/*
@@ -66,7 +64,6 @@ public class TestSel3 {
 
 	try {
 	    //IndexView index = factory.open(new File(properties.getProperty("indexpath")));
-	    IndexView index = null;
 
 	    try {
 		index = factory.open(properties);
@@ -87,6 +84,7 @@ public class TestSel3 {
 
 	    if (narrow1 == null) {
 		System.err.println("Didn't do selection properly");
+		exit(2);
 	    } else {
 		printIndex(narrow1);
 	    }
@@ -94,7 +92,7 @@ public class TestSel3 {
 	    System.out.println("Narrowing. narrow1 -> narrow2");
 
 	    IndexView narrow2 = narrow1.select(new EndPointInterval(new AbsolutePosition(10),
-								    new Second(8, TimeDirection.FORWARD_DT)),
+								    new Second(8, TimeDirection.FORWARD)),
 					       IndexTimestampSelector.DATA, Overlap.FREE,
 					       Lifetime.DISCRETE);
 
@@ -115,6 +113,7 @@ public class TestSel3 {
 
 	    if (narrow3 == null) {
 		System.err.println("Didn't do selection properly");
+		exit(2);
 	    } else {
 		printIndex(narrow3);
 	    }
@@ -129,6 +128,7 @@ public class TestSel3 {
 
 	    if (narrow4 == null) {
 		System.err.println("Didn't do selection properly");
+		exit(2);
 	    } else {
 		printIndex(narrow4);
 	    }
@@ -144,6 +144,7 @@ public class TestSel3 {
 
 	    if (narrow5 == null) {
 		System.err.println("Didn't do selection properly");
+		exit(2);
 	    } else {
 		printIndex(narrow5);
 	    }
@@ -177,15 +178,24 @@ public class TestSel3 {
 
 	    
 	    
+	    exit(0);
 
 
-
-	    factory.close(index);
 	} catch (TimeIndexException ioe) {
 	    System.err.println("Error with index \"" +  properties.getProperty("indexpath") + "\"");
 	    System.exit(1);
 	}	    
 
+    }
+
+    public static void exit(int val) {
+	try {
+	    index.close();
+	    System.exit(val);
+	} catch (TimeIndexException ioe) {
+	    System.err.println("Error closing index \"" + index.getName() + "\"");
+	    System.exit(1);
+	}	    
     }
 
     public static void printIndex(IndexView index) throws TimeIndexException {
