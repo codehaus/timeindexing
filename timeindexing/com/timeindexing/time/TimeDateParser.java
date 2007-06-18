@@ -6,8 +6,7 @@ import java.text.NumberFormat;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.Date;
-import java.util.TimeZone;
-
+import java.util.Calendar;
 
 /**
  * Parses a time or date from a given input.
@@ -16,43 +15,58 @@ public class TimeDateParser {
     /*
      * A format for year/month/day plus hour:minutes:seconds
      */
-    protected static DateParser fullestFormat = new DateParser("yyyy/MM/dd HH:mm:ss");
+    protected DateParser fullestFormat = new DateParser("yyyy/MM/dd HH:mm:ss");
+    /*
+     * A format for day/month/year plus hour:minutes:seconds
+     */
+    protected DateParser dmyFullestFormat = new DateParser("dd/MM/yyyy HH:mm:ss");
     /*
      * A format for year/month/day plus hour:minutes:seconds with no spaces
      */
-    protected static DateParser fullestFormatNS = new DateParser("yyyy/MM/dd-HH:mm:ss");
+    protected DateParser fullestFormatNS = new DateParser("yyyy/MM/dd-HH:mm:ss");
     /*
      * A format for year/month/day plus hour:minutes
      */
-    protected static DateParser fullFormat = new DateParser("yyyy/MM/dd HH:mm");
+    protected DateParser fullFormat = new DateParser("yyyy/MM/dd HH:mm");
+    /*
+     * A format for day/month/year plus hour:minutes
+     */
+    protected DateParser dmyFullFormat = new DateParser("dd/MM/yyyy HH:mm");
     /*
      * A format for year/month/day plus hour:minutes with no spaces
      */
-    protected static DateParser fullFormatNS = new DateParser("yyyy/MM/dd-HH:mm");
+    protected DateParser fullFormatNS = new DateParser("yyyy/MM/dd-HH:mm");
     /*
      * A format for year/month/day
      */
-    protected static DateParser ymdFormat = new DateParser("yyyy/MM/dd");
+    protected DateParser ymdFormat = new DateParser("yyyy/MM/dd");
+    /*
+     * A format for day/month/year
+     */
+    protected DateParser dmyFormat = new DateParser("dd/MM/yyyy");
     /*
      * A format for the first day
      */
-    protected static DateParser dayFormat = new DateParser("HH:mm:ss");
+    protected DateParser dayFormat = new DateParser("HH:mm:ss");
     /*
      * A format for the first hour
      */
-    protected static DateParser hourFormat = new DateParser("mm:ss");
+    protected DateParser hourFormat = new DateParser("mm:ss");
     /*
      * A format for seconds only
      */
-    protected static DateParser secondFormat = new DateParser("ss");
+    protected DateParser secondFormat = new DateParser("ss");
 
     TimestampGenerator generator = null;
+
+    Calendar calendar = null;
 
     /**
      * Construct a TimeDateParser.
      */
     public TimeDateParser() {
 	generator = new TimestampGenerator();
+	calendar = Calendar.getInstance();
     }
 
     
@@ -64,8 +78,11 @@ public class TimeDateParser {
      * Formats processed for time are:
      * <ul>
      * <li> yyyy/MM/dd HH:mm:ss 
+     * <li> dd/MM/yyyy HH:mm:ss 
      * <li> yyyy/MM/dd HH:mm
+     * <li> dd/MM/yyyy HH:mm
      * <li> yyyy/MM/dd
+     * <li> dd/MM/yyyy
      * <li> HH:mm:ss
      * <li> mm:ss
      * <li> ss
@@ -81,112 +98,147 @@ public class TimeDateParser {
      * @return a Timestamp object  if the input is valid, null otherwise.
      */
     public Timestamp parse(String timeArg, boolean absolute) {
-	Date date = null;
-	long seconds = 0;
-	int subSeconds = 0;
-	String timeStr = null;
-	String subSecondStr =null;
-	int subSecondLen = 0;
+	    Date date = null;
+	    long seconds = 0;
+	    int subSeconds = 0;
+	    String timeStr = null;
+	    String subSecondStr =null;
+	    int subSecondLen = 0;
 
-	// Split the time using . as the separator
-	// Before the . are dates and times in the second domain.
-	// After the dot are times in the subsecond domain
-	int postitionOfDot = timeArg.indexOf('.');
+	    // Split the time using . as the separator
+	    // Before the . are dates and times in the second domain.
+	    // After the dot are times in the subsecond domain
+	    int postitionOfDot = timeArg.indexOf('.');
 
-	if (postitionOfDot == -1) {                        // there is NO .
-	    // a time in whole seconds
-	    timeStr = timeArg;
-	} else {
-	    // split the time into two distinct parts
-	    String secondPart = timeArg.substring(0, postitionOfDot);
-	    String subSecondPart = timeArg.substring(postitionOfDot+1);
+	    if (postitionOfDot == -1) {                        // there is NO .
+		// a time in whole seconds
+		timeStr = timeArg;
+	    } else {
+		// split the time into two distinct parts
+		String secondPart = timeArg.substring(0, postitionOfDot);
+		String subSecondPart = timeArg.substring(postitionOfDot+1);
 	    
-	    timeStr = secondPart;
-	    subSecondStr = subSecondPart;
-	    subSecondLen = subSecondStr.length();
-	}
-	    
-
-	//System.err.println("Parse input = " + dateStr);
-
-	if (date == null) {	// the time string is null
-	    // let's try dayFormat
-	    date = dayFormat.parse(timeStr);
-	    //System.err.println("Parse day = " + date);
-	}
-
-	if (date == null) {	// the time string is null
-	    // let's try hourFormat
-	    date = hourFormat.parse(timeStr);
-	    //System.err.println("Parse hour = " + date);
-	}
-
-	if (date == null) {	// the time string is null
-	    // let's try secondFormat
-	    // No Don't - it just doesn't work
-	    // SimpleDateFormat is full of irregularities.
-	    // WAS date = secondFormat.parse(timeStr);
-	    try {
-		long number = Long.parseLong(timeStr);
-		//System.err.println("Parse secs = " + number);
-		date = new Date (number*1000);
-	    } catch (NumberFormatException nfe) {
-		;
+		timeStr = secondPart;
+		subSecondStr = subSecondPart;
+		subSecondLen = subSecondStr.length();
 	    }
-	    //System.err.println("Parse secs = " + date);
-	}
+	    
+
+	    //System.err.println("Parse input = " + dateStr);
+
+	    if (date == null) {	// the time string is null
+		// let's try dayFormat
+		date = dayFormat.parse(timeStr);
+		//System.err.println("Parse day = " + date);
+	    }
+
+	    if (date == null) {	// the time string is null
+		// let's try hourFormat
+		date = hourFormat.parse(timeStr);
+		//System.err.println("Parse hour = " + date);
+	    }
+
+	    if (date == null) {	// the time string is null
+		// let's try secondFormat
+		// No Don't - it just doesn't work
+		// SimpleDateFormat is full of irregularities.
+		// WAS date = secondFormat.parse(timeStr);
+		try {
+		    long number = Long.parseLong(timeStr);
+		    //System.err.println("Parse secs = " + number);
+		    date = new Date (number*1000);
+		} catch (NumberFormatException nfe) {
+		    ;
+		}
+		//System.err.println("Parse secs = " + date);
+	    }
 
 
-	if (date == null) {	// the time string is null
-	    // let's try Format
-	    date = fullestFormatNS.parse(timeStr);
-	    //System.err.println("Parse Fullest date = " + date);
-	}
+	    if (date == null) {	// the time string is null
+		// let's try Format
+		date = fullestFormatNS.parse(timeStr);
+		//System.err.println("Parse Fullest date = " + date);
+	    }
 
-	if (date == null) {	// the time string is null
-	    // let's try Format
-	    date = fullestFormat.parse(timeStr);
-	    //System.err.println("Parse Fullest date = " + date);
-	}
+	    checkpoint(date);
 
-	if (date == null) {	// the time string is null
-	    // let's try Format
-	    date = fullFormatNS.parse(timeStr);
-	    //System.err.println("Parse Full  date = " + date);
-	}
+	    if (date == null) {	// the time string is null
+		// let's try Format
+		date = fullestFormat.parse(timeStr);
+		//System.err.println("Parse Fullest date = " + date);
+	    }
 
-	if (date == null) {	// the time string is null
-	    // let's try Format
-	    date = fullFormat.parse(timeStr);
-	    //System.err.println("Parse Full  date = " + date);
-	}
+	    checkpoint(date);
 
-	if (date == null) {	// the time string is null
-	    // let's try Format
-	    date = ymdFormat.parse(timeStr);
-	    //System.err.println("Parse YMD date = " + date);
-	}
+	    if (date == null || calendar.get(Calendar.YEAR) < 100) {	// the time string is null
+		// let's try Format
+		date = dmyFullestFormat.parse(timeStr);
+		//System.err.println("Parse Fullest date = " + date);
+	    }
 
-	if (date == null) {	//  all the time parses failed 
-	    // so return null
-	    return null;
-	} else {
-	    seconds = date.getTime()/1000;
-	}
+	    checkpoint(date);
 
-	//System.err.println("Parsed seconds = " + seconds);
+	    if (date == null) {	// the time string is null
+		// let's try Format
+		date = fullFormatNS.parse(timeStr);
+		//System.err.println("Parse Full  date = " + date);
+	    }
+
+	    checkpoint(date);
+
+	    if (date == null) {	// the time string is null
+		// let's try Format
+		date = fullFormat.parse(timeStr);
+		//System.err.println("Parse Full  date = " + date);
+	    }
+
+	    checkpoint(date);
+
+	    if (date == null) {	// the time string is null
+		// let's try Format
+		date = dmyFullFormat.parse(timeStr);
+		//System.err.println("Parse Full  date = " + date);
+	    }
+
+	    checkpoint(date);
+
+	    if (date == null || calendar.get(Calendar.YEAR) < 100) {	// the time string is null
+		// let's try Format
+		date = ymdFormat.parse(timeStr);
+		//System.err.println("Parse YMD date = " + date);
+	    }
+
+	    checkpoint(date);
+
+	    if (date == null || calendar.get(Calendar.YEAR) < 100) {	// the time string is null
+		// let's try Format
+		date = dmyFormat.parse(timeStr);
+		//System.err.println("Parse DMY date = " + date);
+	    }
+
+	    checkpoint(date);
+
+	    if (date == null) {	//  all the time parses failed 
+		// so return null
+		return null;
+	    } else {
+		seconds = date.getTime()/1000;
+	    }
+
+	    //System.err.println("Parsed seconds = " + seconds);
+
+	    checkpoint(date);
+
+	    // get the no of subseconds
+	    if (postitionOfDot > -1) {              // there were subseconds
+		subSeconds = parseSubseconds(subSecondStr);
+		//System.err.println("subSeconds = " + subSeconds);
+	    } 
+
+	    Timestamp timestamp = createTimestamp(seconds, subSeconds, subSecondLen, absolute);
 
 
-	// get the no of subseconds
-	if (postitionOfDot > -1) {              // there were subseconds
-	    subSeconds = parseSubseconds(subSecondStr);
-	    //System.err.println("subSeconds = " + subSeconds);
-	} 
-
-	Timestamp timestamp = createTimestamp(seconds, subSeconds, subSecondLen, absolute);
-
-
-	return timestamp;
+	    return timestamp;
     }
 
 
@@ -357,5 +409,14 @@ public class TimeDateParser {
  
          return timestamp;
     }
+
+
+    private void checkpoint(Date date) {
+	if (date != null) {
+	    calendar.setTime(date);
+	    //System.err.println("Year = " + calendar.get(Calendar.YEAR));
+	}
+    }
+
 }
 
