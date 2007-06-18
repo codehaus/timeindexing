@@ -53,6 +53,22 @@ public class CascadingMap extends HashMap implements Map {
 	}
     }
 
+   /**
+     * Construct a CascadingMap using a Map object.
+     */
+    public CascadingMap(Map map) {
+	Iterator keys = map.keySet().iterator();
+
+	while (keys.hasNext()) {
+	    Object aKey = keys.next();
+	    Object aValue = map.get(aKey);
+
+	    // got the name and value
+	    // now add it to the map
+	    put(aKey, aValue);
+	}
+    }
+
     /**
      * A constructor which specifies a submap
      * @param aSubMap an existing CascadingMap which will be a submap
