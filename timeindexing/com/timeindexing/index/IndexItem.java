@@ -46,9 +46,10 @@ public interface IndexItem {
     public ID getItemID();
 
     /**
-     * The ID of annotations associated with this IndexItem.
+     * The meta data of annotations associated with this IndexItem.
+     * The application is free to process this in any way.
      */
-    public ID getAnnotations();
+    public long getAnnotationMetaData();
 
     /**
      * Get the index position this IndexItem is in.
@@ -73,5 +74,5 @@ public interface IndexItem {
     /**
      * Follow the reference, if this IndexItem holds an IndexReference.
      */
-    public IndexItem follow() throws GetItemException;
+    public IndexItem follow() throws GetItemException, IndexClosedException;
 }
