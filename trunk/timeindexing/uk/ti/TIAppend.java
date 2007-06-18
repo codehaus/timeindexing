@@ -176,7 +176,9 @@ public class TIAppend {
 		    dataTS = result.getDataTimestamp();
 		    item = new ByteBufferItem(result.getData());
 
-		    indexSize = index.addItem(item, dataTS);
+		    index.addItem(item, dataTS);
+
+		    indexSize = index.getLength();
 
 		    //index.hollowItem(indexSize - 1);
 		}
