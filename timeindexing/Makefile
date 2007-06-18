@@ -3,37 +3,38 @@ JARGS=
 all: io time index cache event basic data util plugin appl servlet
 
 io:
-	jikes $(JARGS) com/timeindexing/io/*.java
+	javac $(JARGS) com/timeindexing/io/*.java
 
 time:
-	jikes $(JARGS) com/timeindexing/time/*.java
+	javac $(JARGS) com/timeindexing/time/*.java
 
 index:
-	jikes $(JARGS) com/timeindexing/index/*.java
+	javac $(JARGS) com/timeindexing/index/*.java
 
 cache:
-	jikes $(JARGS) com/timeindexing/cache/*.java
+	javac $(JARGS) com/timeindexing/cache/*.java
 
 event:
-	jikes $(JARGS) com/timeindexing/event/*.java
+	javac $(JARGS) com/timeindexing/event/*.java
 
 basic:
-	jikes $(JARGS) com/timeindexing/basic/*.java
+	javac $(JARGS) com/timeindexing/basic/*.java
 
 data:
-	jikes $(JARGS) com/timeindexing/data/*.java
+	javac $(JARGS) com/timeindexing/data/*.java
 
 util:
-	jikes $(JARGS) com/timeindexing/util/*.java
+	javac $(JARGS) com/timeindexing/util/*.java
 
 plugin:
-	jikes $(JARGS) com/timeindexing/plugin/*.java
+	javac $(JARGS) com/timeindexing/plugin/*.java
 
 appl:
-	jikes $(JARGS) com/timeindexing/appl/*.java
+	javac $(JARGS) com/timeindexing/appl/*.java
+	javac $(JARGS) com/timeindexing/appl/playlist/*.java
 
 servlet:
-	jikes $(JARGS) com/timeindexing/servlet/*.java
+	javac $(JARGS) com/timeindexing/servlet/*.java
 
 
 lib: all
