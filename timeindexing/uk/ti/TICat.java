@@ -5,6 +5,8 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedFileIndexItem;
 import com.timeindexing.index.TimeIndexException;
 import com.timeindexing.index.GetItemException;
+import com.timeindexing.index.IndexClosedException;
+import com.timeindexing.cache.RemoveAfterUsePolicy;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -25,6 +27,7 @@ public class TICat extends TIAbstractRestore {
 	/*
 	 * Handle broken pipes properly
 	 */
+	/*
 	final Signal sigpipe = new Signal("PIPE");
 
 	SignalHandler handler = new SignalHandler () {
@@ -33,7 +36,7 @@ public class TICat extends TIAbstractRestore {
 		}
 	    };
 	Signal.handle(sigpipe, handler);
- 
+	*/
 
 
 
@@ -80,6 +83,9 @@ public class TICat extends TIAbstractRestore {
      * Print an index to the OutputStream.
      */
     protected void printIndex(Index index, OutputStream out)  throws TimeIndexException {
+
+	index.setCachePolicy(new RemoveAfterUsePolicy());
+
 	long total = index.getLength();
 	for (long i=0; i<total; i++) {
 	    IndexItem itemN = index.getItem(i);
@@ -100,6 +106,8 @@ public class TICat extends TIAbstractRestore {
 		item = item.follow();
 	    }
 	} catch (GetItemException gie) {
+	    return;
+	} catch (IndexClosedException ice) {
 	    return;
 	}
 
