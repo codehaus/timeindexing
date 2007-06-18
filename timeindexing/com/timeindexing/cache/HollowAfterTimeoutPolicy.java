@@ -9,7 +9,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.RelativeTimestamp;
 import com.timeindexing.time.ElapsedMillisecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -24,7 +24,7 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public HollowAfterTimeoutPolicy() {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	// 0.5 second
 	timeout = new ElapsedMillisecondTimestamp(500);
 
@@ -35,7 +35,7 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public HollowAfterTimeoutPolicy(RelativeTimestamp elapsed) {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	timeout = elapsed;
     }
 
@@ -67,11 +67,16 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      * @param pos the position being requested
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
+	// if the item is in the monitorList remove it.
+	monitorList.remove(item);
+
 	// if the first item in the monitorList
 	// was last accessed with an elapsed time greater
 	// than the timeout, then hollow it
 	// and remove one item from the monitorList
-	if (monitorList.size() > 0) {
+	while (monitorList.size() > 0) {
+
+	    
 	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 
 	    Timestamp firstTimeout = TimeCalculator.elapsedSince(first.getLastAccessTime());
@@ -84,19 +89,17 @@ public class HollowAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 		monitorList.remove(first);
 	    
 		cache.hollowItem(first.getPosition());
-	    } 
-
-	    /*
-	    else {
+	    } else {
+		/*
 		// the timeout is not big enough
 		// so remove it from the beginning of the list
 		// and add it to the end
 		monitorList.remove(first);
 		monitorList.add(first);
 		System.err.println("ReQueuing " + item.getPosition() + ".Hollow list size = " + monitorList.size());
+		*/
+		break;
 	    }
-	    */
-		
 	}
 
 	return null;
