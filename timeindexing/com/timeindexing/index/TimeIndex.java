@@ -6,9 +6,13 @@ import com.timeindexing.index.Index;
 import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.IndexTimestampSelector;
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.TimeSpecifier;
+import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.TimeCalculator;
 import com.timeindexing.time.TimestampMapping;
 import com.timeindexing.time.Lifetime;
+import com.timeindexing.time.IntervalSpecifier;
+import com.timeindexing.time.Clock;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.basic.Position;
 import com.timeindexing.basic.AbsolutePosition;
@@ -168,6 +172,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return first.getIndexTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (IndexClosedException ice) {
+		return Timestamp.ZERO;
 	    } catch (PositionOutOfBoundsException poobe) {
 		return Timestamp.ZERO;
 	    }
@@ -186,6 +192,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		IndexItem last = getItem(getLength()-1);
 		return last.getIndexTimestamp();
 	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    } catch (IndexClosedException ice) {
 		return Timestamp.ZERO;
 	    } catch (PositionOutOfBoundsException poobe) {
 		return Timestamp.ZERO;
@@ -207,6 +215,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		return first.getDataTimestamp();
 	    } catch (GetItemException gie) {
 		return Timestamp.ZERO;
+	    } catch (IndexClosedException ice) {
+		return Timestamp.ZERO;
 	    } catch (PositionOutOfBoundsException poobe) {
 		return Timestamp.ZERO;
 	    }
@@ -225,6 +235,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		IndexItem last = getItem(getLength()-1);
 		return last.getDataTimestamp();
 	    } catch (GetItemException gie) {
+		return Timestamp.ZERO;
+	    } catch (IndexClosedException ice) {
 		return Timestamp.ZERO;
 	    } catch (PositionOutOfBoundsException poobe) {
 		return Timestamp.ZERO;
@@ -300,7 +312,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index.
      */
-    public long addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException , AddItemException {
+    public IndexItem addItem(DataItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException , AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -311,7 +323,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Data Item to the Index with a specific Data Timestamp
      */
-    public long addItem(DataItem item, Timestamp datatime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addItem(DataItem item, Timestamp datatime) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -319,11 +331,23 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	}
     }
 
+    /**
+     * Add a Data Item to the Index with a speicifed Data Timestamp and some annotation data
+     */
+    public IndexItem addItem(DataItem item, Timestamp datatime, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	if (isSelection) {
+	    throw new IndexTerminatedException("Can't add data to an Index selection");
+	} else {
+	    return indexModel.addItem(item, datatime, annotation);
+	}
+    }
+
+
 
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem otherItem, Index otherIndex) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
@@ -334,13 +358,26 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Add a Referemnce to an IndexItem in a Index.
      */
-    public long addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	if (isSelection) {
 	    throw new IndexTerminatedException("Can't add data to an Index selection");
 	} else {
 	    return indexModel.addReference(otherItem, otherIndex, dataTS);
 	}
     }
+
+    /**
+     * Add a Reference to an IndexItem in a Index.
+     * The Data Timestamp of the IndexItem is the one specified, as is the annotation value.
+     */
+    public IndexItem addReference(IndexItem otherItem, Index otherIndex, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+	if (isSelection) {
+	    throw new IndexTerminatedException("Can't add data to an Index selection");
+	} else {
+	    return indexModel.addReference(otherItem, otherIndex, dataTS, annotation);
+	}
+    }
+
 
     /**
      * Get the no of items in the index.
@@ -356,7 +393,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(long n) throws GetItemException {
+    public IndexItem getItem(long n) throws GetItemException, IndexClosedException {
 	if (isSelection) {
 	    return indexModel.getItem(n+start.value());
 	} else {
@@ -367,7 +404,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get an Index Item from the Index.
      */
-    public IndexItem getItem(Position p) throws GetItemException {
+    public IndexItem getItem(Position p) throws GetItemException, IndexClosedException {
 	if (isSelection) {
 	    return indexModel.getItem((Position)new AbsoluteAdjustablePosition(p).adjust(start));
 	} else {
@@ -377,8 +414,17 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Get an Index Item from the Index.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
      */
-    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException {
+    public IndexItem getItem(Timestamp t) throws GetItemException, IndexClosedException {
+	return getItem(t, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Get an Index Item from the Index.
+     */
+    public IndexItem getItem(Timestamp t, IndexTimestampSelector sel, Lifetime lifetime) throws GetItemException, IndexClosedException {
+	//return indexModel.getItem(t, sel, lifetime);
 	TimestampMapping tsm = locate(t, sel, lifetime);
 	return getItem(tsm.position());
     }
@@ -426,6 +472,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
     /**
      * Does a timestamp fall within the bounds of the Index.
+     * Uses IndexTimestampSelector.DATA as a default.
+     * The bounds are the first time data is put in and the last
+     * time data is put in the Index.
+     */
+    public boolean contains(Timestamp t) {
+	return contains(t, IndexTimestampSelector.DATA);
+    }
+
+    /**
+     * Does a timestamp fall within the bounds of the Index.
      * The bounds are the first time data is put in and the last
      * time data is put in the Index.
      */
@@ -444,6 +500,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		first = getItem(0);
 		last = getItem(getLength()-1);
 	    } catch (GetItemException gie) {
+		return false;
+	    } catch (IndexClosedException ice) {
 		return false;
 	    } catch (PositionOutOfBoundsException poobe) {
 		return false;
@@ -467,6 +525,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	} else {
 	    return indexModel.contains(t, sel);
 	}
+    }
+
+    /**
+     * Try and determine the position associated with the speicifed Timestamp.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original time
+     * and the found position.
+     */
+    public TimestampMapping locate(Timestamp t) {
+	return locate(t, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
     }
 
     /**
@@ -498,6 +566,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 		    last = getItem(getLength()-1);
 		} catch (GetItemException gie) {
 		    return null;
+		} catch (IndexClosedException ice) {
+		    return null;
 		} catch (PositionOutOfBoundsException poobe) {
 		    return null;
 		}
@@ -522,6 +592,16 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	} else {
 	    return indexModel.locate(t, sel, lifetime);
 	}
+    }
+
+    /**
+     * Try and determine the Timestamp associated with the speicifed Position.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     * Returns a TimestampMapping which contains the original Position
+     * and the found Timestamp.
+     */
+    public TimestampMapping locate(Position p) {
+	return locate(p, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
     }
 
 
@@ -550,6 +630,32 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 
     /**
+     * Select an Interval given an Interval object.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(Interval interval) {
+	// ensure we call this class's select()
+	// to get the correct processinf if isSelection == true
+	return select(interval, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.CONTINUOUS);
+    }
+
+
+    /**
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     * Defaults to using IndexTimestampSelector.DATA, Overlap.FREE, 
+     * and Lifetime.CONTINUOUS, as these are the most common values.
+     * Returns null if it cant be done.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier) {
+	// ensure we call this class's select()
+	// to get the correct processinf if isSelection == true
+	Interval interval = intervalSpecifier.instantiate(t);
+	return select(interval, IndexTimestampSelector.DATA, Overlap.FREE, Lifetime.CONTINUOUS);
+    }
+
+    /**
      * Select an Interval.
      * Returns null if it cant be done.
      */
@@ -565,6 +671,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	    // setup the start and end values
 	    if (selection.start == Position.TOO_LOW || selection.start == Position.TOO_HIGH) {
 		// selection start is out of bounds
+		return null;
 	    } else {
 		// realign start to reflect existing view
 		long startValue = selection.start.value();
@@ -573,6 +680,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 
 	    if (selection.end == Position.TOO_LOW || selection.end == Position.TOO_HIGH) {
 		// selection end is out of bounds
+		return null;
 	    } else {
 		// realign end to reflect existing view
 		long endValue = selection.end.value();
@@ -582,11 +690,24 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
 	    return selection;
 	} else {
 	    TimeIndex selection = (TimeIndex)indexModel.select(interval, selector, overlap, lifetime);
-	    selection.selectionIndexView = this;
 
-	    return selection;
-	    
+	    if (selection != null) {
+		selection.selectionIndexView = this;
+		return selection;
+	    } else {
+		return null;
+	    }	    
 	}
+    }
+
+    /*
+     * Select an Interval given a Timestamp and an IntervalSpecifier.
+     */
+    public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime) {
+	// ensure we call this class's select()
+	// to get the correct processinf if isSelection == true
+ 	Interval interval = intervalSpecifier.instantiate(t);
+	return select(interval, selector, overlap, lifetime);
     }
 
     /**
@@ -679,7 +800,9 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Close the index.
      * Intened to close all associated streams and files,
-     * and this sets the end time too.
+     * and sets the end time too, if this is the last view to close.
+     * <b>This also disconnects the view from the model.</b>
+     * Any methods called after this will fail.
      */
     public boolean close() throws IndexCloseException {
 	return indexModel.close();
@@ -711,6 +834,8 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Get a view onto the Index.
      */
     public IndexView asView() {
+	//System.err.println(Clock.time.time() + " " + getURI() + ". AS_VIEW" + ". Thread " + Thread.currentThread().getName() );
+
 	return indexModel.asView();
     }
 
@@ -764,6 +889,15 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Sets the current navigation position into the IndexView
      * specified as a Timestamp.
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     */
+    public IndexView position(Timestamp t) {
+	return position(t, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Sets the current navigation position into the IndexView
+     * specified as a Timestamp.
      */
     public IndexView position(Timestamp t, IndexTimestampSelector selector, Lifetime lifetime) {
 	TimestampMapping tsMapping = locate(t, selector, lifetime);
@@ -796,6 +930,34 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      */
     public Position getEndPosition() {
 	return end;
+    }
+
+    /**
+     * Move the current navigation position in the IndexView
+     * using the TimeSpecifier.
+     * e.g. index.move(new Minutes(10, FORWARD));
+     * Uses IndexTimestampSelector.DATA and Lifetime.CONTINUOUS as defaults.
+     */
+    public IndexView move(TimeSpecifier ts) {
+	return move(ts, IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+    }
+
+    /**
+     * Move the current navigation position in the IndexView
+     * using the TimeSpecifier.
+     * e.g. index.move(new Minutes(10, FORWARD), IndexTimestampSelector.DATA, Lifetime.CONTINUOUS);
+     */
+    public IndexView move(TimeSpecifier ts, IndexTimestampSelector selector, Lifetime lifetime) {
+	// get the current position
+	TimestampMapping current = locate(position());
+
+	// work out what the new time would be
+	Timestamp newTimestamp = ts.instantiate(current.timestamp());
+
+	// now set the position based on this new time
+	IndexView indexView = position(newTimestamp, selector, lifetime);
+
+	return indexView;
     }
 
     /**
@@ -843,7 +1005,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get the Index Item from the Index at position position().
      */
-    public IndexItem getItem() throws GetItemException {
+    public IndexItem getItem() throws GetItemException, IndexClosedException {
 	if (position == null) {
 	    throw new PositionOutOfBoundsException("Position not set. Region does not exist");
 	} else {
@@ -854,7 +1016,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     /**
      * Get the Index Item from the Index at position mark().
      */
-    public IndexItem getItemAtMark() throws GetItemException {
+    public IndexItem getItemAtMark() throws GetItemException, IndexClosedException {
 	if (mark == null) {
 	    throw new PositionOutOfBoundsException("Mark not set. Region does not exist");
 	} else {
@@ -887,11 +1049,10 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
     }
 
     /**
-     * The finalize behviour is to call close().
+     * Get the CachePolicy 
      */
-    protected void finalize() throws Throwable {
-	close();
-	super.finalize();
+    public CachePolicy getCachePolicy() {
+	return indexModel.getCachePolicy();
     }
 
     /**
@@ -899,11 +1060,27 @@ public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Seriali
      * Setting a new CachePolicy in the middle of operation
      * can lose some timing information held by the existing CachePolicy,
      * so use with care.
-     * @return true if the policy was set
+     * @return the old policy if the policy was set
      */
-    public boolean setCachePolicy(CachePolicy policy) {
+    public CachePolicy setCachePolicy(CachePolicy policy) {
 	return indexModel.setCachePolicy(policy);
     }
+
+    /**
+     * Does the index load data automatically when doing a get item. 
+     */
+    public boolean getLoadDataAutomatically() {
+	return indexModel.getLoadDataAutomatically();
+    }
+
+    /**
+     * Load data automatically when doing a get item.
+     * @return the previous value of this status
+     */
+    public boolean setLoadDataAutomatically(boolean load) {
+	return indexModel.setLoadDataAutomatically(load);
+    }
+
 }
 
 
