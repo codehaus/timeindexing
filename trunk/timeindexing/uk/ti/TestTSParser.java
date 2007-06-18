@@ -77,7 +77,26 @@ public class TestTSParser {
 	System.out.print(timeStr + " => Ela ");
 	System.out.println(timeParser.parse(timeStr, false));
 
+	timeStr = "05/04/2002";
+	System.out.print(timeStr + " => Abs ");
+	System.out.println(timeParser.parse(timeStr, true));
+	System.out.print(timeStr + " => Ela ");
+	System.out.println(timeParser.parse(timeStr, false));
+
+
 	timeStr = "2002/6/7";
+	System.out.print(timeStr + " => Abs ");
+	System.out.println(timeParser.parse(timeStr, true));
+	System.out.print(timeStr + " => Ela ");
+	System.out.println(timeParser.parse(timeStr, false));
+
+	timeStr = "7/6/2002";
+	System.out.print(timeStr + " => Abs ");
+	System.out.println(timeParser.parse(timeStr, true));
+	System.out.print(timeStr + " => Ela ");
+	System.out.println(timeParser.parse(timeStr, false));
+
+	timeStr = "31/12/2020";
 	System.out.print(timeStr + " => Abs ");
 	System.out.println(timeParser.parse(timeStr, true));
 	System.out.print(timeStr + " => Ela ");
