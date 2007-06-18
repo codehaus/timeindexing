@@ -80,7 +80,7 @@ public class TestConvert2 {
 	    convertProperties.setProperty("name", "testconvert2");
 	    convertProperties.setProperty("indexpath", "/tmp/testconvert2");
 
-	    Index convIndex = factory.save(narrow1, IndexType.EXTERNAL_DT, convertProperties);
+	    Index convIndex = factory.save(narrow1, IndexType.EXTERNAL, convertProperties);
 
 	    convIndex.close();
 

@@ -40,7 +40,7 @@ public class Test5C {
 	properties.setProperty("datapath", "/tmp/test5cNF");
 
 	try {
-	    IndexView index = factory.create(IndexType.EXTERNAL_DT, properties);
+	    IndexView index = factory.create(IndexType.EXTERNAL, properties);
 
 	    Timestamp dTS = null;
 	    /* Item 0 */
@@ -91,7 +91,7 @@ public class Test5C {
 	    index.setAutoCommit(false);
 
 	    /* A few more */
-	    for (int few = 0; few < 1000; few++) {
+	    for (int few = 0; few < 10000; few++) {
 
 		int myDelay = 100 + (int)(System.currentTimeMillis() % 100);
 
@@ -103,6 +103,11 @@ public class Test5C {
 		data = new StringItem("delay was " + myDelay);
 
 		index.addItem(data, dTS);
+
+		if (few % 100 == 0) {
+		    // print a message occassionally
+		    System.err.println("Item " + few + " @ " + dTS);
+		}
 
 	    }
 

@@ -40,7 +40,7 @@ public class Test5B {
 	properties.setProperty("nodatafileheader", "true");
 
 	try {
-	    IndexView index = factory.create(IndexType.EXTERNAL_DT, properties);
+	    IndexView index = factory.create(IndexType.EXTERNAL, properties);
 
 	    /* Item 0 */
 

@@ -41,7 +41,7 @@ public class TestRef1 {
 	    createProperties.clear();
 	    createProperties.setProperty("name", "index-Test4");
 
-	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
 	    /* Item 0 */
 
@@ -112,7 +112,7 @@ public class TestRef1 {
 	    createProperties.clear();
 	    createProperties.setProperty("name", "index-Referrer");
 
-	    IndexView indexReferrer = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView indexReferrer = factory.create(IndexType.INCORE, createProperties);
 
 	    // add a reference to IndexItem 0.
 	    indexReferrer.addReference(index.getItem(0), index);

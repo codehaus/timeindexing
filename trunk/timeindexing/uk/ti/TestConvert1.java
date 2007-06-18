@@ -38,7 +38,7 @@ public class TestConvert1 {
 
 	try {
 
-	    IndexView index = factory.create(IndexType.INCORE_DT, createProperties);
+	    IndexView index = factory.create(IndexType.INCORE, createProperties);
 
 	    /* Item 0 */
 
@@ -110,7 +110,7 @@ public class TestConvert1 {
 	    convertProperties.setProperty("name", "testconvert1");
 	    convertProperties.setProperty("indexpath", "/tmp/testconvert1");
 
-	    Index convIndex = factory.save(index, IndexType.EXTERNAL_DT, convertProperties);
+	    Index convIndex = factory.save(index, IndexType.EXTERNAL, convertProperties);
 
 	    convIndex.close();
 

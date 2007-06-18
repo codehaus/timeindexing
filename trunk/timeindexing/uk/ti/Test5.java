@@ -42,7 +42,7 @@ public class Test5 {
 	    IndexView index = null;
 
 	    try {
-		index = factory.create(IndexType.INLINE_DT, properties);
+		index = factory.create(IndexType.INLINE, properties);
 	    } catch (IndexCreateException ice) {
 		System.err.println("Couldn't create \"/tmp/test5\".");
 		System.exit(0);
@@ -94,9 +94,9 @@ public class Test5 {
 
 	    delay(100);
 
-	    factory.close(index);
-
 	    printIndex(index);
+
+	    factory.close(index);
 	} catch (TimeIndexException ice) {
 	    System.err.println("Test5: " + ice.getMessage());
 	    System.exit(1);

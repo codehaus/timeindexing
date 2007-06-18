@@ -68,7 +68,7 @@ public class TestRef4 {
 	    createProperties.setProperty("name", index.getName() + "-referrer");
 	    createProperties.setProperty("indexpath", "/tmp/" + index.getName() + "-referrer");
 
-	    IndexView indexReferrer = factory.create(IndexType.EXTERNAL_DT, createProperties);
+	    IndexView indexReferrer = factory.create(IndexType.EXTERNAL, createProperties);
 
 
 	    // add a reference every 100 items
