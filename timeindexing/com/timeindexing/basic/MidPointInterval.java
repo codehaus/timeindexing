@@ -160,9 +160,14 @@ public class MidPointInterval extends AbsoluteInterval implements Interval, Clon
 	    Count count = (Count)value;
 
 	    // calculate the new position given the mid pos and a count
-	    Position result = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posMid).adjust(count));
 
-	    return result;
+	    if (posMid.position().value() < 0) {
+		return Position.TOO_LOW;
+	    } else {
+		Position result = new AbsolutePosition((Position)new AbsoluteAdjustablePosition(posMid).adjust(count));
+
+		return result;
+	    }
 
 	} else if (value instanceof RelativeTimestamp) {
 	    RelativeTimestamp offset = (RelativeTimestamp)value;
