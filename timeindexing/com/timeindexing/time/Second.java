@@ -9,17 +9,25 @@ public class Second extends AbstractTimeSpecifier implements TimeSpecifier {
     /**
      * Construct a Second TimeSpecifier.
      */
+    public Second(long count) {
+	setHowMany(count);
+	setDirection(TimeDirection.FORWARD);
+    }
+
+    /**
+     * Construct a Second TimeSpecifier.
+     */
     public Second(long count, TimeDirection direction) {
-	howMany = count;
-	modificationDirection = direction;
+	setHowMany(count);
+	setDirection(direction);
     }
 
     /**
      * Construct a Second TimeSpecifier.
      */
     public Second(long count, TimeDirection direction, TimeSpecifier modifier) {
-	howMany = count;
-	modificationDirection = direction;
+	setHowMany(count);
+	setDirection(direction);
 	afterDoing(modifier);
     }
 
@@ -46,7 +54,7 @@ public class Second extends AbstractTimeSpecifier implements TimeSpecifier {
 	Timestamp elapsedTimestamp = new ElapsedSecondTimestamp(seconds);
 	Timestamp returnTimestamp = null;
 
-	if (modificationDirection == TimeDirection.FORWARD_DT) {
+	if (modificationDirection == TimeDirection.FORWARD) {
 	    returnTimestamp = TimeCalculator.addTimestamp(timestampToUse, elapsedTimestamp);
 	} else {
 	    returnTimestamp = TimeCalculator.subtractTimestamp(timestampToUse, elapsedTimestamp);

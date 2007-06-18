@@ -9,17 +9,25 @@ public class Microsecond extends AbstractTimeSpecifier implements TimeSpecifier 
     /**
      * Construct a Microsecond TimeSpecifier.
      */
+    public Microsecond(long count) {
+	setHowMany(count);
+	setDirection(TimeDirection.FORWARD);
+    }
+
+    /**
+     * Construct a Microsecond TimeSpecifier.
+     */
     public Microsecond(long count, TimeDirection direction) {
-	howMany = count;
-	modificationDirection = direction;
+	setHowMany(count);
+	setDirection(direction);
     }
 
     /**
      * Construct a Microsecond TimeSpecifier.
      */
     public Microsecond(long count, TimeDirection direction, TimeSpecifier modifier) {
-	howMany = count;
-	modificationDirection = direction;
+	setHowMany(count);
+	setDirection(direction);
 	afterDoing(modifier);
     }
 
@@ -46,7 +54,7 @@ public class Microsecond extends AbstractTimeSpecifier implements TimeSpecifier 
 	Timestamp elapsedTimestamp = new ElapsedMicrosecondTimestamp(microseconds);
 	Timestamp returnTimestamp = null;
 
-	if (modificationDirection == TimeDirection.FORWARD_DT) {
+	if (modificationDirection == TimeDirection.FORWARD) {
 	    returnTimestamp = TimeCalculator.addTimestamp(timestampToUse, elapsedTimestamp);
 	} else {
 	    returnTimestamp = TimeCalculator.subtractTimestamp(timestampToUse, elapsedTimestamp);

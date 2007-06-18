@@ -9,6 +9,14 @@ public class Hour extends AbstractTimeSpecifier implements TimeSpecifier {
     /**
      * Construct a Hour TimeSpecifier.
      */
+    public Hour(long count) {
+	setHowMany(count);
+	setDirection(TimeDirection.FORWARD);
+    }
+
+    /**
+     * Construct a Hour TimeSpecifier.
+     */
     public Hour(long count, TimeDirection direction) {
 	setHowMany(count);
 	setDirection(direction);
@@ -46,7 +54,7 @@ public class Hour extends AbstractTimeSpecifier implements TimeSpecifier {
 	Timestamp elapsedTimestamp = new ElapsedSecondTimestamp(seconds);
 	Timestamp returnTimestamp = null;
 
-	if (modificationDirection == TimeDirection.FORWARD_DT) {
+	if (modificationDirection == TimeDirection.FORWARD) {
 	    returnTimestamp = TimeCalculator.addTimestamp(timestampToUse, elapsedTimestamp);
 	} else {
 	    returnTimestamp = TimeCalculator.subtractTimestamp(timestampToUse, elapsedTimestamp);

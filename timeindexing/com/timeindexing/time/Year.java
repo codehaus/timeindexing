@@ -12,6 +12,14 @@ public class Year extends AbstractTimeSpecifier implements TimeSpecifier {
     /**
      * Construct a Year TimeSpecifier.
      */
+    public Year(long count) {
+	setHowMany(count);
+	setDirection(TimeDirection.FORWARD);
+    }
+
+    /**
+     * Construct a Year TimeSpecifier.
+     */
     public Year(long count, TimeDirection direction) {
 	setHowMany(count);
 	setDirection(direction);
@@ -51,7 +59,7 @@ public class Year extends AbstractTimeSpecifier implements TimeSpecifier {
 	calendar.setTimeInMillis( timestampToUse.getSeconds() * 1000);
 
 
-	if (modificationDirection == TimeDirection.FORWARD_DT) {
+	if (modificationDirection == TimeDirection.FORWARD) {
 	    // add howMany years
 	    calendar.add(Calendar.YEAR, (int)(howMany));
 
