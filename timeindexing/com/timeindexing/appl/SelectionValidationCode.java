@@ -4,6 +4,7 @@ package com.timeindexing.appl;
 
 import com.timeindexing.index.IndexView;
 import com.timeindexing.index.GetItemException;
+import com.timeindexing.index.IndexClosedException;
 
 /**
  * This generates a validation code for an IndexView.
@@ -55,6 +56,8 @@ public class SelectionValidationCode {
 
 	    return securityCode;
 	} catch (GetItemException gie) {
+	    return 0;
+	} catch (IndexClosedException ice) {
 	    return 0;
 	}
     }
