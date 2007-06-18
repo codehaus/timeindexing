@@ -12,6 +12,7 @@ import com.timeindexing.index.DataReference;
 import com.timeindexing.index.DataReferenceObject;
 import com.timeindexing.index.DataAbstraction;
 import com.timeindexing.index.PositionOutOfBoundsException;
+import com.timeindexing.basic.AbsolutePosition;
 
 
 import java.util.List;
@@ -39,10 +40,11 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	    return null;
 	} else if (pos < 0) {
 	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
-	} else if (pos >= indexItems.size()) {
-	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	    //} else if (pos >= indexItems.size()) {
+	    //throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	} else {
-	    fileItem = (ManagedFileIndexItem)indexItems.get(pos);
+	    //fileItem = (ManagedFileIndexItem)indexItems.get(pos);
+	    fileItem = (ManagedFileIndexItem)indexItems.get(new AbsolutePosition(pos));
 
 	    // call the policy
 	    if (policy != null) {
@@ -67,29 +69,6 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		return fileItem;
 
 	    } else {
-		//System.err.println("FileIndexCache: resolve data for " + fileItem.getPosition());
-
-
-		// get the DataAbstraction, which must be a DataReference, and
-		// which holds the offset and the size
-		DataReference dataRef = (DataReference)fileItem.getDataAbstraction();
-
-		// read the data
-		DataHolderObject dataObj = ((StoredIndex)myIndex).readData(dataRef);
-
-		// if we got the data 
-		if (dataObj != null) {
-		    // then set the data
-		    fileItem.setData(dataObj);
-
-		    // calculate the held volume
-		    volumeHeld += fileItem.getDataSize().value(); 
-
-		    //System.err.println("Volume + = " + volumeHeld);
-
-
-		}
-
 		// call the policy
 		if (policy != null) {
 		    policy.notifyGetItemEnd(fileItem, pos);
@@ -111,10 +90,11 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	    return false;
 	} else if (pos < 0) {
 	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
-	} else if (pos >= indexItems.size()) {
-	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	    //} else if (pos >= indexItems.size()) {
+	    //throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	} else {
-	    fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
+	    //fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
+	    fileItem =  (ManagedFileIndexItem)indexItems.get(new AbsolutePosition(pos));
 
 	    if (fileItem == null) {
 		// the fileItem has been removed already
@@ -157,12 +137,13 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	    return false;
 	} else if (pos < 0) {
 	    throw new PositionOutOfBoundsException("Index value too low: " + pos);
-	} else if (pos >= indexItems.size()) {
-	    throw new PositionOutOfBoundsException("Index value too high: " + pos);
+	    //} else if (pos >= indexItems.size()) {
+	    //throw new PositionOutOfBoundsException("Index value too high: " + pos);
 	} else {
 	    //System.err.println("RemoveItem " + pos + " removing");
 
-	    ManagedFileIndexItem fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
+	    //ManagedFileIndexItem fileItem =  (ManagedFileIndexItem)indexItems.get(pos);
+	    ManagedFileIndexItem fileItem =  (ManagedFileIndexItem)indexItems.get(new AbsolutePosition(pos));
 
 
 	    if (fileItem == null) {
@@ -182,7 +163,8 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		} 
 
 		// clear the reference to the IndexItem at position pos
-		indexItems.set(pos, null);
+		//indexItems.set(pos, null);
+		indexItems.remove(new AbsolutePosition(pos));
 	
 		// clear the bit in the loaded map
 		loadedMask.clear(pos);
