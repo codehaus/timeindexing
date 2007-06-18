@@ -4,8 +4,12 @@ package com.timeindexing.index;
 
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.RelativeAdjustableCount;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This is the TimeIndexDirectory which returns Index objects.
@@ -35,6 +39,11 @@ public class TimeIndexDirectory {
      */
     protected  HashMap countTable = null;
 
+    /*
+     * The locks.
+     */
+    protected HashMap lockMap = new HashMap();
+
     /**
      * Construct a TimeIndexDirectory
      */
@@ -42,6 +51,71 @@ public class TimeIndexDirectory {
 	indexByIDDirectory = new HashMap();
 	indexByNameDirectory = new HashMap();
 	countTable = new HashMap();
+	Runtime.getRuntime().addShutdownHook(new TimeIndexShutdownHook());
+    }
+
+
+    /**
+     * Lock an index
+     */
+    public synchronized boolean lock(URI indexURI) {
+	//System.err.println("Locking " + indexURI + " Thread " + Thread.currentThread().getName());
+
+	if (lockMap.containsKey(indexURI)) {
+	    // already locked
+	    return false;
+	} else {
+	    // lock it
+	    lockMap.put(indexURI, indexURI);
+	    return true;
+	}
+    }
+
+    /**
+     * Unlock an index
+     */
+    public synchronized boolean unlock(URI indexURI) {
+	//System.err.println("Unlocking " + indexURI + " Thread " + Thread.currentThread().getName());
+
+	if (lockMap.containsKey(indexURI)) {
+	    // already locked
+	    lockMap.remove(indexURI);
+	    notifyAll();
+	    return true;
+	} else {
+	    // not locked
+	    return false;
+	}
+    }
+
+
+    /**
+     * Is an index locked
+     */
+    public synchronized boolean isLocked(URI indexURI) {
+	return lockMap.containsKey(indexURI);
+    }
+
+    /**
+     * Wait for an index to be unlocked and ready for action.
+     */
+    public synchronized boolean lockWait(URI indexURI) {
+	//System.err.println("lockWait " + indexURI + " Thread " + Thread.currentThread().getName());
+
+	if (lockMap.containsKey(indexURI)) {
+	    // already locked
+	    try {
+		//System.err.println("Awaiting " + indexURI + " Thread " + Thread.currentThread().getName());
+		wait();
+		return true;
+	    } catch (InterruptedException ie) {
+		//System.err.println("Return " + indexURI + " Thread " + Thread.currentThread().getName());
+		return true;
+	    }
+	} else {
+	    // not locked
+	    return false;
+	}
     }
 
     /**
@@ -89,6 +163,13 @@ public class TimeIndexDirectory {
 	    indexByNameDirectory.remove(name);
 	    return true;
 	}
+    }
+
+    /**
+     * List all the Indexes by name.
+     */
+    public Set listIndexesByName() {
+	return indexByNameDirectory.keySet();
     }
 
     /**
@@ -204,26 +285,56 @@ public class TimeIndexDirectory {
      *  Find a Index by index name.
      */
     public static ManagedIndex find(String name) {
-	return directory.getIndex(name);
+	synchronized (directory) {
+	    return directory.getIndex(name);
+	}
     }
     /**
      * Find a Index by ID.
      */
     public static ManagedIndex find(ID anID) {
-	return directory.getIndex(anID);
+	synchronized (directory) {
+	    return directory.getIndex(anID);
+	}
+    }
+
+    /**
+     * A set of all the index names.
+     */
+    protected static Set listIndexes() {
+	// there are some shutdown situations where directory
+	// is nullified before we get here
+	if (directory == null) {
+	    return new HashSet();
+	}
+
+	synchronized (directory) {
+	    return directory.listIndexesByName();
+	}
     }
 
     /**
      * Add an extra handle on an Index.
      */
     public static long addHandle(ManagedIndex index) {
-	String indexSpec = index.getURI().toString();
+	//TimeIndexDirectory.mem("TimeIndexDirectory");
 
-	if (directory.getIndex(indexSpec) == null) {
-	    // the index has not been registered yet;
-	    return directory.registerIndex(index, indexSpec, index.getID());
-	} else {
-	    return directory.incrementCount(index);
+	synchronized (directory) {
+	    String indexSpec = index.getURI().toString();
+
+	    if (directory.getIndex(indexSpec) == null) {
+		// the index has not been registered yet;
+		//System.err.println("TimeIndexDirectory: registering " + indexSpec + " Thread " + Thread.currentThread().getName());
+		//System.err.println("TimeIndexDirectory: add handle 1 for " + indexSpec);
+
+		return directory.registerIndex(index, indexSpec, index.getID());
+	    } else {
+		long handle =  directory.incrementCount(index);
+
+		//System.err.println("TimeIndexDirectory: add handle " + handle + " for " + indexSpec + " Thread " + Thread.currentThread().getName());
+
+		return handle;
+	    }
 	}
     }
 
@@ -231,13 +342,73 @@ public class TimeIndexDirectory {
      * Remove a handle on an Index.
      */
     public static long removeHandle(ManagedIndex index) {
-	long count = directory.decrementCount(index);
+	synchronized (directory) {
+	    long count = directory.decrementCount(index);
 
-	if (count == 0) {
-	    directory.unregisterIndex(index);
+	    //System.err.println("TimeIndexDirectory: remove  handle " + (count+1) + " for " + index.getURI().toString() + " Thread " + Thread.currentThread().getName());
+
+	    if (count == 0) {
+		//System.err.println("TimeIndexDirectory: unregistering " + index.getURI().toString() + " Thread " + Thread.currentThread().getName());
+		directory.unregisterIndex(index);
+	    }
+
+	    //TimeIndexDirectory.mem("TimeIndexDirectory");
+
+	    return count;
 	}
-
-	return count;
     }
+
+    /**
+     * Gated access to the index.
+     * @return true if this locks the index
+     */
+    public static boolean indexGate(URI indexURI) {
+	synchronized (directory) {
+	    if (directory.isLocked(indexURI)) {
+		// the index is locked, so
+		// we have to wait for it to be unlocked
+		//System.err.println("lockGate waiting on lock " + indexURI + " Thread " + Thread.currentThread().getName());
+		directory.lockWait(indexURI);
+		return false;
+	    } else {
+		// it's not locked, so
+		// check if it already exists
+		if (directory.getIndex(indexURI.toString()) == null) {
+		    // it isn't registered, so we haven't see it yet,
+		    // so well lock it
+		    //System.err.println("lockGate locking " + indexURI + " Thread " + Thread.currentThread().getName());
+		    directory.lock(indexURI);
+		    return true;
+		} else {
+		    // we've got it registered
+		    //System.err.println("lockGate found registered " + indexURI + " Thread " + Thread.currentThread().getName());
+		    return false;
+		}
+	    }
+	}
+    }
+
+    /**
+     * Unlock an index
+     */
+    public static boolean unlockI(URI indexURI) {
+	synchronized (directory) {
+	    return directory.unlock(indexURI);
+	}
+    }
+
+    public static void mem(String str) {
+	System.err.print(str + ": ");
+	//System.err.print(Runtime.getRuntime().maxMemory());
+	//System.err.print("/");
+	System.err.print(Runtime.getRuntime().totalMemory()/(1024*1024));
+	System.err.print("m/");
+	System.err.print((Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024));
+	System.err.print("k+");
+	System.err.print(Runtime.getRuntime().freeMemory()/(1024*1024));
+	System.err.println("m");
+    }
+
+
 
 }
