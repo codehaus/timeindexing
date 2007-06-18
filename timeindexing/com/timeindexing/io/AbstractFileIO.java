@@ -48,7 +48,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
     String indexName = null;
     ID indexID = null;
-    DataType dataType = DataType.NOTSET_DT;
+    DataType dataType = DataType.NOTSET;
 
     String originalIndexSpecifier = null; // the original spec for an index
     String headerFileName = null; // the resolved header file name
@@ -203,7 +203,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /**
      * Add an item.
      */
-    public long addItem(ManagedIndexItem itemM) throws IOException {
+    public synchronized long addItem(ManagedIndexItem itemM) throws IOException {
 	return writeItem(itemM);
     }
 
@@ -264,7 +264,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    indexBufWrite.putLong(item.getDataSize().value());
 	    indexBufWrite.putInt(item.getDataType().value());
 	    indexBufWrite.putLong(item.getItemID().value());
-	    indexBufWrite.putLong(item.getAnnotations().value()); // TODO: fix annoation code
+	    indexBufWrite.putLong(item.getAnnotationMetaData());
 
 	    // make it ready for writing
 	    indexBufWrite.flip();
@@ -329,9 +329,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    indexBufWrite.putLong(item.getDataTimestamp().value());
 	    indexBufWrite.putLong(currentDataPosition);
 	    indexBufWrite.putLong(REFERENCE_BUFFER_SIZE);
-	    indexBufWrite.putInt(DataType.REFERENCE);
+	    indexBufWrite.putInt(DataType.REFERENCE_VALUE);
 	    indexBufWrite.putLong(item.getItemID().value());
-	    indexBufWrite.putLong(item.getAnnotations().value()); // TODO: fix annoation code
+	    indexBufWrite.putLong(item.getAnnotationMetaData());
 
 	    // make it ready for writing
 	    indexBufWrite.flip();
@@ -536,9 +536,9 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	DataAbstraction data = null;
 	long offset = -1;
 	long size = 0;
-	int type = DataType.NOTSET;
+	int type = DataType.NOTSET_VALUE;
 	long id = 0;
-	long annotationID = 0;
+	long annotationValue = 0;
 	ManagedFileIndexItem indexItem = null;
 	
 	// goto an offset in the index
@@ -558,16 +558,16 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	size = indexBufRead.getLong();
 	type = indexBufRead.getInt();
 	id = indexBufRead.getLong();
-	annotationID = indexBufRead.getLong();
+	annotationValue = indexBufRead.getLong();
 
-	if (type == DataType.REFERENCE) {
+	if (type == DataType.REFERENCE_VALUE) {
 	    data = readReferenceData(offset, size);
-	    indexItem = new FileIndexItem(dataTS, indexTS, data, new Size(0),  DataType.REFERENCE_DT, new SID(id), new SID(annotationID));
+	    indexItem = new FileIndexItem(dataTS, indexTS, data, new Size(0),  DataType.REFERENCE, new SID(id), annotationValue);
 	    ((IndexReferenceDataHolder)data).setIndexItem(indexItem);
 
 	} else {
 	    data = readNormalData(offset, size, withData);
-	    indexItem = new FileIndexItem(dataTS, indexTS, data, DataTypeDirectory.find(type), new SID(id), new SID(annotationID));
+	    indexItem = new FileIndexItem(dataTS, indexTS, data, DataTypeDirectory.find(type), new SID(id), annotationValue);
 
 	}
 
@@ -598,10 +598,12 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    ByteBuffer buffer = readData(offset, size);
 
 	    // we got the data successfully, so build a DataHolderObject
+	    //System.err.println("AbstractIndexIO: readNormalData. size=" + size);
 	    data = new DataHolderObject(buffer, new Size(size));
 	} else {	    // don;t get the data now
 	    skipData(offset, size);
 
+	    //System.err.println("AbstractIndexIO: readNormalData. DataReferenceObject offset=" + offset + " size="+size);
 	    // no need to get the  data, so build a DataReferenceObject
 	    data = new DataReferenceObject(new Offset(offset), new Size(size));
 	}
@@ -1078,7 +1080,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 		return false;
 	    }
 	} catch (InterruptedException ie) {
-	    System.err.println("sleep interrupted");
+	    //System.err.println("sleep interrupted");
 	    // a timeout didn;t happen, it was an interrupt
 	    timeoutHappened = false;
 	    return false;
