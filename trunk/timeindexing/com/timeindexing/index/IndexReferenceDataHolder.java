@@ -74,7 +74,7 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
     /**
      * Follow this reference.
      */
-    public IndexItem follow() throws GetItemException {
+    public IndexItem follow() throws GetItemException, IndexClosedException {
 	return indexItem.follow();
     }
 

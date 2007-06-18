@@ -28,5 +28,5 @@ public interface IndexReference {
     /**
      * Follow this reference.
      */
-    public IndexItem follow() throws GetItemException;
+    public IndexItem follow() throws GetItemException, IndexClosedException;
 } 
