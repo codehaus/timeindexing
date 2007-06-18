@@ -17,18 +17,19 @@ import com.timeindexing.index.IndexProperties;
  */
 public class OctetStreamDownloadServlet extends SelectServlet {
     /**
-     * Set the content type.
+     * Get the content type for this response.
      */
-    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
-	setContentType("application/octet-stream");
+    protected String getContentType() {
+	return "application/octet-stream";
     }
 
     /**
-     * Set the filename for downloads.
+     * This filename generator, takes the arguments and generates a useful filename.
+     * Returns filename-0:10-to-1:23.
      */
-    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
-	String generatedName = fileNameGenerator(properties);
-	
-	setFilename(generatedName + ".bin");
+    protected String fileNameGenerator(IndexProperties properties) {
+	String base = super.fileNameGenerator(properties);
+	return base + ".bin";
     }
+
 }

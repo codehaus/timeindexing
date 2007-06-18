@@ -29,10 +29,9 @@ public class SecurityCodeServlet extends SelectServlet {
      * Do the playout functionality.
      * In this case, it is to show the security code for a selection.
      */
-    public void doPlayBack(HttpServletRequest request, HttpServletResponse response)
-    throws IOException {
+    public int doPlayBack(HttpServletRequest request, HttpServletResponse response, IndexProperties properties, int passedInStatus) throws IOException {
 	
-	setContentType("text/html");
+	setContentType(request, response, "text/html");
 
 	try {
 	    String filename= (String)properties.get("indexpath");
@@ -84,13 +83,15 @@ public class SecurityCodeServlet extends SelectServlet {
 	}
 	    
 	properties.clear();
+
+	return passedInStatus;
     }
 
     /**
-     * Set the content type.
+     * Get the content type.
      */
-    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
-	setContentType("text/html");
+    protected String getContentType() {
+	return "text/html";
     }
 
 }
