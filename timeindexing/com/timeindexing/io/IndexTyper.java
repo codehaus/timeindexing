@@ -211,19 +211,19 @@ public class IndexTyper {
 		    int indexTypeValue = (int)readBuf.get();
 
 		    switch (indexTypeValue) {
-		    case IndexType.INLINE: {
-			setIndexType(IndexType.INLINE_DT);
+		    case IndexType.INLINE_VALUE: {
+			setIndexType(IndexType.INLINE);
 			break;
 		    }
-		    case IndexType.EXTERNAL: {
-			setIndexType(IndexType.EXTERNAL_DT);
+		    case IndexType.EXTERNAL_VALUE: {
+			setIndexType(IndexType.EXTERNAL);
 			break;
 		    }
-		    case IndexType.SHADOW: {
-			setIndexType(IndexType.SHADOW_DT);
+		    case IndexType.SHADOW_VALUE: {
+			setIndexType(IndexType.SHADOW);
 			break;
 		    }
-		    case IndexType.INCORE: {
+		    case IndexType.INCORE_VALUE: {
 			throw new IOException("Header read failure. Got unexpected IndexType: INCORE");
 		    }
 		    default: {
@@ -231,11 +231,11 @@ public class IndexTyper {
 		    }
 		    }
 		} else if (type == FileType.INLINE_INDEX) {
-		    setIndexType(IndexType.INLINE_DT);
+		    setIndexType(IndexType.INLINE);
 		} else if (type == FileType.EXTERNAL_INDEX) {
-		    setIndexType(IndexType.EXTERNAL_DT);
+		    setIndexType(IndexType.EXTERNAL);
 		} else if (type == FileType.SHADOW_INDEX) {
-		    setIndexType(IndexType.SHADOW_DT);
+		    setIndexType(IndexType.SHADOW);
 		} else {
 			throw new IOException("Header read failure. Got unexpected IndexType: " + type);
 		}
