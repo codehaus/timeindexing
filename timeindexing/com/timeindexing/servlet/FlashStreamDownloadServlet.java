@@ -17,45 +17,58 @@ import com.timeindexing.index.IndexProperties;
  * The associate file name is "download.mp3".
  */
 public class FlashStreamDownloadServlet extends SelectServlet {
-    // is the browser Internet Explorer
-    boolean browserIsIE = false;
-
     /**
      * Playback the data.
      */
-    protected void doPlayBack(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	String user_agent = request.getHeader("user-agent");
-
-	// if user_agent matches MSIE do slightly different things
-	if (user_agent.matches(".*MSIE.*")) {
-	    browserIsIE = true;
-	}
-
-	System.err.print(this.getClass().getName() + ": user_agent: = " + user_agent);
-	System.err.println(" IE?: " + browserIsIE);
-
+    protected int doPlayBack(HttpServletRequest request, HttpServletResponse response, IndexProperties properties, int passedInStatus) throws IOException {
 	// now do usual playback
-	super.doPlayBack(request, response);
+	return super.doPlayBack(request, response, properties, passedInStatus);
     }
 
     /**
      * Set the content type.
      */
-    protected void setContentType(HttpServletResponse response, IndexProperties properties) {
-	if (browserIsIE) {	// do special IE processing
-	    setContentType("audio/mp3");
-	    response.setContentLength(100000000);
+    protected void setContentType(HttpServletRequest request, HttpServletResponse response, String type) {
+	// we need to do special processing for Flash embedded in IE
+	if (type.equals("audio/x-mpeg")) {
+	    // is the browser Internet Explorer
+	    boolean browserIsIE = false;
+
+	    String user_agent = request.getHeader("user-agent");
+
+	    // if user_agent matches MSIE do slightly different things
+	    if (user_agent.matches(".*MSIE.*")) {
+		browserIsIE = true;
+	    }
+
+	    System.err.print(this.getClass().getName() + ": user_agent: = " + user_agent);
+	    System.err.println(" IE?: " + browserIsIE);
+
+	    if (browserIsIE) {	// do special IE processing
+		super.setContentType(request, response, "audio/mp3");
+		response.setContentLength(100000000);
+	    } else {
+		setContentType(request, response, "audio/x-mpeg");
+	    }
 	} else {
-	    setContentType("audio/x-mpeg");
+	    super.setContentType(request, response, type);
 	}
     }
 
     /**
-     * Set the filename for downloads.
+     * Get the content type
      */
-    protected void setFilename(HttpServletResponse response, IndexProperties properties) {
-	String generatedName = fileNameGenerator(properties);
-	
-	setFilename(generatedName + ".mp3");
+    protected String getContentType() {
+	return "audio/x-mpeg";
+    }
+
+
+    /**
+     * This filename generator, takes the arguments and generates a useful filename.
+     * Returns filename-0:10-to-1:23.
+     */
+    protected String fileNameGenerator(IndexProperties properties) {
+	String base = super.fileNameGenerator(properties);
+	return base + ".mp3";
     }
 }
