@@ -9,7 +9,7 @@ import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.RelativeTimestamp;
 import com.timeindexing.time.ElapsedMillisecondTimestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -24,7 +24,7 @@ public class RemoveAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public RemoveAfterTimeoutPolicy() {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	// 0.5 second
 	timeout = new ElapsedMillisecondTimestamp(500);
     }
@@ -33,9 +33,32 @@ public class RemoveAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      * Construct this policy object
      */
     public RemoveAfterTimeoutPolicy(RelativeTimestamp elapsed) {
-	monitorList = new LinkedList();
+	monitorList = new DoubleLinkedList();
 	timeout = elapsed;
     }
+
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemBegin(IndexItem item,long pos) {
+	//System.err.print("notifyAddItemBegin: ");
+	notifyGetItemBegin(item, pos);
+	return null;
+    }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemEnd(IndexItem item, long pos) {
+	//System.err.print("notifyAddItemEnd: ");
+	notifyGetItemEnd(item, pos);
+	return null;
+    }    
 
     /**
      * Called at the beginning of cache.getItem()
@@ -46,7 +69,8 @@ public class RemoveAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 	// was last accessed with an elapsed time greater
 	// than the timeout, then remove it
 	// and remove one item from the monitorList
-	if (monitorList.size() > 0) {
+	while (monitorList.size() > 0) {
+
 	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 
 	    Timestamp firstTimeout = TimeCalculator.elapsedSince(first.getLastAccessTime());
@@ -59,10 +83,11 @@ public class RemoveAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
 		monitorList.remove(first);
 	    
 		cache.removeItem(first.getPosition());
+	    } else {
+		break;
 	    }
 		
 	}
-
 	return null;
     }
 
@@ -72,10 +97,8 @@ public class RemoveAfterTimeoutPolicy extends AbstractCachePolicy implements Cac
      */
     public Object notifyGetItemEnd(IndexItem item, long pos) {
 	// if this item is not in the monitorList, then add it
-	if (! monitorList.contains(item)) {
-	    monitorList.add(item);
+	monitorList.add(item);
 	    //System.err.println("Queuing " + item.getPosition() + ".Remove list size = " + monitorList.size());
-	}
 
 	return null;
     }

@@ -6,7 +6,7 @@ import com.timeindexing.index.IndexItem;
 import com.timeindexing.index.ManagedIndexItem;
 import com.timeindexing.time.Timestamp;
 import com.timeindexing.time.TimeCalculator;
-import java.util.LinkedList;
+import com.timeindexing.util.DoubleLinkedList;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -21,7 +21,7 @@ public class RemoveAfterUsePolicy extends AbstractCachePolicy implements CachePo
      * Construct this policy object
      */
     public RemoveAfterUsePolicy() {
-	monitorList = new LinkedList(); //new IndexItemComparator());
+	monitorList = new DoubleLinkedList(); //new IndexItemComparator());
 	queueWindow = 40;
     }
 
@@ -29,9 +29,31 @@ public class RemoveAfterUsePolicy extends AbstractCachePolicy implements CachePo
      * Construct this policy object
      */
     public RemoveAfterUsePolicy(int winSize) {
-	monitorList = new LinkedList(); // new IndexItemComparator());
+	monitorList = new DoubleLinkedList(); // new IndexItemComparator());
 	queueWindow = winSize;
     }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemBegin(IndexItem item,long pos) {
+	//System.err.print("notifyAddItemBegin: ");
+	notifyGetItemBegin(item, pos);
+	return null;
+    }
+
+    /**
+     * Called at the beginning of cache.addItem()
+     * @param item the item being added
+     * @param pos the position the item is being added to
+     */
+    public Object notifyAddItemEnd(IndexItem item, long pos) {
+	//System.err.print("notifyAddItemEnd: ");
+	notifyGetItemEnd(item, pos);
+	return null;
+    }    
 
     /**
      * Called at the beginning of cache.getItem()
@@ -39,14 +61,12 @@ public class RemoveAfterUsePolicy extends AbstractCachePolicy implements CachePo
      */
     public Object notifyGetItemBegin(IndexItem item, long pos) {
 	// if the item is in the monitorList remove it.
-	if (monitorList.contains(item)) {
-	    monitorList.remove(item);
+	monitorList.remove(item);
 	    //System.err.println("DeQueue " + item.getPosition() + ".Remove list size = " + monitorList.size());
-	}
 
 	// if there's something to delete
 	// remove one item
-	if (monitorList.size() >= queueWindow) {
+	while (monitorList.size() >= queueWindow) {
 	    ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
 	    //System.err.print("Removeing " + first.getPosition() + ". Last accesse time: " + first.getLastAccessTime() + ".Remove list size = " + monitorList.size());
 	    monitorList.remove(first);
