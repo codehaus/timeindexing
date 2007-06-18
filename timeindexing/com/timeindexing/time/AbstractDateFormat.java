@@ -4,7 +4,6 @@
 package com.timeindexing.time;
 
 import java.util.Date;
-import java.text.NumberFormat;
 import java.text.DecimalFormat;
 
 /**
