@@ -17,7 +17,7 @@ import java.io.IOException;
 public class BufferedWriter implements WriterPlugin {
     OutputStream out = null;
 
-    private static int BUFSIZE = 8192;
+    private int BUFSIZE = 8192;
 
     // the output buffer
     byte [] outbuf = null;
