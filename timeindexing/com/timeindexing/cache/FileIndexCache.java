@@ -178,7 +178,7 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
     /**
      * Clear the whole cache
      */
-    public boolean clear() {
+    public synchronized boolean clear() {
 	long itemCount = loadedMask.size();
 	long current = 0;
 
