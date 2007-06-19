@@ -32,7 +32,7 @@ import java.net.URI;
  * This is the generic object that applications interact with.
  * It is a view onto an index.
  */
-public  class TimeIndex implements Index, IndexView,  Cloneable, java.io.Serializable {
+public  class TimeIndex implements Index, IndexView,  Cloneable{
     /**
      * The actual implementation of an index.
      */
