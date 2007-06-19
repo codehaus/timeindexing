@@ -345,6 +345,7 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
 
     /**
      * Close this index.
+     * @return true if the index is really closed by calling this
      */
     public synchronized boolean close() throws IndexCloseException {
 	// This method is defined here as it calls 
