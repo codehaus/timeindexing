@@ -28,7 +28,7 @@ import java.io.Serializable;
 public class DataTypeDirectory implements Serializable {
     final static long serialVersionUID = 789782781860612814L;
 
-    protected static DataTypeDirectory directory = new DataTypeDirectory();
+    protected final static DataTypeDirectory directory = new DataTypeDirectory();
 
     /**
      * The ID directory.
