@@ -26,13 +26,13 @@ import java.util.Properties;
  * Every value is explicitly held.
  */
 public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializable {
-    Timestamp dataTS = null;
-    Timestamp indexTS = null;
-    DataAbstraction data = null;
-    Size size = null;
-    DataType type = DataType.ANY;
-    ID id = null;
-    long annotationValue = 0;
+    transient Timestamp dataTS = null;
+    transient Timestamp indexTS = null;
+    transient DataAbstraction data = null;
+    transient Size size = null;
+    transient DataType type = DataType.ANY;
+    transient ID id = null;
+    transient long annotationValue = 0;
     transient AbsolutePosition position = null;
     transient Index theIndex = null;
     transient Timestamp lastAccessTime = null;
@@ -350,7 +350,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	size = new Size(sizeRead);
 
 	byte [] tmpdata = new byte[(int)sizeRead];
-	in.read(tmpdata, 0, (int)sizeRead);
+	int noRead = in.read(tmpdata, 0, (int)sizeRead);
 	ByteBuffer buffer = ByteBuffer.wrap(tmpdata);
 	data = new DataHolderObject(buffer, sizeRead);
 
