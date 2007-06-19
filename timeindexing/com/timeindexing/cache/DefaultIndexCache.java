@@ -291,7 +291,7 @@ public class DefaultIndexCache implements IndexCache {
     /**
      * Get the current data volume held by IndexItems in this cache.
      */
-    public synchronized long getDataVolume() {
+    public long getDataVolume() {
 	return volumeHeld;
     }
 
@@ -299,7 +299,7 @@ public class DefaultIndexCache implements IndexCache {
      * Increase the data volume
      * @return the new data volume
      */
-    public synchronized long increaseDataVolume(long v) {
+    public long increaseDataVolume(long v) {
 	volumeHeld += v;
 	return volumeHeld;
     }
@@ -309,7 +309,7 @@ public class DefaultIndexCache implements IndexCache {
      * Decrease the data volume
      * @return the new data volume
      */
-    public synchronized long decreaseDataVolume(long v) {
+    public long decreaseDataVolume(long v) {
 	volumeHeld -= v;
 	return volumeHeld;
     }
@@ -318,28 +318,28 @@ public class DefaultIndexCache implements IndexCache {
     /**
      * Get the time the first IndexItem was put into the Index.
      */
-    public synchronized Timestamp getFirstIndexTime() {
+    public Timestamp getFirstIndexTime() {
 	return firstIndexTime;
     }
 
     /**
      * Get the time the last IndexItem was put into the Index.
      */
-    public synchronized Timestamp getLastIndexTime() {
+    public Timestamp getLastIndexTime() {
 	return lastIndexTime;
     }
 
     /**
      * Get the time the first IndexItem was put into the Index.
      */
-    public synchronized Timestamp getFirstDataTime() {
+    public Timestamp getFirstDataTime() {
 	return firstDataTime;
     }
 
     /**
      * Get the time the last IndexItem was put into the Index.
      */
-    public synchronized Timestamp getLastDataTime() {
+    public Timestamp getLastDataTime() {
 	return lastDataTime;
     }
 
