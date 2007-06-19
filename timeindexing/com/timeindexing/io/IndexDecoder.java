@@ -479,9 +479,9 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	Boolean inOrder = null;
 
 	if (value == 1) {
-	    inOrder = new Boolean(true);
+	    inOrder = Boolean.valueOf(true);
 	} else {
-	    inOrder = new Boolean(false);
+	    inOrder = Boolean.valueOf(false);
 	}
 
 	return inOrder;
@@ -499,9 +499,9 @@ public class IndexDecoder extends DefaultIndexHeader implements ManagedIndexHead
 	Boolean noDataHeader = null;
 
 	if (value == 1) {
-	    noDataHeader = new Boolean(true);
+	    noDataHeader = Boolean.valueOf(true);
 	} else {
-	    noDataHeader = new Boolean(false);
+	    noDataHeader = Boolean.valueOf(false);
 	}
 
 	return noDataHeader;

@@ -446,7 +446,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * State that the index is in time order.
      */
     public ManagedIndexHeader setInTimeOrder() {
-	setOption(HeaderOption.IS_IN_TIME_ORDER_HO, new Boolean(true));
+	setOption(HeaderOption.IS_IN_TIME_ORDER_HO,  Boolean.valueOf(true));
 	return this;
     }
 
@@ -455,7 +455,7 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
      * State that the index is not in time order any more.
      */
     public ManagedIndexHeader notInTimeOrder() {
-	setOption(HeaderOption.IS_IN_TIME_ORDER_HO, new Boolean(false));
+	setOption(HeaderOption.IS_IN_TIME_ORDER_HO, Boolean.valueOf(false));
 	return this;
     }
 
