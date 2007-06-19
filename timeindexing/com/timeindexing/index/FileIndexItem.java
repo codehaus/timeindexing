@@ -127,7 +127,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     /**
      * Does this IndexItem actually hold the data.
      */
-    public synchronized boolean hasData() {
+    public boolean hasData() {
 	setLastAccessTime();
 
 	if (data instanceof IndexReference) {
@@ -142,7 +142,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     /**
      * Get the DataAbstraction held by the IndexItem.
      */
-    public synchronized DataAbstraction getDataAbstraction() {
+    public DataAbstraction getDataAbstraction() {
 	setLastAccessTime();
 	return data;
     }
