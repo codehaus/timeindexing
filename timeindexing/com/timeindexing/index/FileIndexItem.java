@@ -22,8 +22,8 @@ import java.nio.ByteBuffer;
  * Every value is explicitly held.
  */
 public class FileIndexItem extends IncoreIndexItem implements IndexItem, ManagedFileIndexItem, Serializable {
-    Offset dataOffset = null; 
-    Offset indexOffset = null;
+    transient Offset dataOffset = null; 
+    transient Offset indexOffset = null;
 
     /**
      * Construct a FileIndexItem from
@@ -106,20 +106,17 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
 		// and inform the cache of the new data volume
 		index.getCache().increaseDataVolume(getDataSize().value());
 
-		//volumeHeld += fileItem.getDataSize().value(); 
-
 		//System.err.println("Volume + = " + volumeHeld);
 
+		// get the buffer to return
+		ByteBuffer buffer =  ((DataHolder)dataObj).getBytes();
 
+		return buffer;
+
+	    } else {
+		// we didn't get the data back
+		throw new RuntimeException("FileIndexItem: DateReference " +  getPosition() + " " + data + " Thread " + Thread.currentThread().getName());
 	    }
-
-
-	    // get the buffer to return
-	    ByteBuffer buffer =  ((DataHolder)dataObj).getBytes();
-
-	    return buffer;
-
-	    //throw new RuntimeException("FileIndexItem: DateReference " +  getPosition() + " " + data + " Thread " + Thread.currentThread().getName());
 
 	} else {
 	    System.err.println("FileIndexItem: returning EMPTY_BUFFER  data class " + data.getClass().getName() +  " Thread " + Thread.currentThread().getName());
@@ -130,7 +127,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     /**
      * Does this IndexItem actually hold the data.
      */
-    public boolean hasData() {
+    public synchronized boolean hasData() {
 	setLastAccessTime();
 
 	if (data instanceof IndexReference) {
@@ -145,7 +142,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
     /**
      * Get the DataAbstraction held by the IndexItem.
      */
-    public DataAbstraction getDataAbstraction() {
+    public synchronized DataAbstraction getDataAbstraction() {
 	setLastAccessTime();
 	return data;
     }
