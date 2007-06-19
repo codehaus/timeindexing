@@ -942,9 +942,6 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 		}
 	    }
 
-	    public boolean equals(Object obj) {
-		return super.equals(obj);
-	    }
 	};
 		
     /**
@@ -1036,7 +1033,7 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
     /**
      * Get the current CachePolicy.
      */
-    public CachePolicy getCachePolicy() {
+    public synchronized CachePolicy getCachePolicy() {
 	return indexCache.getPolicy();
     }
 
