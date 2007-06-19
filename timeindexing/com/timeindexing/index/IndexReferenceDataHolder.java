@@ -6,6 +6,7 @@ import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Position;
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.time.Clock;
 import java.util.Properties;
 import java.nio.ByteBuffer;
 import java.net.URI;
@@ -39,6 +40,8 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
 	indexItem = myIndexItem;
 	otherIndexID = indexID;
 	indexItemPosition = itemPosition;
+	readTime = Clock.time.time();
+	lastAccessTime = Timestamp.ZERO;
     }
 
     /**
@@ -48,6 +51,8 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
     public IndexReferenceDataHolder(ID indexID, Position itemPosition) {
 	otherIndexID = indexID;
 	indexItemPosition = itemPosition;
+	readTime = Clock.time.time();
+	lastAccessTime = Timestamp.ZERO;
     }
 
     /**
@@ -75,6 +80,7 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
      * Follow this reference.
      */
     public IndexItem follow() throws GetItemException, IndexClosedException {
+	lastAccessTime = Clock.time.time();
 	return indexItem.follow();
     }
 
@@ -83,6 +89,7 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
      * This should follow the Reference.
      */
     public ByteBuffer getBytes() {
+	lastAccessTime = Clock.time.time();
 	return EMPTY_BUFFER;
 	/*
 	try {
