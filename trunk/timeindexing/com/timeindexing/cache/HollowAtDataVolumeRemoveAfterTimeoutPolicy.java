@@ -93,7 +93,7 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
 	// remove one item
 	if (monitorList.size() > 0) {
 
-	    //System.err.print("Hollowing " + ". Volume = " + cache.getDataVolume());
+	    //System.err.println("Hollowing " + "MonitorList = " + monitorList.size() + ". Volume = " + cache.getDataVolume());
 
  	    while (cache.getDataVolume() > volumeThreshold) {
 		ManagedIndexItem first = (ManagedIndexItem)monitorList.getFirst();
@@ -108,7 +108,7 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
 		removeList.add(first);
 	    }
 
-	    //System.err.println(". Volume = " + cache.getDataVolume()  + ". Thread " + Thread.currentThread().getName() );
+	    //System.err.println("Done " + "MonitorList = " + monitorList.size() + ". Volume = " + cache.getDataVolume());
 
 	}
 
@@ -153,6 +153,6 @@ public class HollowAtDataVolumeRemoveAfterTimeoutPolicy extends AbstractCachePol
      * TO String
      */
     public String toString() {
-	return "HollowAtDataVolumeRemoveAfterTimeoutPolicy: queueWindow = " + monitorList.size() + "/" + volumeThreshold;
+	return "HollowAtDataVolumeRemoveAfterTimeoutPolicy: ML = " + monitorList.size() + " RL = " + removeList.size() + " vol = " + volumeThreshold;
     }
 }
