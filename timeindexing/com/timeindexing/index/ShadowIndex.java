@@ -30,7 +30,7 @@ public class ShadowIndex extends ExternalIndex  implements ManagedIndex  {
 	header = new IncoreIndexHeader(this, indexName);
 	indexCache = new FileIndexCache(this);
 
-	setCachePolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy(20*1024, new ElapsedMillisecondTimestamp(200)));
+	setCachePolicy(new HollowAtDataVolumeRemoveAfterTimeoutPolicy(1024*1024, new ElapsedMillisecondTimestamp(200)));
 	//new HollowAtDataVolumeRemoveAfterTimeoutPolicy());
 	// new HollowAtDataVolumePolicy(1024*1024)); //
 
