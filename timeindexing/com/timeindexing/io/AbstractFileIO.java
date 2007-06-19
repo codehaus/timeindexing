@@ -92,7 +92,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /*
      * The size of an index item in the index file
      */
-    static int INDEX_ITEM_SIZE = 52;
+    int INDEX_ITEM_SIZE = 52;
 
 
     /*
