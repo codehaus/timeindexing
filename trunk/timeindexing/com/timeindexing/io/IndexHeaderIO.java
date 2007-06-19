@@ -36,7 +36,7 @@ import java.net.URI;
  * An Index Header IO object.
  * It represents the file version of an index header in core.
  */
-public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor, IndexHeader, Cloneable {
+public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor, IndexHeader {
     // The IndexFileInteractor that interacts between the
     // StoredIndex and the underlying files.
     IndexFileInteractor interactor = null;
@@ -571,15 +571,15 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	// the description
 	Description desc = (Description)getOption(anOption);
 
-	// 1 for option byte, 2 for the size
-	// 4 for data-type code
-	// n for the description, and 1 for the NUL
-	int size = 1 + 2 + 4 + desc.length() + 1;
-
-	if (desc == null || desc.equals("")) {
+	if (desc == null || desc.length() == 0) {
 	    ; // nothing to do
 	    return  0;
 	} else {
+	    // 1 for option byte, 2 for the size
+	    // 4 for data-type code
+	    // n for the description, and 1 for the NUL
+	    int size = 1 + 2 + 4 + desc.length() + 1;
+
 	    if (what == HeaderOptionProcess.SIZE) {
 		return size;
 	    } else {
@@ -603,14 +603,15 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	// the index path
 	String path = (String)getOption(anOption);
 
-	// 1 for option byte, 2 for the size
-	// n for the path, and 1 for the NUL
-	int size = 1 + 2  + path.length() + 1;
-
 	if (path == null || path.equals("")) {
 	    ; // nothing to do
 	    return  0;
 	} else {
+
+	    // 1 for option byte, 2 for the size
+	    // n for the path, and 1 for the NUL
+	    int size = 1 + 2  + path.length() + 1;
+
 	    if (what == HeaderOptionProcess.SIZE) {
 		return size;
 	    } else {
@@ -633,14 +634,14 @@ public class IndexHeaderIO extends IndexDecoder implements HeaderFileInteractor,
 	// the data path
 	String path = (String)getOption(anOption);
 
-	// 1 for option byte, 2 for the size
-	// n for the path, and 1 for the NUL
-	int size = 1 + 2  + path.length() + 1;
-
 	if (path == null || path.equals("")) {
 	    ; // nothing to do
 	    return  0;
 	} else {
+	    // 1 for option byte, 2 for the size
+	    // n for the path, and 1 for the NUL
+	    int size = 1 + 2  + path.length() + 1;
+
 	    if (what == HeaderOptionProcess.SIZE) {
 		return size;
 	    } else {
