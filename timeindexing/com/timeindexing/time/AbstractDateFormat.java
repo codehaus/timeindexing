@@ -14,7 +14,7 @@ public abstract class AbstractDateFormat implements TimestampFormatting {
     /*
      * A format for whole seconds
      */
-    protected static DateFormatter defaultFormatter = new DateFormatter("yyyy/MM/dd HH:mm:ss");
+    protected final static DateFormatter defaultFormatter = new DateFormatter("yyyy/MM/dd HH:mm:ss");
 
     /*
      * The DateFormatter
