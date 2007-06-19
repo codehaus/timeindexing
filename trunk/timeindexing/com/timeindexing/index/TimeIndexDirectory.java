@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class TimeIndexDirectory {
     // Allocate the one instance of the TimeIndexDirectory
-    protected static TimeIndexDirectory directory = new TimeIndexDirectory();
+    protected final static TimeIndexDirectory directory = new TimeIndexDirectory();
 
     /**
      * The ID directory.
