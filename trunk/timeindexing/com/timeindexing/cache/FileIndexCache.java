@@ -104,6 +104,11 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		if (fileItem.hasData()) {
 		    //System.err.println("HollowItem " + fileItem.getPosition() + " hollowing.  Offset=" + fileItem.getDataOffset() + " Size=" + fileItem.getDataSize());
 
+		    // calculate the held volume
+		    volumeHeld -= fileItem.getDataSize().value();
+
+		    //System.err.println("Volume - = " + volumeHeld);
+
 		    // get the data object for this index item
 		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
 
@@ -112,11 +117,6 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 
 		    // then set the data
 		    fileItem.setData(dataRef);
-
-		    // calculate the held volume
-		    volumeHeld -= fileItem.getDataSize().value();
-
-		    //System.err.println("Volume - = " + volumeHeld);
 
 		    return true;
 		} else {
@@ -166,6 +166,9 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 		//indexItems.set(pos, null);
 		indexItems.remove(new AbsolutePosition(pos));
 	
+		// decrease the cacheSize
+		cacheSize--;
+
 		// clear the bit in the loaded map
 		loadedMask.clear(pos);
 
