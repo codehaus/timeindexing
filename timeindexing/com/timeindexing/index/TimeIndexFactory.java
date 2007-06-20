@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Properties;
 import java.util.Iterator;
+import java.util.Map;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -75,6 +76,19 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     }
 
 
+    /**
+     * Create a new Time Index object given an IndexType.
+     * If the index already exists then an IndexView onto
+     * that index will be returned.
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.SHADOW, IndexType.INCORE.
+     * @param indexMap map of the index needed at creat time, such as  its name.
+     */
+    public IndexView create(IndexType kind, Map indexMap) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException {
+	Properties indexProperties = new Properties();
+	indexProperties.putAll(indexMap);
+
+	return create(kind, indexProperties);
+    }
 
     /**
      * Create a new Time Index object given an IndexType.
@@ -403,7 +417,22 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * Retrieve a TimeIndex object by file name.
      * e.g. TimeIndexFactory.open(properties)
      *
-     * @param indexFilename  the filename of the index
+     * @param indexMap the filename of the index
+     * @return null if the index can't be opened
+     */
+    public IndexView open(Map indexMap)  throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException {
+	Properties indexProperties = new Properties();
+	indexProperties.putAll(indexMap);
+
+	return open(indexProperties);
+    }
+
+
+    /**
+     * Retrieve a TimeIndex object by file name.
+     * e.g. TimeIndexFactory.open(properties)
+     *
+     * @param indexProperties  the filename of the index
      * @return null if the index can't be opened
      */
     public IndexView open(Properties indexProperties)  throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException {
@@ -748,6 +777,17 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	boolean closed = index.close();
 
 	return closed;
+    }
+
+    /**
+     * Open an Index and decode the header.
+     * The Index is closed when this method returns.
+     */
+    private IndexTyper indexTyper(Map indexMap) throws TimeIndexFactoryException,  IndexSpecificationException, IndexOpenException  {
+	Properties indexProperties = new Properties();
+	indexProperties.putAll(indexMap);
+
+	return indexTyper(indexProperties);
     }
 
     /**
