@@ -193,12 +193,16 @@ public class TIHeader extends TIAbstractRestore {
     /**
      * Close 
      */
-    public void close() throws TimeIndexException {
+    public void close() {
 	// close the index
 	boolean doClose = Boolean.valueOf(properties.getProperty("close")).booleanValue();
 	if (doClose) {
 	    //System.err.println("Closing \"" + index.getName() + "\"");
-	    factory.close(index);
+	    try {
+		factory.close(index);
+	    } catch (TimeIndexException tie) {
+		System.err.println("Closing error " + tie);
+	    }
 	}
     }
 	
