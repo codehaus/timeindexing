@@ -25,7 +25,7 @@ public class IndexSelectionInputStream extends IndexInputStream {
     public IndexSelectionInputStream(Index anIndex, IndexProperties properties) {
 	SelectionProcessor selector = new SelectionProcessor();
  
-	IndexView selection = selector.select((IndexView)index, properties);
+	IndexView selection = selector.select((IndexView)anIndex, properties);
 	index = selection;
 	length = selection.getLength();
     }
