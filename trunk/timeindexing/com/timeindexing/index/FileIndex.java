@@ -118,7 +118,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addItem(dataitem, null);
     }
 
@@ -131,7 +131,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addItem(dataitem, dataTS, 0);
     }
 
@@ -145,7 +145,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @param annotation the annotation meta data
      * @return the no of items in the index.
      */
-    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addItem(DataItem dataitem, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	// set the ID to be the length
 	// as it's unique
 	long id = getLength();
@@ -158,11 +158,14 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	// create a FileIndexItem
 	FileIndexItem item = new FileIndexItem(actualTS, recordTS, dataitem, dataitem.getDataType(), new SID(id), annotation);
 
- 	// add the item to the cache
- 	addItem(item);
+	synchronized (this) {
+
+	    // add the item to the cache
+	    addItem(item);
  
- 	// now write it out
-	long newSize = writeItem(item);
+	    // now write it out
+	    long newSize = writeItem(item);
+	}
 
 	// mark as being changed
 	changed = true;
@@ -229,7 +232,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * and the IndexItem's data Timestamp.
      * It is used internally when doing a TimeIndexFactory.save().
      */
-    public IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public synchronized IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
         IndexReferenceDataHolder dataHolder = null;
 
@@ -274,7 +277,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
     /**
      * Get an Index Item from the Index.
      */
-    public synchronized IndexItem getItem(long n) throws GetItemException, IndexClosedException {
+    public IndexItem getItem(long n) throws GetItemException, IndexClosedException {
 	setLastAccessTime();
 
 	IndexItem item = null;
@@ -283,25 +286,27 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    throw new IndexClosedException("Can't get item " + n + " from a closed index");
 	}
 
-	if (indexCache.containsItem(n)) { 	// if the cache has the item
-	    // get it from the cache
-	    item = indexCache.getItem(n);
-	} else {
-	    //System.err.println("FileIndex: " + getName() + " load-on-demand item: " + n);
-	    try {
-		// get the IndexItem from the index interactor.
-		// This automatically gets placed in the cache
-		item = indexInteractor.getItem(n, getLoadDataAutomatically());
+	synchronized (indexCache) {
+	    if (indexCache.containsItem(n)) { 	// if the cache has the item
+		// get it from the cache
+		item = indexCache.getItem(n);
+	    } else {
+		//System.err.println("FileIndex: " + getName() + " load-on-demand item: " + n);
+		try {
+		    // get the IndexItem from the index interactor.
+		    // This automatically gets placed in the cache
+		    item = indexInteractor.getItem(n, getLoadDataAutomatically());
 
-		if (item == null) {
+		    if (item == null) {
+			throw new GetItemException("Cant load item " + n);
+		    }
+
+		    // Get it out of the cache.
+		    // This will fill the data if it is hollow
+		    //item = indexCache.getItem(n);
+		} catch (IOException ioe) {
 		    throw new GetItemException("Cant load item " + n);
 		}
-
-		// Get it out of the cache.
-		// This will fill the data if it is hollow
-		//item = indexCache.getItem(n);
-	    } catch (IOException ioe) {
-		throw new GetItemException("Cant load item " + n);
 	    }
 	}
 
@@ -347,16 +352,20 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * @param position the position to load the IndexItem at
      * @return the no of items in the cache
      */
-    public synchronized long retrieveItem(IndexItem item, long position) {
+    public long retrieveItem(IndexItem item, long position) {
 	// now set the item's position and
 	// bind it to the index
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
 	itemM.setPosition(new AbsolutePosition(position));
 	itemM.setIndex(this);
 
-	// add the item to the index item cache
-	// the cache will return the size of the index
-	long cacheSize = indexCache.addItem(item, position);
+	long cacheSize = 0;
+
+	synchronized (indexCache) {
+	    // add the item to the index item cache
+	    // the cache will return the size of the index
+	    cacheSize = indexCache.addItem(item, position);
+	}
 
 	//System.err.print("R");
 	//System.err.flush();
@@ -370,12 +379,14 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Read data for an index item
      * given a DataReference.
      */
-    public synchronized DataHolderObject readData(long pos, DataReference dataReference) {
+    public DataHolderObject readData(long pos, DataReference dataReference) {
 	//System.err.println("FileIndex: " + " readData @" +  pos + ". Thread " + Thread.currentThread().getName() );
 	//System.err.print("D");
 	//System.err.flush();
 
-	return indexInteractor.convertDataReference(dataReference);
+	synchronized (indexInteractor) {
+	    return indexInteractor.convertDataReference(dataReference);
+	}
     }
      
    /**
