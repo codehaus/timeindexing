@@ -203,7 +203,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /**
      * Add an item.
      */
-    public synchronized long addItem(ManagedIndexItem itemM) throws IOException {
+    public long addItem(ManagedIndexItem itemM) throws IOException {
 	return writeItem(itemM);
     }
 
@@ -211,7 +211,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
      * Write the contents of the item
      * It assumes the index file is alreayd open for writing.
      */
-    public long writeItem(ManagedIndexItem itemM) throws IOException {
+    public synchronized long writeItem(ManagedIndexItem itemM) throws IOException {
 	if (itemM.isReference()) {
 	    // write out a reference
 	    return writeReference(itemM);
