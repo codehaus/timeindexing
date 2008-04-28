@@ -22,7 +22,7 @@ import java.io.IOException;
 public class IndexInputStream extends InputStream {
     Index index = null;
     long length = 0;
-    long currentItem = 0;
+    long currentItem = -1;
     ByteBuffer itemdata = null;
 
     /*
@@ -52,30 +52,15 @@ public class IndexInputStream extends InputStream {
      * @exception  IOException  if an I/O error occurs.
      */
     public int read() throws IOException {
-	// if there is no item data
-	if (itemdata == null) {
-	    // read the next IndexItem
-	    try {
-		IndexItem item = index.getItem(currentItem);
-		itemdata = item.getData();
-	    } catch (GetItemException gie) {
-		throw new IOException(gie.getMessage());
-	    } catch (IndexClosedException ice) {
-		throw new IOException(ice.getMessage());
-	    }
-	}
-
-	if (currentItem == (length-1) && itemdata.remaining() == 0) {
-	    // we're at the end
-	    return -1;
-	} else {
-
-	    if (itemdata.remaining() > 0) {
-		// there's more data in this ByteBuffer
-		return (int)itemdata.get();
+	// if there is no item data or we're
+	// at the nend of the bytebuffer
+	// read the next IndexItem
+	if (itemdata == null || itemdata.remaining() == 0) {
+	    // see if we're at the end of the Index
+	    if (currentItem == (length-1) ) {
+		// we're at the end
+		return -1;
 	    } else {
-		// we've hit then end of this ByteBuffer
-		// so fetch the next one
 		currentItem++;
 
 		try {
@@ -86,11 +71,12 @@ public class IndexInputStream extends InputStream {
 		} catch (IndexClosedException ice) {
 		    throw new IOException(ice.getMessage());
 		}
-		// and return the first byte
-		return (int)itemdata.get();
 	    }
-
 	}
+
+	int b = (int)(itemdata.get() & 0xff);
+	// return an int
+	return b;
     }
 
 }
