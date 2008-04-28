@@ -26,7 +26,7 @@ public class BufferedWriter implements WriterPlugin {
     int bufPos = 0;
 
     /*
-     * The EOL mark ¶
+     * The EOL mark
      */
     static byte[] eol = null;
 
@@ -73,8 +73,8 @@ public class BufferedWriter implements WriterPlugin {
     /**
      * Output properties include:
      * <ul>
-     * <li> "eolmark" -> ¶
-     * <li> "newline" -> \n
+     * <li> "eolmark" ->
+     * <li> "newline" -> 
      * </ul>
      */
     public long write(IndexItem item, IndexProperties outputProperties) throws IOException {
