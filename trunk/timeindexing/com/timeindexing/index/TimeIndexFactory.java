@@ -669,6 +669,20 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE.
      * @param indexProperties properties of the index needed at creat time, such as  its name.
      */
+    public IndexView save(Index index, IndexType kind, Map indexMap) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException, TimeIndexException {
+	Properties indexProperties = new Properties();
+	indexProperties.putAll(indexMap);
+
+	return save(index, kind, indexProperties);
+    }
+	
+    /**
+     * Create a new Index object from an existing Index object.
+     * The type of the new Index is based on a constant, as defined in TimeType.
+     * @param index the original index to convert
+     * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE.
+     * @param indexProperties properties of the index needed at creat time, such as  its name.
+     */
     public IndexView save(Index index, IndexType kind, Properties indexProperties) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException, TimeIndexException {
 	IndexView newIndexView = create(kind, indexProperties);
 
@@ -728,6 +742,19 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	Properties indexProperties = new Properties();
 	indexProperties.setProperty("uri", uri.toString());
 	
+	return append(indexProperties);
+    }
+
+    /**
+     * Append to an index.
+     * e.g. TimeIndexFactory.append(map)
+     *
+     * @param indexMap  a Map spec of the index
+     */
+    public IndexView append(Map indexMap)  throws TimeIndexFactoryException, IndexSpecificationException, IndexOpenException {
+	Properties indexProperties = new Properties();
+	indexProperties.putAll(indexMap);
+
 	return append(indexProperties);
     }
 
