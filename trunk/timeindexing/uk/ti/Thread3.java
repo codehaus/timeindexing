@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Properties;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.io.FileOutputStream;
 
 /**
  * Test of multiple TimeIndex threads to the same underlying index.
@@ -89,7 +90,7 @@ public class Thread3 implements Runnable {
 
     public void run() {
 	try {
-	    Selecter selecter = new Selecter(indexPath, System.out);
+	    Selecter selecter = new Selecter(indexPath, new FileOutputStream("/tmp/thread3.out"));
 
 	    selecter.select(new IndexProperties());
 
