@@ -91,7 +91,7 @@ public class IndexOpener {
 	indexProperties.setProperty("indexpath", indexPath);
 
 	switch (kind.value()) {
-	case IndexType.INLINE: {
+	case IndexType.INLINE_VALUE: {
 	    ManagedIndex newIndex = new InlineIndex(); 
 
 	    newIndex.open(indexProperties);
@@ -99,7 +99,7 @@ public class IndexOpener {
 	    return newIndex;
 	}
 
-	case IndexType.EXTERNAL: {
+	case IndexType.EXTERNAL_VALUE: {
 	    ManagedIndex newIndex = new ExternalIndex(); 
 
 	    newIndex.open(indexProperties);
@@ -107,7 +107,7 @@ public class IndexOpener {
 	    return newIndex;
 	}
 
-	case IndexType.SHADOW: {
+	case IndexType.SHADOW_VALUE: {
 	    ManagedIndex newIndex = new ShadowIndex(); 
 
 	    newIndex.open(indexProperties);
@@ -115,7 +115,7 @@ public class IndexOpener {
 	    return newIndex;
 	}
 
-	case IndexType.INCORE: {
+	case IndexType.INCORE_VALUE: {
 	    ManagedIndex newIndex = new IncoreIndex();
 
 	    newIndex.open(indexProperties);
