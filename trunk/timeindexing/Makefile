@@ -1,6 +1,9 @@
-JARGS=
+JARGS=-target 1.5
 
-all: io time index cache event basic data util plugin appl servlet
+all: io time index cache event basic data util plugin appl servlet etags
+
+etags:
+	etags com/timeindexing/*/*.java
 
 io:
 	javac $(JARGS) com/timeindexing/io/*.java
