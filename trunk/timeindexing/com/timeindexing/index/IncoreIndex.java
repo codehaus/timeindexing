@@ -198,7 +198,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * @param item the DataItem to add
      * @return the no of items in the index.
      */
-    public synchronized IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
+    public IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
 	return addItem(dataitem, null);
     }
 
@@ -211,7 +211,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
      */
-    public synchronized IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public IndexItem addItem(DataItem dataitem, Timestamp dataTS) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	return addItem(dataitem, dataTS, 0);
     }
 
@@ -292,7 +292,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * and the IndexItem's data Timestamp.
      * It is used internally when doing a TimeIndexFactory.save().
      */
-    public IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
+    public synchronized IndexItem addReference(IndexReference reference, Timestamp dataTS, long annotation) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 
         IndexReferenceDataHolder dataHolder = null;
 
