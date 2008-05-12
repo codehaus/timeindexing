@@ -23,6 +23,7 @@ import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.data.DataItem;
 import com.timeindexing.cache.IndexCache;
 import com.timeindexing.cache.CachePolicy;
+import com.timeindexing.util.DoubleLinkedList;
 import com.timeindexing.event.*;
 
 import java.util.Properties;
@@ -305,6 +306,13 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
 	//     throw new AddItemException("IndexItem not later than end item");
 	// }
 
+	if (TimeCalculator.lessThan(itemDataTime, dataLast)) {
+	    throw new AddItemException("IndexItem data time not later than last data time.");
+	}
+
+	if (TimeCalculator.lessThan(itemIndexTime, indexLast)) {
+	    throw new AddItemException("IndexItem index time not later than last index time.");
+	}
 
 	// cast to a ManagedIndexItem so we can setup the item properly
 	ManagedIndexItem itemM = (ManagedIndexItem)item;
@@ -921,6 +929,101 @@ public abstract class AbstractIndex implements ExtendedIndex, ExtendedIndexHeade
  	Interval interval = intervalSpecifier.instantiate(t);
 	return select(interval, selector, overlap, lifetime);
     }
+
+
+    /**
+     * Filter some IndexItems out into a new IncoreIndex.
+     */
+    public IndexView filter(Function fn) throws TimeIndexException {
+	// Create a new Incore Index for the result of this filtering
+	Properties properties = new Properties();
+	properties.put("name" , ("filter_"+ new UID().value()));
+
+	IncoreIndex filterIndex = new IncoreIndex();
+	filterIndex.create(properties);
+
+	IndexView view = filterIndex.addView();
+
+	// now skip through this index
+	Iterator iterator = iterator();
+
+	while (iterator.hasNext()) {
+	    IndexItem nextItem = (IndexItem)iterator.next();
+
+	    if (fn.evaluate(nextItem) != null) {
+		// we need to keep this IndexItem
+		// so add a reference to this IndexItem
+		filterIndex.addReference(nextItem, this);
+	    }
+	}
+
+	// terminate the new index
+	filterIndex.terminate();
+
+	return view;
+    }
+
+    /**
+     * Map a function to all of the IndexItems, resulting  in a new IncoreIndex.
+     */
+    public IndexView map(Function fn) throws TimeIndexException {
+	// Create a new Incore Index for the result of this filtering
+	Properties properties = new Properties();
+	properties.put("name" , ("map_"+ new UID().value()));
+
+	IncoreIndex mapIndex = new IncoreIndex();
+	mapIndex.create(properties);
+
+	IndexView view = mapIndex.addView();
+	
+	// now skip through this index
+	Iterator iterator = iterator();
+	Object newItem = null;
+
+	while (iterator.hasNext()) {
+	    IndexItem nextItem = (IndexItem)iterator.next();
+
+	    newItem = fn.evaluate(nextItem);
+	    if (newItem instanceof IndexItem) {
+		// we need to add the new IndexItem
+		mapIndex.addItem((IndexItem)newItem);
+	    } else if (newItem instanceof DataItem) {
+		// we need to add the new DataItem
+		mapIndex.addItem((DataItem)newItem);
+	    }
+	}
+
+	// terminate the new index
+	mapIndex.terminate();
+
+	return view;
+    }
+
+    /**
+     * Apply a function to all of the IndexItems, resulting  in a List of results.
+     */
+    public DoubleLinkedList apply(Function fn) throws TimeIndexException {
+	// Create a new List for the result of this apply
+	// It will be the same size as the index
+	DoubleLinkedList list = new DoubleLinkedList();
+
+	// now skip through this index
+	Iterator iterator = iterator();
+	Object newObj = null;
+
+	while (iterator.hasNext()) {
+	    IndexItem nextItem = (IndexItem)iterator.next();
+
+	    // apply the function
+	    newObj = fn.evaluate(nextItem);
+
+	    // add the result to the list
+	    list.add(newObj);
+	}
+
+	return list;
+    }
+
 
     /**
      * Determine if one Position is lessthan another Position.
