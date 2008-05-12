@@ -109,9 +109,6 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 
 		    //System.err.println("Volume - = " + volumeHeld);
 
-		    // get the data object for this index item
-		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
-
 		    // hollow it
 		    DataReference dataRef = new DataReferenceObject(fileItem.getDataOffset(), fileItem.getDataSize());
 
@@ -153,9 +150,6 @@ public class FileIndexCache extends DefaultIndexCache implements IndexCache {
 	    } else {
 		// update the data volume held 
 		if (fileItem.hasData()) {
-		    // get the data object for this index item
-		    DataHolderObject dataObj = (DataHolderObject)fileItem.getDataAbstraction();
-
 		    // calculate the held volume
 		    volumeHeld -= fileItem.getDataSize().value();
 
