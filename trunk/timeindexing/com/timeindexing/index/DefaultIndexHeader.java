@@ -550,10 +550,10 @@ public class DefaultIndexHeader implements ManagedIndexHeader {
 	}
 
 	if (referencedIndexMap.containsValue(URIName)) {
-	    System.err.println("Skipping " + indexID + " => " + URIName);
+	    //System.err.println("Skipping " + indexID + " => " + URIName);
 	} else {
 	    referencedIndexMap.put(indexID, URIName);
-	    System.err.println("Adding " + indexID + " => " + URIName);
+	    //System.err.println("Adding IndexURI to Header " + indexID + " => " + URIName);
 	}
 
 	return true;
