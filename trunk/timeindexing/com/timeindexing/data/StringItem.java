@@ -14,7 +14,6 @@ public class StringItem implements DataItem {
     /*
      * The string
      */
-    String data = null;
     ByteBuffer stringBuffer = null;
 
     /**
