@@ -41,6 +41,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 
     /**
      * Commit this index.
+     * @return true if the index isActivated and isChanged, otherwise return false
      */
     public synchronized boolean commit() throws IndexCommitException  {
 	// if the index is activated and has changed
@@ -115,7 +116,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * The data timestamp will be the same as the record timestamp.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the DataItem to add
+     * @param dataitem the DataItem to add
      * @return the no of items in the index.
      */
     public IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
@@ -126,7 +127,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Add a Data Item to the Index plus a Timestamp from the Data.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the IndexItem to add
+     * @param dataitem the IndexItem to add
      * @param dataTS the Timestamp for the data, null implies that
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
@@ -139,7 +140,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
      * Add a Data Item to the Index plus a Timestamp from the Data.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the IndexItem to add
+     * @param dataitem the IndexItem to add
      * @param dataTS the Timestamp for the data, null implies that
      * the data Timestamp is the same as the record Timestamp
      * @param annotation the annotation meta data
@@ -164,6 +165,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	    addItem(item);
  
 	    // now write it out
+	    // new size is the new size of the index
 	    long newSize = writeItem(item);
 	}
 
@@ -266,6 +268,7 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
  	addItem(item);
  
  	// now write it out
+	// new size is the new size of the index
 	long newSize = writeItem(item);
 
 	// mark as being changed
@@ -318,6 +321,10 @@ public abstract class FileIndex extends AbstractManagedIndex implements StoredIn
 	return item;
     }
 
+    /**
+     * Write an IndexItem to the Index.
+     * @return the size of the resulting index.
+     */
     protected long writeItem(FileIndexItem item) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException {
 	long newSize = getLength();
 
