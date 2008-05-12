@@ -102,7 +102,10 @@ public class HollowAfterUsePolicy extends AbstractCachePolicy implements CachePo
 	return "HollowAfterUsePolicy: queueWindow = " + monitorList.size() + "/" + queueWindow;
     }
 
-    private class IndexItemComparator implements Comparator {
+    /**
+     * An Index Item Comparator
+     */
+    private static class IndexItemComparator implements Comparator {
 	public int compare(Object o1, Object o2) {
 	    ManagedIndexItem item1 = (ManagedIndexItem)o1;
 	    ManagedIndexItem item2 = (ManagedIndexItem)o2;
