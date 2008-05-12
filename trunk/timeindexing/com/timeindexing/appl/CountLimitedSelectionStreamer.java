@@ -41,7 +41,7 @@ public class CountLimitedSelectionStreamer extends SelectionStreamer  {
 	// if there's any items in the selection
         if (length > 0) {
 	    // get the count limit for selection from the properties
-	    SelectionProcessor processor = new SelectionProcessor();
+	    //SelectionProcessor processor = new SelectionProcessor();
 	    System.err.println("IndexProperties = " + outputProperties);
 	    String countLimitStr = (String)outputProperties.get("countlimit");
 
