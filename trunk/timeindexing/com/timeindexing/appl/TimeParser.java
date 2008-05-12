@@ -41,7 +41,7 @@ public class TimeParser {
      * Formats for subseconds can resolve down to nanoseconds.
      * e.g.  .2 is 2/10ths of a seconds, .200 is 200 milliseconds,
      * .25000 is 25000 microseconds, and so on.     
-     * @param timeStr the inout string
+     * @param timeArg the inout string
      * @param absolute should the timestamp be parsed as an absolute
      * time or a relative time.
      * @return a Timestamp object  if the input is valid, null otherwise.
@@ -129,6 +129,7 @@ public class TimeParser {
 
 	//System.err.println("Parsed seconds = " + seconds);
 
+	// check the ParsePosition
 	int next = pos.getIndex();
 
 
