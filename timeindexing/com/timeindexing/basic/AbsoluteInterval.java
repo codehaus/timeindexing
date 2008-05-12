@@ -34,11 +34,6 @@ public abstract class AbsoluteInterval implements Interval {
      */
     boolean resolved = false;
 
-    /*
-     * What style was the Interval specified as.
-     */
-    int style = -1;  // start with an illegal value
-
     /**
      * Get the interval start.
      */
