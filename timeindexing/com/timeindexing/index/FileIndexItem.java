@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
  * An implementatio of an IndexItem that is saved in a file.
  * Every value is explicitly held.
  */
-public class FileIndexItem extends IncoreIndexItem implements IndexItem, ManagedFileIndexItem, Serializable {
+public class FileIndexItem extends IncoreIndexItem implements IndexItem, ManagedFileIndexItem {
     transient Offset dataOffset = null; 
     transient Offset indexOffset = null;
 
@@ -29,7 +29,7 @@ public class FileIndexItem extends IncoreIndexItem implements IndexItem, Managed
      * Construct a FileIndexItem from
      * @param dataTS a data timestamp. The Data timestamp is the same as the Sender timestamp.
      * @param indexTS an index timestamp. The Index timestamp is the same as the Receiver timestamp.
-     * @param data some data as a Item
+     * @param dataitem some data as a Item
      * @param type the type of the data
      * @param id an index ID
      * @param annotationValue the meta data for annotations
