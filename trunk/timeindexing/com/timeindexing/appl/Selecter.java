@@ -32,8 +32,6 @@ public class Selecter extends OutputEventGenerator implements OutputEventListene
 
     SelectionStreamer outputter = null;
 
-    boolean listeningToStreamer = false;
-
     /**
      * Construct a Selecter object, with output to System.out.
      */
@@ -88,7 +86,8 @@ public class Selecter extends OutputEventGenerator implements OutputEventListene
 	long total = 0;
 
 	outputter = new SelectionStreamer(index, output);
-	// listen to SelectionStreamer
+
+	// listen to SelectionStreamer to get OutputEvents
 	outputter.addOutputEventListener(this);
 
 	total = outputter.doOutput(selectionProperties);
@@ -116,15 +115,6 @@ public class Selecter extends OutputEventGenerator implements OutputEventListene
     public void addOutputEventListener(OutputEventListener l) {
 	// do the super class code for external callers
 	super.addOutputEventListener(l);
-
-	// now ensure we listen to the streamer
-	// to get its events
-	/*
-	if (!listeningToStreamer) {
-	    outputter.addOutputEventListener(this);
-	    listeningToStreamer = true;
-	}
-	*/
     }
 
     /**
