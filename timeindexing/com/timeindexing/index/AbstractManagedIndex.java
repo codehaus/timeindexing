@@ -7,6 +7,7 @@ import com.timeindexing.time.Clock;
 import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Offset;
 import com.timeindexing.event.IndexPrimaryEvent;
+import com.timeindexing.event.IndexAddEventListener;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -348,6 +349,15 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
      * @return true if the index is really closed by calling this
      */
     public synchronized boolean close() throws IndexCloseException {
+	return closeView(null);
+    }
+
+
+    /**
+     * Close this index.
+     * @return true if the index is really closed by calling this
+     */
+    public synchronized boolean closeView(IndexView view) throws IndexCloseException {
 	// This method is defined here as it calls 
 	// methods that are only available in AbstractManagedIndex
 
@@ -380,7 +390,7 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
 
 
 	    //System.err.println("AbstractManagedIndex: close " + getURI() + " Thread " + Thread.currentThread().getName()) ;
-	    long refCount = removeView();
+	    long refCount = removeView(view);
 
 	    // if we get to here and the ref coount is 0
 	    // then we close it
@@ -388,7 +398,7 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
 	    boolean closeValue = false;
 	    
 	    if (refCount == 0) {
-		//System.err.println("About to really close " + getURI());
+		// System.err.println("About to really close " + getURI());
 		closeValue = reallyClose();
 	    } else {
 		closeValue = false;
@@ -460,6 +470,8 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
 
 	IndexView view = new TimeIndex(this);
 
+	addAddEventListener((IndexAddEventListener)view);
+
 	if (eventMulticaster.hasPrimaryEventListeners()) {
 	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.ADD_VIEW, this));
 	}
@@ -473,8 +485,13 @@ abstract class AbstractManagedIndex extends AbstractIndex implements ManagedInde
      * Remove a view from this index.
      * @return How many views are still left on the Index
      */
-    public long removeView() {
+    public long removeView(IndexView view) {
 	long refCount = TimeIndexDirectory.removeHandle(this);
+
+	if (view != null) {
+	    removeAddEventListener((IndexAddEventListener)view);
+	}
+			      
 
 	if (eventMulticaster.hasPrimaryEventListeners()) {
 	    eventMulticaster.firePrimaryEvent(new IndexPrimaryEvent(getURI().toString(), header.getID(), IndexPrimaryEvent.REMOVE_VIEW, this));
