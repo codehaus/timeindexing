@@ -26,8 +26,6 @@ public class IndexEventMulticaster implements IndexEventGenerator {
     EventListenerList listenerListAccessEvent = null;
 
 
-    IndexEvent indexEvent = null;
-
     /**
      * Create a an IndexEventMulticaster.
      * It can fire IndexPrimaryEvents, IndexAddEvents, and
