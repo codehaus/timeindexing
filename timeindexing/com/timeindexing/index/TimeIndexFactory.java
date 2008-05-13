@@ -667,7 +667,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      * The type of the new Index is based on a constant, as defined in TimeType.
      * @param index the original index to convert
      * @param kind One of IndexType.INLINE, IndexType.EXTERNAL, IndexType.INCORE.
-     * @param indexProperties properties of the index needed at creat time, such as  its name.
+     * @param indexMap property map of the index needed at create time, such as  its name.
      */
     public IndexView save(Index index, IndexType kind, Map indexMap) throws TimeIndexFactoryException, IndexSpecificationException, IndexCreateException, TimeIndexException {
 	Properties indexProperties = new Properties();
@@ -776,7 +776,7 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
     public IndexView find(ID indexID) {
 	ManagedIndex anIndex = null;
 
-	System.err.println("TimeIndexFactory: in find " + indexID);
+	//System.err.println("TimeIndexFactory: in find " + indexID);
 
 	if ((anIndex = TimeIndexDirectory.find(indexID)) != null) {
 	    // the index is already opened and registered 
@@ -796,9 +796,13 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
      */
     public boolean close(Index index) throws IndexCommitException, IndexCloseException {
 	// commit the contents
-	boolean committed = index.commit();
+	index.commit();
 
-	// TODO: what should we do if committed == false
+	// what should we do if committed == false
+	// well, it means there was nothing to do
+
+
+	//System.err.println("TimeIndexFactory: closing " + index.getClass());
 
 	// close all the objects in the index
 	boolean closed = index.close();
@@ -833,7 +837,6 @@ public class TimeIndexFactory implements IndexPrimaryEventListener, IndexAddEven
 	    if (indexProperties.containsKey("indexpath")) {
 		fileName = indexProperties.getProperty("indexpath");
 		indexFile = new File(fileName);
-		indexPath = indexFile.getCanonicalPath();
 	    } else {
 		throw new IndexSpecificationException("No 'indexpath' specified for TimeIndexFactory");
 	    }
