@@ -418,22 +418,6 @@ public class DoubleLinkedList {
     }
 
 
-
-    /**
-     * A link list entry.
-     */
-    private class Entry {
-        Object element;
-        Entry next;
-        Entry previous;
-
-        Entry(Object element, Entry next, Entry previous) {
-            this.element = element;
-            this.next = next;
-            this.previous = previous;
-        }
-    }
-
     private Entry addBefore(Object o, Entry e) {
 	Entry newEntry = new Entry(o, e, e.previous);
 	newEntry.previous.next = newEntry;
@@ -449,6 +433,22 @@ public class DoubleLinkedList {
 	e.previous.next = e.next;
 	e.next.previous = e.previous;
 	size--;
+    }
+
+
+    /**
+     * A link list entry.
+     */
+    private static class Entry {
+        Object element;
+        Entry next;
+        Entry previous;
+
+        Entry(Object element, Entry next, Entry previous) {
+            this.element = element;
+            this.next = next;
+            this.previous = previous;
+        }
     }
 
 }
