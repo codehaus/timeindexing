@@ -104,14 +104,18 @@ public class TimeIndexDirectory {
 
 	if (lockMap.containsKey(indexURI)) {
 	    // already locked
-	    try {
-		//System.err.println("Awaiting " + indexURI + " Thread " + Thread.currentThread().getName());
-		wait();
-		return true;
-	    } catch (InterruptedException ie) {
-		//System.err.println("Return " + indexURI + " Thread " + Thread.currentThread().getName());
-		return true;
+	    while (lockMap.containsKey(indexURI)) {
+		try {
+		    //System.err.println("Awaiting " + indexURI + " Thread " + Thread.currentThread().getName());
+		    wait();
+		} catch (InterruptedException ie) {
+		    //System.err.println("Return " + indexURI + " Thread " + Thread.currentThread().getName());
+		}
 	    }
+
+	    // the index is unlocked
+	    return true;
+
 	} else {
 	    // not locked
 	    return false;
