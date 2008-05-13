@@ -23,7 +23,6 @@ public class IndexTyper {
     String fileName = null;
     RandomAccessFile headerFile = null;
     FileChannel channel = null;
-    ByteBuffer headerBuf = null;
 
     String indexName = null;
     ID indexID = null;

@@ -23,7 +23,6 @@ import java.io.FileNotFoundException;
 public class FileItem implements ReaderPlugin {
     FileInputStream input = null;
     MappedByteBuffer buffer = null;
-    String line = null;
     boolean eof = false;
 
     /**
