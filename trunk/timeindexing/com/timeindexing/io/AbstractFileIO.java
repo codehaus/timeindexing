@@ -48,7 +48,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 
     String indexName = null;
     ID indexID = null;
-    DataType dataType = DataType.NOTSET;
+    //DataType dataType = DataType.NOTSET;
 
     String originalIndexSpecifier = null; // the original spec for an index
     String headerFileName = null; // the resolved header file name
@@ -525,7 +525,7 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
     /**
      * Read the contents of the item
      * It assumes the index file is alreayd open for writing.
-     * @param offset the byte offset in the file to start reading an item from
+     * @param startOffset the byte offset in the file to start reading an item from
      * @param withData read the data for this IndexItem if withData is true,
      * the data needs to be read at a later time, otherwise
      */
@@ -705,12 +705,19 @@ public abstract class AbstractFileIO extends AbstractIndexIO implements IndexFil
 	    // seek to the right place
 	    seekToData(offset);
 
+	    // read some data
 	    readCount = readDataIntoBuffer(buffer, size);
 
-	    buffer.limit((int)size);
-	    buffer.position(0);
+	    // check got correct amount
+	    if (readCount == size) {
+		buffer.limit((int)size);
+		buffer.position(0);
 
-	    return buffer;
+		return buffer;
+	    } else {
+		// got wrong amount
+		throw new IOException("IO Error trying to read " + size + " bytes from offset " + offset);
+	    }
 
 	} else {
 	    // the data is bigger than a page size
