@@ -12,11 +12,10 @@ import com.timeindexing.time.AbsoluteTimestamp;
 import com.timeindexing.time.Lifetime;
 import com.timeindexing.time.IntervalSpecifier;
 import com.timeindexing.data.DataItem;
+import com.timeindexing.util.DoubleLinkedList;
 import com.timeindexing.cache.CachePolicy;
 
 import java.util.Iterator;
-import java.util.List;
-import java.util.LinkedList;
 
 /**
  * An index.
@@ -191,6 +190,22 @@ public interface Index extends IndexHeader {
      * Select an Interval given a Timestamp and an IntervalSpecifier.
      */
     public IndexView select(AbsoluteTimestamp t, IntervalSpecifier intervalSpecifier, IndexTimestampSelector selector, Overlap overlap, Lifetime lifetime);
+
+
+    /**
+     * Filter some IndexItems out into a new IncoreIndex.
+     */
+    public IndexView filter(Function f) throws TimeIndexException;
+
+    /**
+     * Map a function to all of the IndexItems, resulting  in a new IncoreIndex.
+     */
+    public IndexView map(Function f) throws TimeIndexException;
+
+    /**
+     * Apply a function to all of the IndexItems, resulting  in a List of results.
+     */
+    public DoubleLinkedList apply(Function fn) throws TimeIndexException;
 
     /**
      * Get the  last time an IndexItem was accessed from the index.
