@@ -17,7 +17,7 @@ public class FileUtils {
     /**
      * Resolve a filename given a filename
      * and an extension.
-     * @param filename The filename
+     * @param origFilename The filename
      * @param extension The extension
      * @return null if a name cant be resolved.
      */
