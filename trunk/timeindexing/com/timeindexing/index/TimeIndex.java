@@ -23,7 +23,10 @@ import com.timeindexing.basic.AbsoluteInterval;
 import com.timeindexing.basic.EndPointInterval;
 import com.timeindexing.basic.Overlap;
 import com.timeindexing.basic.ID;
+import com.timeindexing.util.DoubleLinkedList;
 import com.timeindexing.cache.CachePolicy;
+import com.timeindexing.event.IndexAddEvent;
+import com.timeindexing.event.IndexAddEventListener;
 
 import java.util.Iterator;
 import java.net.URI;
@@ -32,7 +35,7 @@ import java.net.URI;
  * This is the generic object that applications interact with.
  * It is a view onto an index.
  */
-public  class TimeIndex implements Index, IndexView,  Cloneable{
+public  class TimeIndex implements Index, IndexView, IndexAddEventListener, Cloneable{
     /**
      * The actual implementation of an index.
      */
@@ -710,6 +713,28 @@ public  class TimeIndex implements Index, IndexView,  Cloneable{
 	return select(interval, selector, overlap, lifetime);
     }
 
+
+    /**
+     * Filter some IndexItems out into a new IncoreIndex.
+     */
+    public IndexView filter(Function fn) throws TimeIndexException {
+	return indexModel.filter(fn);
+    }
+
+    /**
+     * Map a function to all of the IndexItems, resulting  in a new IncoreIndex.
+     */
+    public IndexView map(Function fn) throws TimeIndexException {
+	return indexModel.map(fn);
+    }
+
+    /**
+     * Apply a function to all of the IndexItems, resulting  in a List of results.
+     */
+    public DoubleLinkedList apply(Function fn) throws TimeIndexException {
+	return indexModel.apply(fn);
+    }
+    
     /**
      * Return the Interval used to get a selection.
      * @return null if the view is not a selection.
@@ -805,7 +830,7 @@ public  class TimeIndex implements Index, IndexView,  Cloneable{
      * Any methods called after this will fail.
      */
     public boolean close() throws IndexCloseException {
-	return indexModel.close();
+	return ((ManagedIndex)indexModel).closeView(this);
     }
 
     /**
@@ -1081,6 +1106,12 @@ public  class TimeIndex implements Index, IndexView,  Cloneable{
 	return indexModel.setLoadDataAutomatically(load);
     }
 
+    /**
+     * An item has been added to the index.
+     */
+    public void itemAdded(IndexAddEvent event ) {
+	    end = new AbsolutePosition(indexModel.getLength()-1);
+    }
 }
 
 
