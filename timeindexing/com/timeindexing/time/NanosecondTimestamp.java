@@ -12,7 +12,7 @@ import java.io.ObjectInputStream;
 /**
  * A timestamp that only has significant data down to nanosecond level.
  */
-public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, Serializable {
+public class NanosecondTimestamp extends AbstractAbsoluteTimestamp implements AbsoluteTimestamp, NanosecondScale, Serializable {
     /*
      * The mask used for before/after epoch
      */
@@ -133,7 +133,8 @@ public class NanosecondTimestamp implements AbsoluteTimestamp, NanosecondScale, 
      * This formats the first day specially.
      */
     public String toString() {
-	return ("[" + new NanosecondDateFormat().format((Timestamp)this) + "]");
+	//return ("[" + new NanosecondDateFormat().format((Timestamp)this) + "]");
+	return getEpoch().format(this);
     }
 
     /**

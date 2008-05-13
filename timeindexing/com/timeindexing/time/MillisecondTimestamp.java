@@ -14,7 +14,7 @@ import java.io.ObjectInputStream;
  * The Java runtime currently goes down to milliseconds,
  * so these are easy to get in Java.
  */
-public class MillisecondTimestamp implements AbsoluteTimestamp, MillisecondScale, Serializable {
+public class MillisecondTimestamp extends AbstractAbsoluteTimestamp implements AbsoluteTimestamp, MillisecondScale, Serializable {
     /*
      * The mask used for before/after epoch
      */
@@ -123,7 +123,8 @@ public class MillisecondTimestamp implements AbsoluteTimestamp, MillisecondScale
      * Get the toString() version of a MillisecondTimestamp.
      */
     public String toString() {
-	return ("[" + new MillisecondDateFormat().format((Timestamp)this) + "]");
+	//return ("[" + new MillisecondDateFormat().format((Timestamp)this) + "]");
+	return getEpoch().format(this);
     }
 
     /**

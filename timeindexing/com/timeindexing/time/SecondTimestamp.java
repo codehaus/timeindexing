@@ -12,7 +12,7 @@ import java.io.ObjectInputStream;
 /**
  * A timestamp that only has significant data down to second level.
  */
-public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializable {
+public class SecondTimestamp extends AbstractAbsoluteTimestamp implements AbsoluteTimestamp, SecondScale, Serializable {
     /*
      * The mask used for before/after epoch
      */
@@ -118,7 +118,8 @@ public class SecondTimestamp implements AbsoluteTimestamp, SecondScale, Serializ
      * Get the toString() version of a SecondTimestamp.
      */
     public String toString() {
-	return ("[" + new SecondDateFormat().format((Timestamp)this) + "]");
+	//return ("[" + new SecondDateFormat().format((Timestamp)this) + "]");
+	return getEpoch().format(this);
     }
 
     /**
