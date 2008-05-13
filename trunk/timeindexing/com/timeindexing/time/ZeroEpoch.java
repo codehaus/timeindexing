@@ -24,13 +24,13 @@ public interface ZeroEpoch extends Epoch {
 		Scale scale = t.getScale();
 
 		if (scale instanceof SecondScale) {
-		    return ("(" + new SecondElapsedFormat().format(relative) + ")");
+		    return ("[" + new SecondElapsedFormat().format(relative) + "]");
 		} else 	if (scale instanceof MillisecondScale) {
-		    return ("(" + new MillisecondElapsedFormat().format(relative) + ")");
+		    return ("[" + new MillisecondElapsedFormat().format(relative) + "]");
 		} else if (scale instanceof MicrosecondScale) {
-		    return ("(" + new MicrosecondElapsedFormat().format(relative) + ")");
+		    return ("[" + new MicrosecondElapsedFormat().format(relative) + "]");
 		} else if (scale instanceof NanosecondScale) {
-		    return ("(" + new NanosecondElapsedFormat().format(relative) + ")");
+		    return ("[" + new NanosecondElapsedFormat().format(relative) + "]");
 		} else {
 		    throw new Error("Unhandled type of scale for argument to asScale(). It is: " +
 				    scale.getClass().getName());
