@@ -12,7 +12,7 @@ import java.io.ObjectInputStream;
 /**
  * A timestamp that only has significant data down to microsecond level.
  */
-public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale, Serializable {
+public class MicrosecondTimestamp extends AbstractAbsoluteTimestamp implements AbsoluteTimestamp, MicrosecondScale, Serializable {
     /*
      * The mask used for before/after epoch
      */
@@ -133,7 +133,8 @@ public class MicrosecondTimestamp implements AbsoluteTimestamp, MicrosecondScale
      * Get the toString() version of a MicrosecondTimestamp.
      */
     public String toString() {
-	return ("[" + new MicrosecondDateFormat().format((Timestamp)this) + "]");
+	//return ("[" + new MicrosecondDateFormat().format((Timestamp)this) + "]");
+	return getEpoch().format(this);
     }
 
     /**
