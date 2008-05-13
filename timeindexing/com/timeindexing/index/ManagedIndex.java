@@ -56,6 +56,13 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
     public Collection listTrackedIndexes();
 
     /**
+     * Close the index from a specified view
+     * Intened to close all associated streams and files,
+     * and this sets the end time too.
+     */
+    public boolean closeView(IndexView view) throws IndexCloseException;
+
+    /**
      * Close this index.
      */
     public boolean reallyClose() throws IndexCloseException ;
@@ -76,7 +83,7 @@ public interface ManagedIndex extends ExtendedIndex, ManagedIndexHeader, IndexEv
      * Remove a view from this index.
      * @return How many views are still left on the Index
      */
-    public long removeView();
+    public long removeView(IndexView view);
 
 
 }
