@@ -21,9 +21,6 @@ public class DefaultWriter implements WriterPlugin {
 
     private final static int BUFSIZE = 1024;
 
-    // thr output buffer
-    private byte [] outbuf = new byte[BUFSIZE];
-
     /*
      * The EOL mark �
      */
@@ -92,18 +89,8 @@ public class DefaultWriter implements WriterPlugin {
      * Flush out any remainig data.
      */
     public long flush() throws IOException {
+	out.flush();
 	return 0;
-    }
-
-    /**
-     * Actually write the bytes out.
-     */
-    private long write(byte[] outbuf, int from, int to) throws IOException {
-	long writeCount = to - from;
-
-	out.write(outbuf, from, to);
-
-	return writeCount;
     }
 
     /**
