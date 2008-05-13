@@ -90,15 +90,17 @@ public class IndexReferenceDataHolder implements IndexReference, DataHolder {
      */
     public ByteBuffer getBytes() {
 	lastAccessTime = Clock.time.time();
-	return EMPTY_BUFFER;
-	/*
+
+	// WAS return EMPTY_BUFFER;
+
 	try {
 	    IndexItem otherItem = follow();
 	    return otherItem.getData();
 	} catch (GetItemException gie) {
 	    return null;
+	} catch (IndexClosedException ice) {
+	    return null;
 	}
-	*/
     }
 
     /**
