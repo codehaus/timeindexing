@@ -195,7 +195,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * The data timestamp will be the same as the record timestamp.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the DataItem to add
+     * @param dataitem the DataItem to add
      * @return the no of items in the index.
      */
     public IndexItem addItem(DataItem dataitem) throws IndexTerminatedException, IndexClosedException, IndexActivationException, AddItemException   {
@@ -206,7 +206,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * Add a Data Item to the Index plus a Timestamp from the Data.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the IndexItem to add
+     * @param dataitem the IndexItem to add
      * @param dataTS the Timestamp for the data, null implies that
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
@@ -219,7 +219,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
      * Add a Data Item to the Index plus a Timestamp from the Data.
      * The ID will be generated.
      * There are no annotations.
-     * @param item the IndexItem to add
+     * @param dataitem the IndexItem to add
      * @param dataTS the Timestamp for the data, null implies that
      * the data Timestamp is the same as the record Timestamp
      * @return the no of items in the index.
@@ -270,6 +270,7 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 	    // so keep tabs on it
 	    addIndexURI(indexID, indexURI);
 	}
+
 
         IndexReference reference  = new IndexReferenceDataHolder(otherIndex.getID(), otherItem.getPosition());
 
@@ -323,8 +324,6 @@ public class IncoreIndex extends AbstractManagedIndex implements ManagedIndex {
 
 	// add the item
 	addItem((IndexItem)item);
-
-	long newSize = getLength();
 
 	// mark as being changed
 	changed = true;
