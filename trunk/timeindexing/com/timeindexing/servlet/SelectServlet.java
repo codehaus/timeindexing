@@ -319,7 +319,7 @@ public class SelectServlet extends HttpServlet implements IndexPrimaryEventListe
 
     /**
      * Playback the data.
-     * @returns the status of doing the playback
+     * @return the status of doing the playback
      */
     protected int doPlayBack(HttpServletRequest request, HttpServletResponse response, IndexProperties properties, int passedInStatus) throws IOException {
 	int status = passedInStatus;
