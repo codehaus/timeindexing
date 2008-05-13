@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 public class DefaultInputPlugin implements InputPlugin {
     Index index = null;
     InputStream in = null;
-    long writeCount = 0;
     ReaderPlugin plugin = null;
 
     private final static int BUFSIZE = 1024;

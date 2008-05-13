@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 public class DefaultOutputPlugin implements OutputPlugin {
     Index index = null;
     OutputStream out = null;
-    long writeCount = 0;
     WriterPlugin plugin = null;
 
     /**
