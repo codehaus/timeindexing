@@ -32,7 +32,7 @@ import com.timeindexing.basic.Scale;
  * 4 bits type - 1 sign bit for pre/post epoch - 59 bits seconds
  * About 18,000,000,000 years in seconds.
  * <p>
- * For AbsoluteTimestamps epoch is Jan 1st 1970 at midnight, for
+ * For AbsoluteTimestamps epoch can be zero or Jan 1st 1971 at midnight, for
  * RelativeTimestamps epoch is zero.
  */
 
