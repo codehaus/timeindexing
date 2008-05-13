@@ -42,10 +42,17 @@ public class TimeIndexShutdownHook extends Thread {
 		    String indexURI = (String)indexURIsI.next();
 
 		    // get the Index associated with the name
-		    Index index = TimeIndexDirectory.find(indexURI);
+		    ManagedIndex index = (ManagedIndex)TimeIndexDirectory.find(indexURI);
 
 		    try {
-			index.close();
+			// commit any changes
+			index.commit();
+
+			// really close it
+			index.reallyClose();
+
+			// and remove the handle
+			TimeIndexDirectory.removeHandle(index);
 
 			System.err.println("TimeIndexShutdownHook: close " + indexURI + " Thread " + Thread.currentThread().getName()) ;
 
