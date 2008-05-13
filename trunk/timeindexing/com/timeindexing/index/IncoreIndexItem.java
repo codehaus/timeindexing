@@ -25,7 +25,7 @@ import java.util.Properties;
  * A Full implementation of an IndexItem.
  * Every value is explicitly held.
  */
-public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializable {
+public class IncoreIndexItem implements IndexItem, ManagedIndexItem {
     transient Timestamp dataTS = null;
     transient Timestamp indexTS = null;
     transient DataAbstraction data = null;
@@ -44,7 +44,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      * Construct a IncoreIndexItem from
      * @param dataTS a data timestamp. The Data timestamp is the same as the Sender timestamp.
      * @param indexTS an index timestamp. The Index timestamp is the same as the Receiver timestamp.
-     * @param data some data as a Item
+     * @param dataitem some data as a Item
      * @param type the type of the data
      * @param id an index ID
      * @param annotationValue the meta data for annotations
@@ -111,6 +111,7 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
      */
     public ByteBuffer getData() {
 	setLastAccessTime();
+
 	return ((DataHolder)data).getBytes();
     }
 
@@ -350,7 +351,6 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem, Serializabl
 	size = new Size(sizeRead);
 
 	byte [] tmpdata = new byte[(int)sizeRead];
-	int noRead = in.read(tmpdata, 0, (int)sizeRead);
 	ByteBuffer buffer = ByteBuffer.wrap(tmpdata);
 	data = new DataHolderObject(buffer, sizeRead);
 
