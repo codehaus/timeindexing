@@ -57,15 +57,12 @@ public class TimeDateParser {
      */
     protected DateParser secondFormat = new DateParser("ss");
 
-    TimestampGenerator generator = null;
-
     Calendar calendar = null;
 
     /**
      * Construct a TimeDateParser.
      */
     public TimeDateParser() {
-	generator = new TimestampGenerator();
 	calendar = Calendar.getInstance();
     }
 
@@ -92,7 +89,7 @@ public class TimeDateParser {
      * Formats for subseconds can resolve down to nanoseconds.
      * e.g.  .2 is 2/10ths of a seconds, .200 is 200 milliseconds,
      * .25000 is 25000 microseconds, and so on.     
-     * @param timeStr the inout string
+     * @param timeArg the input string
      * @param absolute should the timestamp be parsed as an absolute
      * time or a relative time.
      * @return a Timestamp object  if the input is valid, null otherwise.
@@ -257,10 +254,10 @@ public class TimeDateParser {
      * Formats for subseconds can resolve down to nanoseconds.
      * e.g.  .2 is 2/10ths of a seconds, .200 is 200 milliseconds,
      * .25000 is 25000 microseconds, and so on.     
-     * @param timeStr the inout string
+     * @param timeArg the input string
      * @param absolute should the timestamp be parsed as an absolute
      * time or a relative time.
-     * @param format  the parse format to use when trying to parse timeStr.
+     * @param parseFormat  the parse format to use when trying to parse timeStr.
      * @return a Timestamp object  if the input is valid, null otherwise.
      */
     public Timestamp parse(String timeArg, boolean absolute, String parseFormat) {
