@@ -6,6 +6,7 @@ import com.timeindexing.basic.ID;
 import com.timeindexing.basic.Size;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.time.Timestamp;
+import com.timeindexing.data.DataItem;
 
 import java.nio.ByteBuffer;
 
@@ -57,6 +58,13 @@ public class IndexItemView implements IndexItem {
      */
     public DataType getDataType() {
 	return item.getDataType();
+    }
+
+    /**
+     * Get the data of this IndexItem as a DataItem.
+     */
+    public DataItem getDataItem() {
+	return item.getDataItem();
     }
 
     /**
