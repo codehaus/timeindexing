@@ -25,4 +25,10 @@ public interface DataItem {
      * Get the DataType of the DataItem.
      */
     public DataType getDataType();
+
+    /**
+     * Get the object from a DataItem.
+     */
+    public Object getObject();
+
 }
