@@ -10,24 +10,47 @@ import com.timeindexing.index.DataType;
  * A item of data presented by a data reader
  * This is an implementation of IntegerItem.
  */
-public class IntegerItem implements DataItem {
+public class IntegerItem extends AbstractDataItem implements DataItem {
     /*
      * The integer
      */
-    ByteBuffer theBuffer = ByteBuffer.allocate(4);
+    Integer theInteger = null;
+
+    /*
+     * The ByteBuffer
+     */
+    ByteBuffer theBuffer = null;
+
+    /**
+     * Construct a IntegerItem from an int
+     */
+    public IntegerItem(int i) {
+	theInteger = new Integer(i);
+    }
 
     /**
      * Construct a IntegerItem from an Integer
      */
-    public IntegerItem(int i) {
-	theBuffer = theBuffer.putInt(i);
-	theBuffer.rewind();
+    public IntegerItem(Integer i) {
+	theInteger = i;
+    }
+
+    /**
+     * Create a IntegerItem from a ByteBuffer.
+     * This is used internally by DataItemFactory.
+     */
+    IntegerItem(ByteBuffer b) {
+	theBuffer = b;
     }
 
     /**
      * Get the data itself
      */
     public ByteBuffer getBytes() {
+	if (theBuffer == null) {
+	    construct();
+	}
+
 	return theBuffer;
     }
 
@@ -35,6 +58,10 @@ public class IntegerItem implements DataItem {
      * Get the size of the item
      */
     public long getSize() {
+	if (theBuffer == null) {
+	    construct();
+	}
+
 	return theBuffer.limit();
     }
 
@@ -43,5 +70,38 @@ public class IntegerItem implements DataItem {
      */
     public DataType getDataType() {
 	return DataType.INTEGER;
+    }
+
+    /**
+     * Get the Integer object from this IntegerItem.
+     * @return an Integer
+     */
+    public Object getObject() {
+	if (theInteger == null) {
+	    deconstruct();
+	}
+
+	return theInteger;
+    }
+
+    /**
+     * Construct the ByteBuffer from the String.
+     */
+    private void construct() {
+	theBuffer = ByteBuffer.allocate(4);
+	theBuffer = theBuffer.putInt(theInteger);
+	theBuffer.rewind();
+    }
+
+    /**
+     * Deconstruct the ByteBuffer into a String
+     */
+    private void deconstruct() {
+	// We need to extract the Int from the ByteBuffer.
+	// The we can construct an Integer from that.
+	int value = theBuffer.getInt();
+
+	theInteger = new Integer(value);
+	
     }
 }
