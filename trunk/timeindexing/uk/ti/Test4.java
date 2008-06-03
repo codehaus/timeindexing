@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.nio.ByteBuffer;
+import java.io.IOException;
 
 /**
  * First test of TimeIndexFactory and IncoreIndex.
@@ -105,13 +106,13 @@ public class Test4 {
 
 	    index.close();
 
-	} catch (TimeIndexException ice) {
+	} catch (Exception ice) {
 	    System.err.println("Test4: " + ice.getMessage());
 	    System.exit(1);
 	}
     }
 
-    public static void printIndex(Index index) throws TimeIndexException {
+    public static void printIndex(Index index) throws TimeIndexException, IOException {
 	System.out.print("Name: " + index.getName() + "\n");
 	System.out.print("URI: " + index.getURI() + "\n");
 	System.out.print("Start:\t" + index.getStartTime() + "\n");
@@ -130,7 +131,7 @@ public class Test4 {
 	    
     }
 
-    public static void printIndexItem(IndexItem item) throws TimeIndexException {
+    public static void printIndexItem(IndexItem item) throws TimeIndexException, IOException {
 
 	System.out.print(item.getDataTimestamp() + "\t");
 
@@ -149,7 +150,7 @@ public class Test4 {
 
 	System.out.print(item.getItemID() + "\t");
 
-	System.out.print(item.getAnnotations() + "\n");
+	System.out.print(item.getAnnotationMetaData() + "\n");
 
     }
 
