@@ -198,7 +198,7 @@ public class MultiIndex3 {
 
 	System.out.print(item.getItemID() + "\t");
 
-	System.out.print(item.getAnnotations() + "\n");
+	System.out.print(item.getAnnotationMetaData() + "\n");
 
     }
 
