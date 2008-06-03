@@ -12,6 +12,7 @@ import com.timeindexing.basic.Size;
 import com.timeindexing.basic.Position;
 import com.timeindexing.basic.AbsolutePosition;
 import com.timeindexing.data.DataItem;
+import com.timeindexing.data.DataItemFactory;
 
 import java.io.Serializable;
 import java.io.IOException;
@@ -137,6 +138,19 @@ public class IncoreIndexItem implements IndexItem, ManagedIndexItem {
     public DataType getDataType() {
 	setLastAccessTime();
 	return type;
+    }
+
+    /**
+     * Get the data of this IndexItem as a DataItem.
+     */
+    public DataItem getDataItem() {
+	setLastAccessTime();
+
+	ByteBuffer theBuffer = getData();
+
+	DataItemFactory factory = new DataItemFactory();
+
+	return factory.convert(theBuffer, type);
     }
 
     /**
