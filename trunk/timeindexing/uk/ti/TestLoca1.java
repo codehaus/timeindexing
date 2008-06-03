@@ -235,7 +235,7 @@ public class TestLoca1 {
 
 	out.append(item.getItemID() + "\t");
 
-	out.append(item.getAnnotations() + "\t");
+	out.append(item.getAnnotationMetaData() + "\t");
 
 	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
 

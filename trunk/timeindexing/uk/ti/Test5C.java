@@ -159,7 +159,7 @@ public class Test5C {
 
 	System.out.print(item.getItemID() + "\t");
 
-	System.out.print(item.getAnnotations() + "\t");
+	System.out.print(item.getAnnotationMetaData() + "\t");
 
 	ManagedFileIndexItem itemM = (ManagedFileIndexItem)item;
 

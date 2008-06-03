@@ -30,7 +30,7 @@ public class Test2 {
 	// An item of data
 	DataItem data = new StringItem("quite a lot of stuff");
 	ID id = new SID(123456);
-	ID annotations = new SID(0);
+	long annotations = 0;
 
 	System.out.println("Data = " + data);
 
@@ -56,7 +56,7 @@ public class Test2 {
 
 	System.out.print(item.getItemID() + "\t");
 
-	System.out.print(item.getAnnotations() + "\n");
+	System.out.print(item.getAnnotationMetaData() + "\n");
 
     }
 }
