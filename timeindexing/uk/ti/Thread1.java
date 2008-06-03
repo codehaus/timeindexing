@@ -138,7 +138,7 @@ public class Thread1 implements Runnable {
 
 	System.out.print(item.getItemID() + "\t");
 
-	System.out.print(item.getAnnotations() + "\n");
+	System.out.print(item.getAnnotationMetaData() + "\n");
 	*/
 	ByteBuffer itemdata = item.getData();
 	
