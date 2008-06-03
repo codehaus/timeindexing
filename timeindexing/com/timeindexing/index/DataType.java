@@ -226,6 +226,10 @@ public interface DataType {
 	    public int value() {
 		return BOOLEAN_VALUE;
 	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
 	};
 
 
@@ -297,6 +301,60 @@ public interface DataType {
 
 	    public int value() {
 		return VOID_VALUE;
+	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
+	};
+
+    /**
+     * The data is a big integer.
+     */
+    final static int BIG_INTEGER_VALUE = 11;
+    public final static DataType BIG_INTEGER = new DataType() {
+	    public String mimeType() {
+		return "type/big-integer";
+	    }
+
+	    public int value() {
+		return BIG_INTEGER_VALUE;
+	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
+	};
+
+    /**
+     * The data is a big decimal
+     */
+    final static int BIG_DECIMAL_VALUE = 12;
+    public final static DataType BIG_DECIMAL = new DataType() {
+	    public String mimeType() {
+		return "type/big-decimal";
+	    }
+
+	    public int value() {
+		return BIG_DECIMAL_VALUE;
+	    }
+
+	    public String toString() {
+		return mimeType();
+	    }
+	};
+
+    /**
+     * The data is serializable.
+     */
+    final static int SERIALIZABLE_VALUE = 99;
+    public final static DataType SERIALIZABLE = new DataType() {
+	    public String mimeType() {
+		return "type/serializable";
+	    }
+
+	    public int value() {
+		return SERIALIZABLE_VALUE;
 	    }
 
 	    public String toString() {
