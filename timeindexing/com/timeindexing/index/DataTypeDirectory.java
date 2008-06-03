@@ -71,6 +71,9 @@ public class DataTypeDirectory implements Serializable {
 	registerDataType(DataType.CHAR);
 	registerDataType(DataType.STRING);
 	registerDataType(DataType.VOID);
+	registerDataType(DataType.BIG_INTEGER);
+	registerDataType(DataType.BIG_DECIMAL);
+	registerDataType(DataType.SERIALIZABLE);
 	registerDataType(DataType.TEXT);
 	registerDataType(DataType.HTML);
 	registerDataType(DataType.XML);
