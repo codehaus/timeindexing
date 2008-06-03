@@ -43,4 +43,13 @@ public class ReaderResultItem implements DataItem {
     public DataType getDataType() {
 	return result.getDataType();
     }
+
+    /**
+     * Get the ByteBuffer object from this ReaderResultItem.
+     * @return a ByteBuffer
+     */
+    public Object getObject() {
+	return result;
+    }
+
 }
