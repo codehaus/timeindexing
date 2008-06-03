@@ -129,7 +129,12 @@ public class MP3Dump extends TIAbstractRestore {
 	    }
 
 	    for (int b=0; b < count; b++) {
-		buf.append(Integer.toHexString(0x000000FF & array[b]));
+		int value = 0x000000FF & array[b];
+
+		if (value < 16) {
+		    buf.append("0");
+		}
+		buf.append(Integer.toHexString(value));
 		buf.append(" ");
 	    }
 	}
