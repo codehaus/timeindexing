@@ -54,4 +54,15 @@ public class ByteBufferItem implements DataItem {
     public DataType getDataType() {
 	return dataType;
     }
+
+
+    /**
+     * Get the ByteBuffer object from this ByteBufferItem.
+     * @return a ByteBuffer
+     */
+    public Object getObject() {
+	return data;
+    }
+
+
 }
